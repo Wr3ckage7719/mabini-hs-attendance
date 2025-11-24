@@ -1,0 +1,41 @@
+/* Compatibility shim: map legacy admin selectors to new admin-theme variables */
+
+/* Sidebar mapping */
+.sidebar {
+  width: 84px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  padding: 18px 12px;
+  box-sizing: border-box;
+  border-right: 1px solid rgba(15,23,36,0.04);
+}
+.sidebar .sidebar-header { display:none; }
+.sidebar .sidebar-menu { margin-top:18px; }
+.sidebar .menu-item { display:block; padding:10px 8px; border-radius:8px; color:var(--muted); text-decoration:none }
+.sidebar .menu-item.active { background: transparent; color:var(--accent); }
+.sidebar-footer { margin-top: auto; padding-top:12px; }
+
+/* Top bar mapping */
+.top-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
+.page-title { font-size:22px; font-weight:600; color:var(--text); margin:6px 0; }
+.top-actions { display:flex; align-items:center; gap:10px; }
+.theme-toggle { background:transparent; border:0; padding:8px; border-radius:10px; cursor:pointer; }
+.theme-toggle .sun-icon, .theme-toggle .moon-icon { width:18px; height:18px }
+
+/* Main content mapping */
+.main-content { flex:1; padding:28px; background:transparent }
+.content-area { max-width:1200px; margin:0 auto }
+
+/* Cards and grids */
+.stats-grid, .stats-grid * { box-sizing:border-box }
+.stat-card { background:var(--panel); border-radius:12px; padding:18px; box-shadow:var(--soft-shadow); border:1px solid rgba(15,23,36,0.04); }
+.quick-actions .action-card { background:var(--panel); border-radius:12px; padding:24px; box-shadow:var(--soft-shadow); display:flex; flex-direction:column; align-items:center; justify-content:center }
+
+/* Tables */
+.table-container, .table-container table { background:transparent }
+table th, table td { padding:12px }
+
+/* Responsive adjustments */
+@media (max-width:900px){
+  .sidebar{ width:64px }
+  .page-title{ font-size:18px }
+}

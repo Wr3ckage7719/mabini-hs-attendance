@@ -1,0 +1,11 @@
+# Enable JavaScript ES6 modules
+<FilesMatch "\.(js|mjs)$">
+    Header set Content-Type "application/javascript"
+</FilesMatch>
+
+# CORS headers for local development
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type"
+</IfModule>

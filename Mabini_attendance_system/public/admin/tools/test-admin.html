@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Admin Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+        .result { background: white; padding: 20px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Quick Admin Account Test</h1>
+    <button onclick="testAdminExists()">1. Check if Admin Exists</button>
+    <button onclick="testLogin()">2. Test Login</button>
+    <button onclick="createAdmin()">3. Create Admin Account</button>
+    <div id="results"></div>
+
+    <script type="module">
+        import { supabase } from '../js/supabase-client.js';
+        import { authClient } from '../js/auth-client.js';
+        window.supabase = supabase;
+        window.authClient = authClient;
+
+        window.testAdminExists = async function() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="result">Checking...</div>';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', 'admin@mabinihs.local')
+                    .single();
+                
+                if (error) {
+                    if (error.code === 'PGRST116') {
+                        results.innerHTML = `<div class="result error">❌ Admin account DOES NOT EXIST in database</div>`;
+                    } else {
+                        results.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
+                    }
+                } else {
+                    results.innerHTML = `<div class="result success">✅ Admin account EXISTS<br>
+                        Email: ${data.email}<br>
+                        Role: ${data.role}<br>
+                        Name: ${data.first_name} ${data.last_name}<br>
+                        ID: ${data.id}</div>`;
+                }
+            } catch (err) {
+                results.innerHTML = `<div class="result error">❌ ${err.message}</div>`;
+            }
+        };
+
+        window.testLogin = async function() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="result">Testing login...</div>';
+            
+            try {
+                const result = await authClient.login('admin@mabinihs.local', 'admin123');
+                
+                if (result.success) {
+                    results.innerHTML = `<div class="result success">✅ LOGIN SUCCESSFUL!<br>
+                        User ID: ${result.user.id}<br>
+                        Email: ${result.user.email}<br>
+                        Role: ${result.user.profile?.role}<br>
+                        Name: ${result.user.profile?.first_name} ${result.user.profile?.last_name}</div>`;
+                } else {
+                    results.innerHTML = `<div class="result error">❌ LOGIN FAILED<br>
+                        Error: ${result.error}</div>`;
+                }
+            } catch (err) {
+                results.innerHTML = `<div class="result error">❌ ${err.message}</div>`;
+            }
+        };
+
+        window.createAdmin = async function() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="result">Creating admin account...</div>';
+            
+            try {
+                // First check if exists
+                const { data: existing } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('email', 'admin@mabinihs.local')
+                    .single();
+                
+                if (existing) {
+                    results.innerHTML = '<div class="result error">❌ Admin already exists! Use "Test Login" instead.</div>';
+                    return;
+                }
+
+                // Create Supabase auth user
+                const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+                    email: 'admin@mabinihs.local',
+                    password: 'admin123',
+                    email_confirm: true
+                });
+
+                if (authError) throw authError;
+
+                // Create user profile
+                const { error: profileError } = await supabase
+                    .from('users')
+                    .insert({
+                        id: authData.user.id,
+                        email: 'admin@mabinihs.local',
+                        first_name: 'System',
+                        last_name: 'Administrator',
+                        role: 'admin',
+                        is_active: true,
+                        created_at: new Date().toISOString()
+                    });
+
+                if (profileError) throw profileError;
+
+                results.innerHTML = '<div class="result success">✅ Admin account created successfully!<br>Email: admin@mabinihs.local<br>Password: admin123</div>';
+            } catch (err) {
+                results.innerHTML = `<div class="result error">❌ Failed to create admin:<br>${err.message}</div>`;
+            }
+        };
+
+        // Auto-check on load
+        testAdminExists();
+    </script>
+</body>
+</html>

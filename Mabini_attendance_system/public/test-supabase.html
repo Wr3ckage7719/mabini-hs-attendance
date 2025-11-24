@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success { background: #0e4429; color: #3fb950; }
+        .error { background: #3f1618; color: #f85149; }
+        .info { background: #1f6feb20; color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Supabase Connection Diagnostics</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        const results = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        async function runTests() {
+            // Test 1: Check if Supabase client can be imported
+            try {
+                log('Test 1: Importing Supabase client...', 'info');
+                const { supabase } = await import('./js/supabase-client.js');
+                log('✅ Supabase client imported successfully', 'success');
+                
+                // Test 2: Check configuration
+                log('Test 2: Checking Supabase configuration...', 'info');
+                log(`URL: ${supabase.supabaseUrl}`, 'info');
+                log(`Key exists: ${supabase.supabaseKey ? 'Yes (length: ' + supabase.supabaseKey.length + ')' : 'No'}`, 'info');
+                
+                // Test 3: Try a simple query
+                log('Test 3: Testing connection with getUser()...', 'info');
+                const { data, error } = await supabase.auth.getUser();
+                if (error && error.message === 'Auth session missing!') {
+                    log('✅ Connection works (no session, which is expected)', 'success');
+                } else if (error) {
+                    log(`❌ Connection error: ${error.message}`, 'error');
+                } else {
+                    log('✅ Connection works and session exists', 'success');
+                }
+                
+                // Test 4: Try to query users table (should fail with RLS but connection should work)
+                log('Test 4: Testing REST API with users table query...', 'info');
+                const { data: users, error: usersError } = await supabase
+                    .from('users')
+                    .select('count')
+                    .limit(1);
+                
+                if (usersError) {
+                    if (usersError.message.includes('apikey')) {
+                        log(`❌ API key not being sent: ${usersError.message}`, 'error');
+                    } else if (usersError.message.includes('RLS') || usersError.message.includes('policy')) {
+                        log('✅ REST API works (RLS blocking query is expected)', 'success');
+                    } else {
+                        log(`⚠️ REST API error: ${usersError.message}`, 'error');
+                    }
+                } else {
+                    log('✅ REST API works and returned data', 'success');
+                }
+                
+                // Test 5: Check auth client
+                log('Test 5: Importing auth client...', 'info');
+                const { authClient } = await import('./js/auth-client.js');
+                log('✅ Auth client imported successfully', 'success');
+                
+                log('\n🎯 SUMMARY:', 'info');
+                log('If all tests passed, the Supabase client is configured correctly.', 'info');
+                log('If Test 4 shows "apikey" error, the problem is with the Supabase client initialization.', 'info');
+                log('If Test 4 shows RLS error, that\'s GOOD - it means the API key is working.', 'info');
+                
+            } catch (error) {
+                log(`❌ Fatal error: ${error.message}`, 'error');
+                console.error('Full error:', error);
+            }
+        }
+
+        runTests();
+    </script>
+</body>
+</html>

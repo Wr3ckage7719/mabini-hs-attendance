@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Diagnostic - Mabini HS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background: #f5f5f5; }
+        .test-card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .status { padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; font-size: 14px; }
+        .status-pending { background: #f0f0f0; color: #666; border: 1px solid #ddd; }
+        .status-running { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .test-log { background: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .test-log div { margin: 5px 0; }
+        .btn-test { margin: 5px; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; max-height: 200px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 System Diagnostic Dashboard</h1>
+        <p class="text-muted">Testing all components of the Mabini HS Attendance System</p>
+
+        <!-- Test 1: Module Loading -->
+        <div class="test-card">
+            <h3>1️⃣ Module Loading Test</h3>
+            <div id="test1-status" class="status status-pending">⏳ Pending...</div>
+            <button class="btn btn-primary btn-test" onclick="runTest1()">Run Test</button>
+            <div id="test1-log" class="test-log" style="display:none;"></div>
+        </div>
+
+        <!-- Test 2: Supabase Connection -->
+        <div class="test-card">
+            <h3>2️⃣ Supabase Connection Test</h3>
+            <div id="test2-status" class="status status-pending">⏳ Pending...</div>
+            <button class="btn btn-primary btn-test" onclick="runTest2()">Run Test</button>
+            <div id="test2-log" class="test-log" style="display:none;"></div>
+        </div>
+
+        <!-- Test 3: Database Query -->
+        <div class="test-card">
+            <h3>3️⃣ Database Query Test</h3>
+            <div id="test3-status" class="status status-pending">⏳ Pending...</div>
+            <button class="btn btn-primary btn-test" onclick="runTest3()">Run Test</button>
+            <div id="test3-log" class="test-log" style="display:none;"></div>
+        </div>
+
+        <!-- Test 4: Authentication Flow -->
+        <div class="test-card">
+            <h3>4️⃣ Authentication Test</h3>
+            <div id="test4-status" class="status status-pending">⏳ Pending...</div>
+            <div class="mb-3">
+                <label>Email: <input type="email" id="test4-email" class="form-control d-inline-block" style="width:300px;" value="admin@mabinihs.local"></label>
+                <label>Password: <input type="password" id="test4-password" class="form-control d-inline-block" style="width:200px;"></label>
+            </div>
+            <button class="btn btn-primary btn-test" onclick="runTest4()">Run Test</button>
+            <button class="btn btn-secondary btn-test" onclick="runTest4Logout()">Test Logout</button>
+            <div id="test4-log" class="test-log" style="display:none;"></div>
+        </div>
+
+        <!-- Test 5: Session Management -->
+        <div class="test-card">
+            <h3>5️⃣ Session Management Test</h3>
+            <div id="test5-status" class="status status-pending">⏳ Pending...</div>
+            <button class="btn btn-primary btn-test" onclick="runTest5()">Check Session</button>
+            <button class="btn btn-danger btn-test" onclick="clearAllStorage()">Clear All Storage</button>
+            <div id="test5-log" class="test-log" style="display:none;"></div>
+        </div>
+
+        <!-- Test 6: Page Protection Logic -->
+        <div class="test-card">
+            <h3>6️⃣ Page Protection Test</h3>
+            <div id="test6-status" class="status status-pending">⏳ Pending...</div>
+            <button class="btn btn-primary btn-test" onclick="runTest6()">Test Protection</button>
+            <div id="test6-log" class="test-log" style="display:none;"></div>
+        </div>
+
+        <!-- Run All Tests -->
+        <div class="text-center my-4">
+            <button class="btn btn-success btn-lg" onclick="runAllTests()">▶️ Run All Tests</button>
+            <button class="btn btn-warning btn-lg" onclick="location.reload()">🔄 Reset</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import modules
+        import { supabase } from '../js/supabase-client.js';
+        import { authClient } from '../js/auth-client.js';
+        import { dataClient } from '../js/data-client.js';
+
+        // Make available globally for onclick handlers
+        window.supabase = supabase;
+        window.authClient = authClient;
+        window.dataClient = dataClient;
+
+        // Utility functions
+        function setStatus(testNum, status, message) {
+            const el = document.getElementById(`test${testNum}-status`);
+            el.className = `status status-${status}`;
+            const icon = status === 'success' ? '✅' : status === 'error' ? '❌' : status === 'running' ? '⏳' : '⏸️';
+            el.innerHTML = `${icon} ${message}`;
+        }
+
+        function log(testNum, message, type = 'info') {
+            const logEl = document.getElementById(`test${testNum}-log`);
+            logEl.style.display = 'block';
+            const time = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logEl.innerHTML += `<div>${icon} [${time}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // TEST 1: Module Loading
+        window.runTest1 = async function() {
+            setStatus(1, 'running', 'Testing module imports...');
+            document.getElementById('test1-log').innerHTML = '';
+
+            try {
+                log(1, 'Checking if modules loaded...', 'info');
+                
+                if (typeof supabase === 'undefined') throw new Error('supabase not loaded');
+                log(1, '✓ supabase-client.js loaded', 'success');
+                
+                if (typeof authClient === 'undefined') throw new Error('authClient not loaded');
+                log(1, '✓ auth-client.js loaded', 'success');
+                
+                if (typeof dataClient === 'undefined') throw new Error('dataClient not loaded');
+                log(1, '✓ data-client.js loaded', 'success');
+                
+                log(1, 'All modules loaded successfully!', 'success');
+                setStatus(1, 'success', 'All modules loaded ✅');
+            } catch (error) {
+                log(1, `Error: ${error.message}`, 'error');
+                setStatus(1, 'error', `Module load failed: ${error.message}`);
+            }
+        };
+
+        // TEST 2: Supabase Connection
+        window.runTest2 = async function() {
+            setStatus(2, 'running', 'Testing Supabase connection...');
+            document.getElementById('test2-log').innerHTML = '';
+
+            try {
+                log(2, 'Connecting to Supabase...', 'info');
+                log(2, 'URL: https://ddblgwzylvwuucnpmtzi.supabase.co', 'info');
+                
+                const { data, error } = await supabase.auth.getSession();
+                
+                if (error && error.message !== 'Auth session missing') {
+                    throw error;
+                }
+                
+                log(2, '✓ Connection successful', 'success');
+                log(2, `Session status: ${data.session ? 'Active session found' : 'No active session'}`, 'info');
+                
+                setStatus(2, 'success', 'Supabase connected ✅');
+            } catch (error) {
+                log(2, `Error: ${error.message}`, 'error');
+                setStatus(2, 'error', `Connection failed: ${error.message}`);
+            }
+        };
+
+        // TEST 3: Database Query
+        window.runTest3 = async function() {
+            setStatus(3, 'running', 'Testing database query...');
+            document.getElementById('test3-log').innerHTML = '';
+
+            try {
+                log(3, 'Querying users table...', 'info');
+                
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('email, role')
+                    .limit(5);
+                
+                if (error) throw error;
+                
+                log(3, `✓ Query successful - Found ${data.length} users`, 'success');
+                data.forEach(user => {
+                    log(3, `  - ${user.email} (${user.role})`, 'info');
+                });
+                
+                setStatus(3, 'success', `Database query successful - ${data.length} users found ✅`);
+            } catch (error) {
+                log(3, `Error: ${error.message}`, 'error');
+                setStatus(3, 'error', `Query failed: ${error.message}`);
+            }
+        };
+
+        // TEST 4: Authentication
+        window.runTest4 = async function() {
+            setStatus(4, 'running', 'Testing authentication...');
+            document.getElementById('test4-log').innerHTML = '';
+
+            const email = document.getElementById('test4-email').value;
+            const password = document.getElementById('test4-password').value;
+
+            if (!password) {
+                setStatus(4, 'error', 'Password required');
+                log(4, 'Please enter password', 'error');
+                return;
+            }
+
+            try {
+                log(4, `Attempting login as ${email}...`, 'info');
+                
+                const result = await authClient.login(email, password);
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Login failed');
+                }
+                
+                log(4, '✓ Login successful', 'success');
+                log(4, `User ID: ${result.user.id}`, 'info');
+                log(4, `Email: ${result.user.email}`, 'info');
+                log(4, `Role: ${result.user.profile?.role}`, 'info');
+                log(4, `Name: ${result.user.profile?.first_name} ${result.user.profile?.last_name}`, 'info');
+                
+                // Check session storage
+                const userData = sessionStorage.getItem('userData');
+                if (userData) {
+                    log(4, '✓ Session data stored', 'success');
+                } else {
+                    log(4, '⚠️ Session data NOT stored', 'warning');
+                }
+                
+                setStatus(4, 'success', `Login successful as ${result.user.profile?.role} ✅`);
+            } catch (error) {
+                log(4, `Error: ${error.message}`, 'error');
+                setStatus(4, 'error', `Login failed: ${error.message}`);
+            }
+        };
+
+        window.runTest4Logout = async function() {
+            document.getElementById('test4-log').innerHTML = '';
+            log(4, 'Testing logout...', 'info');
+
+            try {
+                const result = await authClient.logout();
+                
+                if (result.success) {
+                    log(4, '✓ Logout successful', 'success');
+                    log(4, '✓ Session storage cleared', 'success');
+                    log(4, '✓ Supabase auth cleared', 'success');
+                    setStatus(4, 'success', 'Logout successful ✅');
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                log(4, `Error: ${error.message}`, 'error');
+                setStatus(4, 'error', `Logout failed: ${error.message}`);
+            }
+        };
+
+        // TEST 5: Session Management
+        window.runTest5 = function() {
+            setStatus(5, 'running', 'Checking session state...');
+            document.getElementById('test5-log').innerHTML = '';
+
+            try {
+                log(5, 'Inspecting session storage...', 'info');
+                
+                // Check sessionStorage
+                const userData = sessionStorage.getItem('userData');
+                if (userData) {
+                    const parsed = JSON.parse(userData);
+                    log(5, '✓ sessionStorage.userData found', 'success');
+                    log(5, `  Role: ${parsed.role}`, 'info');
+                    log(5, `  Email: ${parsed.email}`, 'info');
+                } else {
+                    log(5, '⚠️ No userData in sessionStorage', 'warning');
+                }
+                
+                // Check localStorage for Supabase tokens
+                log(5, 'Checking localStorage...', 'info');
+                let foundAuthToken = false;
+                Object.keys(localStorage).forEach(key => {
+                    if (key.includes('auth-token')) {
+                        log(5, `✓ Found ${key}`, 'success');
+                        foundAuthToken = true;
+                    }
+                });
+                
+                if (!foundAuthToken) {
+                    log(5, '⚠️ No Supabase auth tokens found', 'warning');
+                }
+                
+                setStatus(5, 'success', 'Session check complete ✅');
+            } catch (error) {
+                log(5, `Error: ${error.message}`, 'error');
+                setStatus(5, 'error', `Session check failed: ${error.message}`);
+            }
+        };
+
+        window.clearAllStorage = function() {
+            sessionStorage.clear();
+            localStorage.clear();
+            log(5, '✓ All storage cleared', 'success');
+            setStatus(5, 'success', 'Storage cleared ✅');
+        };
+
+        // TEST 6: Page Protection
+        window.runTest6 = async function() {
+            setStatus(6, 'running', 'Testing page protection logic...');
+            document.getElementById('test6-log').innerHTML = '';
+
+            try {
+                log(6, 'Checking if user is authenticated...', 'info');
+                
+                const user = await authClient.getCurrentUser();
+                
+                if (!user) {
+                    log(6, '❌ Not authenticated', 'error');
+                    log(6, 'Page protection would redirect to login', 'info');
+                    setStatus(6, 'error', 'Not authenticated - would redirect ❌');
+                    return;
+                }
+                
+                log(6, '✓ User authenticated', 'success');
+                log(6, `User ID: ${user.id}`, 'info');
+                
+                const profile = await authClient.getUserProfile();
+                
+                if (!profile) {
+                    log(6, '❌ Profile not found', 'error');
+                    setStatus(6, 'error', 'Profile missing ❌');
+                    return;
+                }
+                
+                log(6, `✓ Profile loaded: ${profile.role}`, 'success');
+                
+                if (profile.role === 'admin') {
+                    log(6, '✓ Admin role confirmed - access granted', 'success');
+                    setStatus(6, 'success', 'Page protection passed ✅');
+                } else {
+                    log(6, `⚠️ Role is ${profile.role}, not admin`, 'warning');
+                    log(6, 'Page protection would redirect to role-specific portal', 'info');
+                    setStatus(6, 'error', `Wrong role (${profile.role}) - would redirect ❌`);
+                }
+            } catch (error) {
+                log(6, `Error: ${error.message}`, 'error');
+                setStatus(6, 'error', `Protection check failed: ${error.message}`);
+            }
+        };
+
+        // Run All Tests
+        window.runAllTests = async function() {
+            await runTest1();
+            await new Promise(r => setTimeout(r, 500));
+            await runTest2();
+            await new Promise(r => setTimeout(r, 500));
+            await runTest3();
+            await new Promise(r => setTimeout(r, 500));
+            await runTest5();
+            await new Promise(r => setTimeout(r, 500));
+            await runTest6();
+        };
+
+        // Auto-run test 1 on load
+        runTest1();
+    </script>
+</body>
+</html>

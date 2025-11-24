@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Test - Mabini HS</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .test {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background: #2d2d2d;
+        }
+        .success { border-left: 4px solid #4caf50; }
+        .error { border-left: 4px solid #f44336; }
+        .info { border-left: 4px solid #2196f3; }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #005a9e; }
+        pre {
+            background: #0d0d0d;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Mabini HS System Test</h1>
+    <p>Click the buttons below to test each component</p>
+    
+    <div style="background: #2d2d2d; padding: 15px; margin: 20px 0; border-radius: 5px;">
+        <h3>Login Status: <span id="loginStatus" style="color: #f44336;">Not Logged In</span></h3>
+        <button onclick="doLogin()">Login as Admin First</button>
+    </div>
+
+    <div id="results"></div>
+
+    <button onclick="testTeachersSchema()">1. Test Teachers Schema</button>
+    <button onclick="testCreateTeacher()">2. Create Test Teacher</button>
+    <button onclick="testCreateSubject()">3. Create Test Subject</button>
+    <button onclick="clearAll()">Clear Results</button>
+
+    <script type="module">
+        // Inline Supabase client to avoid import issues
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        const SUPABASE_URL = 'https://ddblgwzylvwuucnpmtzi.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkYmxnd3p5bHZ3dXVjbnBtdHppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4MDM4MjIsImV4cCI6MjA3OTM3OTgyMn0.EL7xhE0SbgvJ_R8ZAlkawOqRMi3yYMGFbGkqBMWMaJI';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        window.supabase = supabase;
+
+        function addResult(title, message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${message}</pre>`;
+            document.getElementById('results').appendChild(div);
+        }
+
+        window.clearAll = function() {
+            document.getElementById('results').innerHTML = '';
+        };
+
+        // Login function
+        window.doLogin = async function() {
+            try {
+                addResult('🔐 Logging in...', 'Attempting to login as admin...', 'info');
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'admin@mabinihs.local',
+                    password: 'admin123'
+                });
+                
+                if (error) {
+                    addResult('❌ Login Failed', error.message, 'error');
+                    document.getElementById('loginStatus').textContent = 'Login Failed';
+                    document.getElementById('loginStatus').style.color = '#f44336';
+                } else {
+                    addResult('✅ Login Successful!', `Logged in as: ${data.user.email}`, 'success');
+                    document.getElementById('loginStatus').textContent = 'Logged In as Admin';
+                    document.getElementById('loginStatus').style.color = '#4caf50';
+                }
+            } catch (err) {
+                addResult('❌ Login Error', err.message, 'error');
+            }
+        };
+
+        // Test 1: Check teachers schema
+        window.testTeachersSchema = async function() {
+            try {
+                addResult('📋 Testing Teachers Schema...', 'Fetching teachers table structure...', 'info');
+                
+                // Try to get one teacher record to see the schema
+                const { data, error } = await supabase
+                    .from('teachers')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    addResult('❌ Schema Test Failed', 
+                        `Error: ${error.message}\n\nDetails: ${JSON.stringify(error, null, 2)}`, 
+                        'error');
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    const columns = Object.keys(data[0]);
+                    const hasPhone = columns.includes('phone');
+                    const hasContactNumber = columns.includes('contact_number');
+                    
+                    const report = `
+Available columns: ${columns.join(', ')}
+
+✓ Has 'phone' column: ${hasPhone ? 'YES ✅' : 'NO ❌'}
+✓ Has 'contact_number' column: ${hasContactNumber ? 'YES (OLD - SHOULD BE REMOVED)' : 'NO ✅'}
+
+Status: ${hasPhone && !hasContactNumber ? '✅ CORRECT SCHEMA' : '❌ SCHEMA NEEDS FIX'}
+                    `;
+                    
+                    addResult('📋 Teachers Schema', report, hasPhone && !hasContactNumber ? 'success' : 'error');
+                } else {
+                    addResult('📋 Teachers Schema', 'No teachers found, but query succeeded.\nColumns: phone exists ✅', 'success');
+                }
+            } catch (err) {
+                addResult('❌ Test Error', err.message, 'error');
+            }
+        };
+
+        // Test 2: Create a teacher
+        window.testCreateTeacher = async function() {
+            try {
+                addResult('👨‍🏫 Creating Test Teacher...', 'Attempting to insert a teacher...', 'info');
+                
+                const teacherData = {
+                    employee_number: 'TEST-' + Date.now(),
+                    first_name: 'Test',
+                    last_name: 'Teacher',
+                    email: `test${Date.now()}@test.com`,
+                    phone: '09123456789',
+                    department: 'Testing',
+                    position: 'Test Teacher',
+                    status: 'active'
+                };
+                
+                const { data, error } = await supabase
+                    .from('teachers')
+                    .insert([teacherData])
+                    .select();
+                
+                if (error) {
+                    addResult('❌ Teacher Creation Failed', 
+                        `Error: ${error.message}\n\nData sent: ${JSON.stringify(teacherData, null, 2)}`, 
+                        'error');
+                } else {
+                    addResult('✅ Teacher Created Successfully!', 
+                        `Teacher ID: ${data[0].id}\n\nData: ${JSON.stringify(data[0], null, 2)}`, 
+                        'success');
+                }
+            } catch (err) {
+                addResult('❌ Test Error', err.message, 'error');
+            }
+        };
+
+        // Test 3: Create a subject
+        window.testCreateSubject = async function() {
+            try {
+                addResult('📚 Creating Test Subject...', 'Attempting to insert a subject...', 'info');
+                
+                const subjectData = {
+                    code: 'TEST-' + Date.now(),
+                    name: 'Test Subject',
+                    description: 'This is a test subject',
+                    grade_level: 7
+                };
+                
+                const { data, error } = await supabase
+                    .from('subjects')
+                    .insert([subjectData])
+                    .select();
+                
+                if (error) {
+                    addResult('❌ Subject Creation Failed', 
+                        `Error: ${error.message}\n\nData sent: ${JSON.stringify(subjectData, null, 2)}`, 
+                        'error');
+                } else {
+                    addResult('✅ Subject Created Successfully!', 
+                        `Subject ID: ${data[0].id}\n\nData: ${JSON.stringify(data[0], null, 2)}`, 
+                        'success');
+                }
+            } catch (err) {
+                addResult('❌ Test Error', err.message, 'error');
+            }
+        };
+
+        // Auto-run schema test on load
+        window.addEventListener('load', async () => {
+            // Check if already logged in
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                document.getElementById('loginStatus').textContent = 'Logged In';
+                document.getElementById('loginStatus').style.color = '#4caf50';
+            }
+            
+            setTimeout(() => {
+                testTeachersSchema();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

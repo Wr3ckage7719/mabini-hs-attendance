@@ -1,0 +1,22 @@
+{
+  "name": "mabini-hs-attendance-system",
+  "version": "1.0.0",
+  "description": "Mabini High School Attendance Management System",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "cd server && npm run dev",
+    "start": "cd server && npm start",
+    "vercel-build": "cd server && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "attendance",
+    "school-management",
+    "supabase",
+    "qr-scanner"
+  ],
+  "author": "Mabini HS",
+  "license": "MIT"
+}

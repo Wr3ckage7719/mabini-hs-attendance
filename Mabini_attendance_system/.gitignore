@@ -1,0 +1,72 @@
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local
+server/.env
+
+# Upload directories
+uploads/
+uploads/faces/*
+uploads/temp/*
+!uploads/.gitkeep
+!uploads/faces/.gitkeep
+!uploads/temp/.gitkeep
+
+# Logs
+*.log
+logs/
+error.log
+access.log
+
+# Cache
+cache/
+*.cache
+token-cache.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*~
+
+# Node modules
+node_modules/
+server/node_modules/
+package-lock.json
+yarn.lock
+
+# PHP
+vendor/
+composer.lock
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Database dumps
+*.sql.gz
+*.sql.zip
+database-backup/
+
+# Vercel
+.vercel
+.vercel/
+
+# Test files
+test-output/
+phpunit.xml
+.phpunit.result.cache

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Students - Teacher Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/admin-theme.css">
+    <script src="../assets/js/theme.js" defer></script>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="bi bi-mortarboard-fill"></i>
+                    <span>Mabini HS</span>
+                </div>
+                <div class="sidebar-subtitle">Teacher Portal</div>
+            </div>
+            
+            <div class="sidebar-menu">
+                <div class="menu-label">Main</div>
+                <a href="dashboard.html" class="menu-item">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <div class="menu-label">My Classes</div>
+                <a href="sections.html" class="menu-item">
+                    <i class="bi bi-grid-3x3-gap-fill"></i>
+                    <span>My Sections</span>
+                </a>
+                <a href="students.html" class="menu-item active">
+                    <i class="bi bi-people-fill"></i>
+                    <span>My Students</span>
+                </a>
+                <a href="subjects.html" class="menu-item">
+                    <i class="bi bi-book-fill"></i>
+                    <span>My Subjects</span>
+                </a>
+                <a href="teaching-loads.html" class="menu-item">
+                    <i class="bi bi-calendar-check-fill"></i>
+                    <span>Teaching Schedule</span>
+                </a>
+                
+                <div class="menu-label">Account</div>
+                <a href="settings.html" class="menu-item">
+                    <i class="bi bi-gear-fill"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">TE</div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">Teacher</div>
+                        <div class="user-role" id="userRole">Teacher</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-top" role="banner">
+                <div style="display:flex;flex-direction:column;">
+                    <div class="admin-breadcrumb muted">
+                        <span class="muted">Teacher</span>
+                        <span aria-hidden="true">/</span>
+                        <span>My Students</span>
+                    </div>
+                    <div class="admin-title">Students in My Classes</div>
+                </div>
+
+                <div class="admin-top-actions">
+                    <button id="themeToggle" class="theme-toggle" aria-pressed="false" aria-label="Toggle theme">
+                        <span class="icon sun" aria-hidden="true" style="display:inline-block">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="icon moon" aria-hidden="true" style="display:none">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                    </button>
+
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div class="avatar" title="Teacher" aria-hidden="true">
+                            <svg width="38" height="38" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M4 20c1.5-4 6-6 8-6s6.5 2 8 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <button id="logoutBtn" class="btn ghost" aria-label="Logout">Logout</button>
+                    </div>
+                </div>
+            </header>
+        
+            <div class="content-area">
+                <!-- Alert Container -->
+                <div id="alertContainer"></div>
+                
+                <!-- Info Card -->
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    Viewing students in your assigned sections. You can view information but cannot edit student records.
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Total Students</h6>
+                                <h3 class="card-title" id="totalStudents">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Active Students</h6>
+                                <h3 class="card-title" id="activeStudents">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Sections Teaching</h6>
+                                <h3 class="card-title" id="totalSectionsTeaching">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Search & Filters</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Search</label>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search by name, ID, or email..." onkeyup="filterStudents()">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Filter by Section</label>
+                                <select class="form-select" id="sectionFilter" onchange="filterStudents()">
+                                    <option value="">All Sections</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Filter by Status</label>
+                                <select class="form-select" id="statusFilter" onchange="filterStudents()">
+                                    <option value="">All</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Students Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Student List</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="studentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Name</th>
+                                        <th>Section</th>
+                                        <th>Grade Level</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center">Loading students...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Mobile Toggle -->
+    <div class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+    </div>
+
+    <!-- View Details Modal -->
+    <div class="modal fade" id="viewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Student Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="viewModalBody">
+                    <p><strong>Student ID:</strong> <span id="viewStudentId"></span></p>
+                    <p><strong>Full Name:</strong> <span id="viewName"></span></p>
+                    <p><strong>Email:</strong> <span id="viewEmail"></span></p>
+                    <p><strong>Section:</strong> <span id="viewSection"></span></p>
+                    <p><strong>Grade Level:</strong> <span id="viewGrade"></span></p>
+                    <p><strong>Status:</strong> <span id="viewStatus"></span></p>
+                    <p><strong>Parent/Guardian:</strong> <span id="viewParent"></span></p>
+                    <p><strong>Contact Number:</strong> <span id="viewContact"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="js/teacher-common.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allStudents = [];
+        let mySections = [];
+        let currentTeacherId = null;
+
+        // Load students in teacher's sections
+        async function loadStudents() {
+            try {
+                // Get current teacher ID
+                const userData = JSON.parse(sessionStorage.getItem('userData'));
+                currentTeacherId = userData.uid || userData.id;
+                
+                // Get teaching loads to find teacher's sections
+                const teachingLoads = await getDocuments('teaching_loads');
+                const mySectionIds = [...new Set(
+                    teachingLoads
+                        .filter(load => load.teacher_id === currentTeacherId)
+                        .map(load => load.section_id)
+                )];
+                
+                // Get sections
+                const sections = await getDocuments('sections');
+                mySections = sections.filter(s => mySectionIds.includes(s.id));
+                
+                // Populate section filter
+                const sectionFilter = document.getElementById('sectionFilter');
+                sectionFilter.innerHTML = '<option value="">All Sections</option>' + 
+                    mySections.map(s => `<option value="${s.id}">${s.name || s.section_name}</option>`).join('');
+                
+                // Get students in these sections
+                const students = await getDocuments('students');
+                allStudents = students.filter(st => mySectionIds.includes(st.section_id)).map(student => {
+                    const section = mySections.find(s => s.id === student.section_id);
+                    return {
+                        ...student,
+                        sectionName: section ? (section.name || section.section_name) : 'Unknown',
+                        gradeLevel: section ? section.grade_level : 'N/A'
+                    };
+                });
+                
+                // Update summary
+                updateSummary(allStudents);
+                
+                // Render students
+                renderStudents(allStudents);
+            } catch (error) {
+                console.error('Error loading students:', error);
+                showAlert('Failed to load students', 'error');
+            }
+        }
+
+        // Update summary cards
+        function updateSummary(students) {
+            document.getElementById('totalStudents').textContent = students.length;
+            document.getElementById('activeStudents').textContent = students.filter(s => s.status === 'active').length;
+            document.getElementById('totalSectionsTeaching').textContent = mySections.length;
+        }
+
+        // Render students table
+        function renderStudents(students) {
+            const tbody = document.getElementById('studentsTableBody');
+            
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No students found in your sections</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = students.map(student => `
+                <tr>
+                    <td><strong>${student.student_id || student.id_number || 'N/A'}</strong></td>
+                    <td>${student.full_name || student.name || `${student.first_name || ''} ${student.last_name || ''}`}</td>
+                    <td>${student.sectionName}</td>
+                    <td>${student.gradeLevel}</td>
+                    <td>${student.email || 'N/A'}</td>
+                    <td><span class="badge bg-${student.status === 'active' ? 'success' : 'secondary'}">${student.status || 'inactive'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewStudent('${student.id}')">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // View student details
+        function viewStudent(studentId) {
+            const student = allStudents.find(s => s.id === studentId);
+            if (!student) return;
+            
+            document.getElementById('viewStudentId').textContent = student.student_id || student.id_number || 'N/A';
+            document.getElementById('viewName').textContent = student.full_name || student.name || `${student.first_name || ''} ${student.last_name || ''}`;
+            document.getElementById('viewEmail').textContent = student.email || 'N/A';
+            document.getElementById('viewSection').textContent = student.sectionName;
+            document.getElementById('viewGrade').textContent = student.gradeLevel;
+            document.getElementById('viewStatus').textContent = student.status || 'inactive';
+            document.getElementById('viewParent').textContent = student.parent_name || student.guardian_name || 'N/A';
+            document.getElementById('viewContact').textContent = student.parent_contact || student.contact || 'N/A';
+            
+            const modal = new bootstrap.Modal(document.getElementById('viewModal'));
+            modal.show();
+        }
+
+        // Filter students
+        function filterStudents() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const sectionFilter = document.getElementById('sectionFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            const filtered = allStudents.filter(student => {
+                // Search filter
+                const name = (student.full_name || student.name || `${student.first_name || ''} ${student.last_name || ''}`).toLowerCase();
+                const id = (student.student_id || student.id_number || '').toString().toLowerCase();
+                const email = (student.email || '').toLowerCase();
+                const matchesSearch = !searchTerm || name.includes(searchTerm) || id.includes(searchTerm) || email.includes(searchTerm);
+                
+                // Section filter
+                const matchesSection = !sectionFilter || student.section_id === sectionFilter;
+                
+                // Status filter
+                const matchesStatus = !statusFilter || student.status === statusFilter;
+                
+                return matchesSearch && matchesSection && matchesStatus;
+            });
+            
+            renderStudents(filtered);
+        }
+
+        // Initialize
+        window.addEventListener('load', async () => {
+            const isAuth = await checkAuth();
+            if (isAuth) {
+                await loadStudents();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Parent — Student Report Card</title>
+        <style>
+            :root{--bg:#071027;--panel:#0c1726;--muted:#9aa9bf;--accent:#6c5ce7;--success:#22c55e}
+            *{box-sizing:border-box}
+            body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(180deg,#071027 0%,#071832 100%);color:#eaf1fb}
+            .wrap{width:100%;max-width:none;margin:0;padding:28px 20px;display:grid;grid-template-columns:340px minmax(0,1fr) 360px;gap:32px}
+            .card-left{background:linear-gradient(180deg,#081226,#0a1630);border-radius:14px;padding:28px;box-shadow:0 18px 48px rgba(2,7,23,.6)}
+            .avatar{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:linear-gradient(135deg,#6c5ce7,#4ade80);font-weight:700}
+            .student-name{text-align:center;font-size:20px;font-weight:700}
+            .student-meta{text-align:center;color:var(--muted);font-size:14px;margin-top:8px}
+            .badge{display:inline-block;padding:6px 10px;border-radius:10px;background:#07361a;color:#aef5bf;font-weight:600;margin:12px auto}
+            .section{margin-top:18px;background:rgba(255,255,255,0.02);padding:14px;border-radius:12px}
+            .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+            .row:last-child{border-bottom:0}
+            .main{display:flex;flex-direction:column;gap:14px}
+            .top-stat{display:flex;gap:16px}
+            .stat{flex:1;background:linear-gradient(180deg,#08142a,#061026);padding:16px;border-radius:12px;display:flex;align-items:center;gap:14px}
+            .stat .value{font-size:22px;font-weight:800}
+            .panel{background:linear-gradient(180deg,#071229,#051023);padding:20px;border-radius:14px}
+            .report-header{display:flex;justify-content:space-between;align-items:center;gap:16px}
+            .controls{display:flex;gap:10px;align-items:center}
+            select,input{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#eaf1fb;padding:10px 12px;border-radius:10px}
+            button{background:linear-gradient(90deg,var(--accent),#4f46e5);color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer}
+            .subjects{margin-top:22px;border-radius:10px;overflow:hidden}
+            table{width:100%;border-collapse:collapse}
+            th,td{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left;vertical-align:middle}
+            th{font-size:13px;color:var(--muted);letter-spacing:0.6px}
+            tbody tr{line-height:1.8}
+            td .grade{font-weight:700}
+            .progress{height:8px;background:rgba(255,255,255,0.04);border-radius:6px;overflow:hidden}
+            .progress>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#22c1c3)}
+            .subject-row{cursor:pointer}
+            .subject-details{display:none;padding:12px 14px;background:rgba(255,255,255,0.02);font-size:13px;color:var(--muted)}
+            .summary{display:flex;gap:14px;margin-top:20px}
+            .summary .box{flex:1;background:rgba(255,255,255,0.02);padding:14px;border-radius:10px;text-align:center}
+            .card-right{background:linear-gradient(180deg,#081226,#0a1630);border-radius:14px;padding:18px;box-shadow:0 18px 48px rgba(2,7,23,.6);display:none;flex-direction:column;align-items:center;gap:12px}
+            .card-right img{max-width:100%;max-height:320px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);object-fit:cover}
+            .card-right .caption{font-size:14px;color:var(--muted);text-align:center;margin-top:10px}
+            @media(max-width:980px){.wrap{grid-template-columns:1fr}.card-left{order:2}.main{order:1}.card-right{order:3;display:none}}
+        </style>
+    </head>
+    <body>
+        <div class="wrap">
+            <aside class="card-left">
+                <div class="avatar">NB</div>
+                <div class="student-name">Niccolo Balon</div>
+                <div class="student-meta">Student ID: <strong>233294</strong></div>
+                <div style="text-align:center;margin-top:10px"><span class="badge">Enrolled</span></div>
+                <div class="section">
+                    <div class="row"><div>Last Enrollment</div><div style="color:var(--muted)">2023-2024 1st</div></div>
+                    <div class="row"><div>Year/Grade</div><div style="color:var(--muted)">7</div></div>
+                    <div class="row"><div>Graduating</div><div style="color:var(--muted)">No</div></div>
+                </div>
+                <div class="section">
+                    <div style="font-weight:700;margin-bottom:6px">Contact</div>
+                    <div style="color:var(--muted)">09xxxxxxxx</div>
+                    <div style="color:var(--muted)">parent1@email.com</div>
+                </div>
+            </aside>
+
+            <main class="main">
+                <div class="top-stat">
+                    <div class="stat"><div style="font-size:12px;color:var(--muted)">Attendance Rate</div><div class="value" id="attendanceRate">0%</div></div>
+                    <div class="stat"><div style="font-size:12px;color:var(--muted)">GPA</div><div class="value" id="gpa">0.00</div></div>
+                    <div class="stat"><div style="font-size:12px;color:var(--muted)">Days Present</div><div class="value" id="daysPresent">0</div></div>
+                    <div class="stat"><div style="font-size:12px;color:var(--muted)">Days Absent</div><div class="value" id="daysAbsent">0</div></div>
+                </div>
+
+                <div class="panel">
+                    <div class="report-header">
+                        <h3 style="margin:0">Report Card</h3>
+                        <div class="controls">
+                            <label style="color:var(--muted);font-size:13px">Year</label>
+                            <select id="yearSelect"><option>2023-2024</option><option>2024-2025</option></select>
+                            <label style="color:var(--muted);font-size:13px">Term</label>
+                            <select id="termSelect"><option>1st</option><option>2nd</option></select>
+                            <div class="actions">
+                                <button id="printBtn">Print / Save PDF</button>
+                                <button id="exportCsv">Export CSV</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subjects" id="attendanceContainer">
+                        <table>
+                            <thead>
+                                <tr><th>DATE</th><th>TIME IN</th><th>TIME OUT</th><th>STATUS</th><th style="text-align:right">VIEW</th></tr>
+                            </thead>
+                            <tbody id="attendanceBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="summary">
+                        <div class="box"><div style="font-size:12px;color:var(--muted)">Remarks</div><div id="remarks" style="font-weight:700">No remarks</div></div>
+                        <div class="box"><div style="font-size:12px;color:var(--muted)">Advisory</div><div id="advisory" style="font-weight:700">N/A</div></div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3 style="margin-top:0">Attendance Summary</h3>
+                    <div style="display:flex;gap:12px;margin-top:10px">
+                        <div style="flex:1;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;text-align:center"><div style="color:var(--muted);font-size:12px">Total Days</div><div id="totalDays" style="font-weight:700">0</div></div>
+                        <div style="flex:1;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;text-align:center"><div style="color:var(--muted);font-size:12px">Present</div><div id="presentDays" style="font-weight:700">0</div></div>
+                        <div style="flex:1;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;text-align:center"><div style="color:var(--muted);font-size:12px">Absent</div><div id="absentDays" style="font-weight:700">0</div></div>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="card-right" id="photoViewer">
+                <div style="width:100%;display:flex;justify-content:space-between;align-items:center">
+                    <div style="font-weight:700">Camera Snapshot</div>
+                    <button id="closePhoto" style="background:transparent;border:0;color:var(--muted);cursor:pointer">✕</button>
+                </div>
+                <img id="cameraPhoto" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='220'><rect width='100%' height='100%' fill='%23081a2b'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23aab9cc' font-family='Arial' font-size='16'>No photo selected</text></svg>" alt="Camera scan">
+                <div class="caption" id="photoCaption">Click 'View' on a row to show the scan</div>
+            </aside>
+        </div>
+
+        <script>
+            // Mock attendance data — replace with API calls later
+            const mockData = {
+                '2023-2024': {
+                    '1st': {
+                        student:{name:'Niccolo Balon', id:'233294'},
+                        attendance:{
+                            total:40, present:38, absent:2,
+                            records:[
+                                {date:'2024-06-01', timeIn:'08:05', timeOut:'12:00', status:'Present'},
+                                {date:'2024-06-02', timeIn:'08:10', timeOut:'12:00', status:'Present'},
+                                {date:'2024-06-03', timeIn:'08:00', timeOut:'12:00', status:'Absent'},
+                                {date:'2024-06-04', timeIn:'08:07', timeOut:'12:00', status:'Present'},
+                                {date:'2024-06-05', timeIn:'08:09', timeOut:'12:00', status:'Present'}
+                            ]
+                        },
+                        remarks:'Good attendance overall.'
+                    }
+                }
+            };
+
+            const yearSelect = document.getElementById('yearSelect');
+            const termSelect = document.getElementById('termSelect');
+            const attendanceBody = document.getElementById('attendanceBody');
+
+            function render(){
+                const year = yearSelect.value; const term = termSelect.value;
+                const data = (mockData[year] && mockData[year][term]) ? mockData[year][term] : null;
+                attendanceBody.innerHTML = '';
+                if (!data) return;
+                const total=data.attendance.total||0; const present=data.attendance.present||0; const absent=data.attendance.absent||0;
+                document.getElementById('attendanceRate').textContent = total?Math.round((present/total)*100)+'%':'0%';
+                // Keep GPA placeholder but recalc from attendance as N/A
+                document.getElementById('gpa').textContent = 'N/A';
+                document.getElementById('daysPresent').textContent = present; document.getElementById('daysAbsent').textContent = absent;
+                document.getElementById('totalDays').textContent = total; document.getElementById('presentDays').textContent = present; document.getElementById('absentDays').textContent = absent;
+                document.getElementById('remarks').textContent = data.remarks||'No remarks'; document.getElementById('advisory').textContent='Class Adviser: Mr. Santos';
+
+                (data.attendance.records||[]).forEach((rec, idx)=>{
+                    const tr=document.createElement('tr');
+                    tr.className = 'attendance-row';
+                    tr.setAttribute('data-idx', idx);
+                    if(rec.photo){ tr.setAttribute('data-photo', rec.photo); }
+                    // add view button in last column
+                    const viewBtn = rec.photo ? `<button class="view-btn" data-idx="${idx}">View</button>` : `<button class="view-btn" disabled style="opacity:.4;cursor:default">View</button>`;
+                    tr.innerHTML = `<td>${rec.date}</td><td>${rec.timeIn}</td><td>${rec.timeOut}</td><td>${rec.status}</td><td style="text-align:right">${viewBtn}</td>`;
+                    attendanceBody.appendChild(tr);
+                });
+
+                // wire view buttons to show photo in the right-side viewer
+                document.querySelectorAll('.view-btn').forEach(btn=>{
+                    btn.addEventListener('click', (ev)=>{
+                        ev.stopPropagation();
+                        const idx = btn.getAttribute('data-idx');
+                        const rec = (data.attendance.records||[])[idx];
+                        const url = rec && rec.photo ? rec.photo : null;
+                        showPhoto(url, rec);
+                    });
+                });
+            }
+
+            document.getElementById('printBtn').addEventListener('click',()=>window.print());
+
+            document.getElementById('exportCsv').addEventListener('click',()=>{
+                const rows=[['Date','Time In','Time Out','Status']];
+                document.querySelectorAll('#attendanceBody tr').forEach(r=>{ const cols=r.querySelectorAll('td'); rows.push([cols[0].textContent.trim(),cols[1].textContent.trim(),cols[2].textContent.trim(),cols[3].textContent.trim()]); });
+                const csv = rows.map(r=>r.map(c=>`"${c.replace(/"/g,'""') }"`).join(',')).join('\n');
+                const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='attendance-history.csv'; a.click(); URL.revokeObjectURL(url);
+            });
+
+            yearSelect.addEventListener('change',render); termSelect.addEventListener('change',render);
+            render();
+
+            function showPhoto(url, record){
+                const viewer = document.getElementById('photoViewer');
+                const img = document.getElementById('cameraPhoto');
+                const caption = document.getElementById('photoCaption');
+                // show the viewer panel
+                viewer.style.display = 'flex';
+                if(!url){
+                    img.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='220'><rect width='100%' height='100%' fill='%23081a2b'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23aab9cc' font-family='Arial' font-size='16'>No photo available</text></svg>";
+                    caption.textContent = record ? `${record.date} — ${record.status}` : 'No photo available';
+                    return;
+                }
+                // set image src (could be a relative path or data URL)
+                img.src = url;
+                caption.textContent = record ? `${record.date} • ${record.timeIn} - ${record.timeOut}` : '';
+            }
+
+            // close button for photo viewer
+            document.getElementById('closePhoto').addEventListener('click', ()=>{
+                const viewer = document.getElementById('photoViewer');
+                viewer.style.display = 'none';
+            });
+        </script>
+    </body>
+</html>

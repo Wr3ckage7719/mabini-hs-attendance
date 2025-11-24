@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Dashboard</title>
+    <meta name="theme-color" content="#4f46e5">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <script src="../assets/js/theme.js" defer></script>
+    <style>
+        /* Settings menu: dynamic colors based on data-theme
+           - light: black text on white background
+           - dark: white text on dark card background (uses existing --card-bg)
+        */
+        html[data-theme='light'] .portal-settings #settingsMenu,
+        html[data-theme='light'] .portal-settings #settingsMenu a,
+        html[data-theme='light'] .portal-settings #settingsMenu strong,
+        html[data-theme='light'] .portal-settings #settingsMenu span {
+            color: #000 !important;
+            background: #fff !important;
+        }
+
+        html[data-theme='dark'] .portal-settings #settingsMenu,
+        html[data-theme='dark'] .portal-settings #settingsMenu a,
+        html[data-theme='dark'] .portal-settings #settingsMenu strong,
+        html[data-theme='dark'] .portal-settings #settingsMenu span {
+            color: #fff !important;
+            background: var(--card-bg) !important;
+        }
+
+        /* Make links and text inherit the menu color by default */
+        .portal-settings #settingsMenu a,
+        .portal-settings #settingsMenu strong,
+        .portal-settings #settingsMenu span {
+            color: inherit !important;
+        }
+
+        /* Logo color adapts to theme (uses currentColor for SVG/text) */
+        html[data-theme='light'] .portal-logo {
+            color: #000 !important;
+        }
+        html[data-theme='dark'] .portal-logo {
+            color: #fff !important;
+        }
+        .portal-logo svg {
+            fill: currentColor;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .portal-logo .logo-text {
+            font-weight: 700;
+            margin-left: 0.5rem;
+            font-size: 1rem;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="portal-bg">
+    <header class="portal-header">
+        <div class="portal-header-content">
+            <a href="#" class="portal-logo" aria-label="Student portal home" style="display:inline-flex; align-items:center; text-decoration:none; color:inherit;">
+                <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L1 7l11 5 9-4.09V17h2V7L12 2zM11 13.18L3 9.65v2.83l8 3.36 8-3.36V9.65l-8 3.53zM5 18v2h14v-2l-7 3-7-3z"/>
+                </svg>
+                <span class="logo-text">STUDENT</span>
+            </a>
+            <div class="portal-actions">
+                <!-- Theme toggle: accessible switch wrapper with icons -->
+                <div id="themeToggle" class="theme-toggle-wrap" style="display:inline-flex; align-items:center; margin-right:0.6rem;">
+                    <label class="toggle-switch" style="display:inline-flex; align-items:center; cursor:pointer;">
+                        <input id="themeToggleInput" type="checkbox" role="switch" aria-label="Toggle theme" style="display:none;">
+                        <span class="switch-track" style="width:44px; height:24px; display:inline-block; border-radius:999px; padding:2px; box-sizing:content-box; background:#e5e7eb;">
+                            <span class="switch-thumb" style="display:inline-block; width:20px; height:20px; background:#fff; border-radius:50%; transition:transform .18s ease; box-shadow:0 1px 2px rgba(0,0,0,0.1); transform:translateX(0);"></span>
+                        </span>
+                    </label>
+                    <span class="theme-icons" style="display:inline-flex; align-items:center; margin-left:0.5rem;">
+                        <svg class="sun-icon" viewBox="0 0 24 24" width="20" height="20" style="display:inline;">
+                            <path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 3a1 1 0 0 0 1-1V1a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1zM12 21a1 1 0 0 0-1 1v1a1 1 0 1 0 2 0v-1a1 1 0 0 0-1-1zM21 11h1a1 1 0 1 0 0-2h-1a1 1 0 1 0 0 2zM3 11H2a1 1 0 1 0 0 2h1a1 1 0 1 0 0-2zM18.364 5.636a1 1 0 0 0 0-1.414l-.707-.707a1 1 0 0 0-1.414 1.414l.707.707a1 1 0 0 0 1.414 0zM5.636 18.364a1 1 0 0 0-1.414 0l-.707.707a1 1 0 1 0 1.414 1.414l.707-.707a1 1 0 0 0 0-1.414zM18.364 18.364a1 1 0 0 0 0 1.414l.707.707a1 1 0 0 0 1.414-1.414l-.707-.707a1 1 0 0 0-1.414 0zM5.636 5.636a1 1 0 0 0 1.414 0l.707-.707A1 1 0 0 0 6.343 3.515l-.707.707a1 1 0 0 0 0 1.414z"/>
+                        </svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" width="20" height="20" style="display:none;">
+                            <path d="M21.64 13.04A9 9 0 1 1 10.96 2.36 7 7 0 0 0 21.64 13.04z"/>
+                        </svg>
+                    </span>
+                </div>
+                <div class="portal-settings" id="settingsDropdown" style="position:relative; margin-right: 0.5rem;">
+                    <button id="settingsToggle" class="portal-settings" style="text-decoration:none; cursor:pointer; background:none; border:none; color:inherit; font-weight:600;">Settings ▾</button>
+                    <div id="settingsMenu" style="display:none; position:absolute; right:0; top:36px; background:var(--card-bg); border:1px solid var(--border-color); padding:0.5rem; border-radius:8px; min-width:180px; box-shadow:0 6px 18px rgba(0,0,0,0.2);">
+                        <a href="settings.html" style="display:flex; align-items:center; gap:0.6rem; padding:0.6rem 0.6rem; color:inherit; text-decoration:none;">
+                            <!-- settings (gear) icon -->
+                            <svg viewBox="0 0 24 24" width="25" height="25" fill="currentColor" style="opacity:0.95;"><path d="M12 8.6A3.4 3.4 0 1 0 12 15.4 3.4 3.4 0 0 0 12 8.6zm8.1 2.1l1.8-1.1-1.6-2.8-2.1.4a7.9 7.9 0 0 0-1.2-.7l-.3-2.2H9.4l-.3 2.2c-.4.2-.8.4-1.2.7L5.6 6.8 4 9.6l1.8 1.1c-.1.3-.1.6-.1.9s0 .6.1.9L4 14.6l1.6 2.8 2.1-.4c.4.3.8.5 1.2.7l.3 2.2h4.6l.3-2.2c.4-.2.8-.4 1.2-.7l2.1.4L21.9 14l-1.8-1.3c.1-.3.1-.6.1-.9s0-.6-.1-.9z"/></svg>
+                            <strong style="font-size:1rem;">Open Settings</strong>
+                        </a>
+                        <div style="display:flex; flex-direction:column; gap:0.25rem; padding:0.25rem 0;">
+                            <a href="#" onclick="doLogout(); return false;" style="display:flex; align-items:center; gap:0.6rem; padding:0.45rem 0.6rem; color:inherit; text-decoration:none;">
+                                <!-- logout icon -->
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="opacity:0.95;"><path d="M16 13v-2H7V8l-5 4 5 4v-3zM20 3h-8v2h8v14h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg>
+                                <span>Log out</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                    <!-- Log out button moved to Settings menu -->
+            </div>
+        </div>
+    </header>
+    <div class="portal-container">
+        <aside class="profile-sidebar">
+            <div class="profile-card">
+                <div class="profile-photo-wrap">
+                    <img id="profilePhoto" src="" alt="Profile Photo" style="width:120px;height:120px;border-radius:50%;object-fit:cover;display:none;border:2px solid rgba(255,255,255,0.06);" />
+                    <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, #4698e5 0%, #3a8eed 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px; font-weight: bold;" id="profileInitials">S</div>
+                </div>
+                <div class="profile-name" id="studentName">Mark Angelo Olfindo</div>
+                <div class="student-id" id="studentId">Student ID: 233092</div>
+                <div class="profile-qr">
+                    <img src="img/QR.jpg" alt="QR Code" class="qr-img">
+                </div>
+                <div class="profile-status-toggle">
+                    <span>Status:</span>
+                    <span class="profile-status-label enrolled">Enrolled</span>
+                </div>
+                <div class="profile-info-list">
+                    <div class="profile-info-item"><span>Last Enrollment</span><span id="lastEnrollment">2023-2024 1st</span></div>
+                    <div class="profile-info-item"><span>Year/Grade</span><span id="gradeLevel">III</span></div>
+                    <div class="profile-info-item"><span>Graduating</span><span>False</span></div>
+                </div>
+
+                <div class="profile-contact">
+                    <div class="contact-title">Contact</div>
+                    <div class="contact-detail" id="contactPhone">09xxxxxxxx</div>
+                    <div class="contact-detail" id="contactEmail">markangelo.Ofindo@gmail.com</div>
+                    <div class="contact-detail" id="contactAddress">Alawihao, Daet, Camarines Norte</div>
+                </div>
+                <div class="profile-personal">
+                    <div class="personal-title">Personal Information</div>
+                    <div class="personal-info-item"><span>Sex:</span> <span id="studentSex">Male</span></div>
+                    <div class="personal-info-item"><span>Nationality:</span> <span id="studentNationality">Filipino</span></div>
+                    <div class="personal-info-item"><span>Birth Date:</span> <span id="studentBirthDate">May 22, 2004</span></div>
+                    <div class="personal-info-item"><span>Birth Place:</span> <span id="studentBirthPlace">CAA Las piñas City, Manila</span></div>
+                </div>
+            </div>
+        </aside>
+        <main class="portal-main">
+            <!-- Dashboard Stats Cards -->
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+                            <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-details">
+                        <div class="stat-value" id="attendanceRate">94.5%</div>
+                        <div class="stat-label">Attendance Rate</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-details">
+                        <div class="stat-value" id="daysPresent">36</div>
+                        <div class="stat-label">Days Present</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+                            <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-details">
+                        <div class="stat-value" id="daysAbsent">2</div>
+                        <div class="stat-label">Days Absent</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-details">
+                        <div class="stat-value" id="totalDays">38</div>
+                        <div class="stat-label">Total Classes</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-card">
+                                        <section class="attendance-index">
+                                            <h2 class="attendance-title">Class Schedule</h2>
+                                            <table class="attendance-schedule-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Day</th>
+                                                        <th>Time</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>Monday, Wednesday</td>
+                                                        <td>04:00 PM - 05:30 PM</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Friday, Saturday</td>
+                                                        <td>02:30 PM - 04:00 PM</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Tuesday, Thursday</td>
+                                                        <td>11:30 AM - 01:00 PM</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </section>
+                                        <section class="attendance-history-section">
+                                            <div class="attendance-history-header">
+                                                <h2 class="attendance-title">Attendance History</h2>
+                                                <form class="attendance-search-form" autocomplete="off">
+                                                    <input type="text" class="attendance-search-input" placeholder="Search date (YYYY-MM-DD)">
+                                                    <select class="attendance-year-select">
+                                                        <option value="2023">2023</option>
+                                                        <option value="2022">2022</option>
+                                                        <option value="2021">2021</option>
+                                                    </select>
+                                                    <button type="submit" class="attendance-search-btn">Search</button>
+                                                </form>
+                                            </div>
+                                            <table class="attendance-history-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Time In</th>
+                                                        <th>Time Out</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="attendanceTableBody">
+                                                    <tr>
+                                                        <td>2023-10-28</td>
+                                                        <td>04:00 PM</td>
+                                                        <td>05:30 PM</td>
+                                                        <td><span class="attendance-present">Present</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>2023-10-27</td>
+                                                        <td>-</td>
+                                                        <td>-</td>
+                                                        <td><span class="attendance-absent">Absent</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>2023-10-26</td>
+                                                        <td>02:30 PM</td>
+                                                        <td>04:00 PM</td>
+                                                        <td><span class="attendance-present">Present</span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </section>
+                            </div>
+        </main>
+    </div>
+    <!-- Defensive theme toggle sync: ensure switch works and icons update -->
+    <script>
+        (function(){
+            const wrapper = document.getElementById('themeToggle');
+            if (!wrapper) return;
+            const input = document.getElementById('themeToggleInput');
+            const suns = wrapper.querySelectorAll('.sun-icon');
+            const moons = wrapper.querySelectorAll('.moon-icon');
+            const track = wrapper.querySelector('.switch-track');
+            const thumb = wrapper.querySelector('.switch-thumb');
+
+            function isDarkTheme() {
+                return document.documentElement.getAttribute('data-theme') === 'dark';
+            }
+
+            function applyIconsAndSwitch() {
+                const isDark = isDarkTheme();
+                suns.forEach(s => s.style.display = isDark ? 'none' : 'inline');
+                moons.forEach(m => m.style.display = isDark ? 'inline' : 'none');
+                if (input) {
+                    input.checked = isDark;
+                    input.setAttribute('aria-checked', isDark ? 'true' : 'false');
+                }
+                if (track && thumb) {
+                    track.style.background = isDark ? '#4f46e5' : '#e5e7eb';
+                    thumb.style.transform = isDark ? 'translateX(20px)' : 'translateX(0)';
+                }
+            }
+
+            // Initialize theme from localStorage if present
+            (function initTheme(){
+                try{
+                    const stored = localStorage.getItem('theme');
+                    if (stored) {
+                        document.documentElement.setAttribute('data-theme', stored);
+                    } else if (!document.documentElement.getAttribute('data-theme')){
+                        document.documentElement.setAttribute('data-theme', 'light');
+                    }
+                } catch (e) {}
+            })();
+
+            applyIconsAndSwitch();
+
+            // Settings dropdown behavior (unchanged)
+            const settingsToggle = document.getElementById('settingsToggle');
+            const settingsMenu = document.getElementById('settingsMenu');
+            if (settingsToggle && settingsMenu) {
+                settingsToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const open = settingsMenu.style.display === 'block';
+                    settingsMenu.style.display = open ? 'none' : 'block';
+                });
+                document.addEventListener('click', (ev) => {
+                    if (!settingsMenu.contains(ev.target) && ev.target !== settingsToggle) {
+                        settingsMenu.style.display = 'none';
+                    }
+                });
+            }
+
+            function setTheme(next){
+                document.documentElement.setAttribute('data-theme', next);
+                try { localStorage.setItem('theme', next); } catch (e) {}
+                applyIconsAndSwitch();
+            }
+
+            if (input) {
+                input.addEventListener('change', () => {
+                    const next = input.checked ? 'dark' : 'light';
+                    setTheme(next);
+                });
+                // clicking wrapper toggles the checkbox (label already does this for input), but keep wrapper clickable
+                wrapper.addEventListener('click', (e) => {
+                    if (e.target === input) return; // input change handles it
+                    input.checked = !input.checked;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            } else {
+                wrapper.addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-theme');
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    setTheme(next);
+                });
+            }
+
+            // Observe theme attribute changes to update icons/switch
+            const obs = new MutationObserver(() => applyIconsAndSwitch());
+            obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        })();
+    </script>
+    <!-- Student Dashboard Script -->
+    <script type="module" src="js/student-dashboard.js"></script>
+</body>
+</html>

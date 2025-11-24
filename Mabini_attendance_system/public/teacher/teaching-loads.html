@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teaching Schedule - Teacher Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/admin-theme.css">
+    <script src="../assets/js/theme.js" defer></script>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="bi bi-mortarboard-fill"></i>
+                    <span>Mabini HS</span>
+                </div>
+                <div class="sidebar-subtitle">Teacher Portal</div>
+            </div>
+            
+            <div class="sidebar-menu">
+                <div class="menu-label">Main</div>
+                <a href="dashboard.html" class="menu-item">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <div class="menu-label">My Classes</div>
+                <a href="sections.html" class="menu-item">
+                    <i class="bi bi-grid-3x3-gap-fill"></i>
+                    <span>My Sections</span>
+                </a>
+                <a href="students.html" class="menu-item">
+                    <i class="bi bi-people-fill"></i>
+                    <span>My Students</span>
+                </a>
+                <a href="subjects.html" class="menu-item">
+                    <i class="bi bi-book-fill"></i>
+                    <span>My Subjects</span>
+                </a>
+                <a href="teaching-loads.html" class="menu-item active">
+                    <i class="bi bi-calendar-check-fill"></i>
+                    <span>Teaching Schedule</span>
+                </a>
+                
+                <div class="menu-label">Account</div>
+                <a href="settings.html" class="menu-item">
+                    <i class="bi bi-gear-fill"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">TE</div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">Teacher</div>
+                        <div class="user-role" id="userRole">Teacher</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-top" role="banner">
+                <div style="display:flex;flex-direction:column;">
+                    <div class="admin-breadcrumb muted">
+                        <span class="muted">Teacher</span>
+                        <span aria-hidden="true">/</span>
+                        <span>Teaching Schedule</span>
+                    </div>
+                    <div class="admin-title">My Teaching Schedule</div>
+                </div>
+
+                <div class="admin-top-actions">
+                    <button id="themeToggle" class="theme-toggle" aria-pressed="false" aria-label="Toggle theme">
+                        <span class="icon sun" aria-hidden="true" style="display:inline-block">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="icon moon" aria-hidden="true" style="display:none">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                    </button>
+
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div class="avatar" title="Teacher" aria-hidden="true">
+                            <svg width="38" height="38" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M4 20c1.5-4 6-6 8-6s6.5 2 8 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <button id="logoutBtn" class="btn ghost" aria-label="Logout">Logout</button>
+                    </div>
+                </div>
+            </header>
+        
+            <div class="content-area">
+                <!-- Alert Container -->
+                <div id="alertContainer"></div>
+                
+                <!-- Info Card -->
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    Viewing your complete teaching schedule. Contact the administrator for schedule changes.
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Total Classes</h6>
+                                <h3 class="card-title" id="totalClasses">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Subjects</h6>
+                                <h3 class="card-title" id="totalSubjects">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Sections</h6>
+                                <h3 class="card-title" id="totalSections">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Weekly Hours</h6>
+                                <h3 class="card-title" id="totalHours">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teaching Loads Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Complete Schedule</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="scheduleTable">
+                                <thead>
+                                    <tr>
+                                        <th>Day</th>
+                                        <th>Time</th>
+                                        <th>Subject</th>
+                                        <th>Section</th>
+                                        <th>Room</th>
+                                        <th>Grade Level</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scheduleTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center">Loading schedule...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Mobile Toggle -->
+    <div class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+    </div>
+
+    <!-- View Details Modal -->
+    <div class="modal fade" id="viewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Class Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="viewModalBody">
+                    <p><strong>Day:</strong> <span id="viewDay"></span></p>
+                    <p><strong>Time:</strong> <span id="viewTime"></span></p>
+                    <p><strong>Subject:</strong> <span id="viewSubject"></span></p>
+                    <p><strong>Section:</strong> <span id="viewSection"></span></p>
+                    <p><strong>Room:</strong> <span id="viewRoom"></span></p>
+                    <p><strong>Grade Level:</strong> <span id="viewGrade"></span></p>
+                    <p><strong>Number of Students:</strong> <span id="viewStudents"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="js/teacher-common.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allSchedules = [];
+        let currentTeacherId = null;
+
+        // Load teaching schedule
+        async function loadSchedule() {
+            try {
+                // Get current teacher ID
+                const userData = JSON.parse(sessionStorage.getItem('userData'));
+                currentTeacherId = userData.uid || userData.id;
+                
+                // Get teaching loads for this teacher
+                const teachingLoads = await getDocuments('teaching_loads');
+                const myLoads = teachingLoads.filter(load => load.teacher_id === currentTeacherId);
+                
+                // Get related data
+                const subjects = await getDocuments('subjects');
+                const sections = await getDocuments('sections');
+                const students = await getDocuments('students');
+                
+                // Combine data
+                allSchedules = myLoads.map(load => {
+                    const subject = subjects.find(s => s.id === load.subject_id);
+                    const section = sections.find(s => s.id === load.section_id);
+                    const sectionStudents = students.filter(st => st.section_id === load.section_id);
+                    
+                    return {
+                        ...load,
+                        subjectName: subject ? (subject.name || subject.subject_name) : 'Unknown',
+                        subjectCode: subject ? (subject.code || subject.subject_code) : 'N/A',
+                        sectionName: section ? (section.name || section.section_name) : 'Unknown',
+                        room: section ? section.room : 'N/A',
+                        gradeLevel: section ? section.grade_level : 'N/A',
+                        studentCount: sectionStudents.length
+                    };
+                });
+                
+                // Update summary
+                updateSummary(allSchedules, subjects, sections);
+                
+                // Render schedule
+                renderSchedule(allSchedules);
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+                showAlert('Failed to load schedule', 'error');
+            }
+        }
+
+        // Update summary cards
+        function updateSummary(schedules, subjects, sections) {
+            document.getElementById('totalClasses').textContent = schedules.length;
+            
+            const uniqueSubjects = [...new Set(schedules.map(s => s.subject_id))];
+            document.getElementById('totalSubjects').textContent = uniqueSubjects.length;
+            
+            const uniqueSections = [...new Set(schedules.map(s => s.section_id))];
+            document.getElementById('totalSections').textContent = uniqueSections.length;
+            
+            // Calculate total hours (assuming each class is 1 hour, adjust as needed)
+            document.getElementById('totalHours').textContent = schedules.length;
+        }
+
+        // Render schedule table
+        function renderSchedule(schedules) {
+            const tbody = document.getElementById('scheduleTableBody');
+            
+            if (schedules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No teaching schedule assigned yet</td></tr>';
+                return;
+            }
+            
+            // Sort by day and time
+            const dayOrder = { 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7 };
+            schedules.sort((a, b) => {
+                const dayCompare = dayOrder[a.day] - dayOrder[b.day];
+                if (dayCompare !== 0) return dayCompare;
+                return (a.time || '').localeCompare(b.time || '');
+            });
+            
+            tbody.innerHTML = schedules.map((schedule, index) => `
+                <tr>
+                    <td><strong>${schedule.day || 'N/A'}</strong></td>
+                    <td>${schedule.time || schedule.start_time || 'N/A'}</td>
+                    <td>${schedule.subjectCode} - ${schedule.subjectName}</td>
+                    <td>${schedule.sectionName}</td>
+                    <td>${schedule.room || 'N/A'}</td>
+                    <td>${schedule.gradeLevel || 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewSchedule(${index})">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // View schedule details
+        function viewSchedule(index) {
+            const schedule = allSchedules[index];
+            if (!schedule) return;
+            
+            document.getElementById('viewDay').textContent = schedule.day || 'N/A';
+            document.getElementById('viewTime').textContent = schedule.time || schedule.start_time || 'N/A';
+            document.getElementById('viewSubject').textContent = `${schedule.subjectCode} - ${schedule.subjectName}`;
+            document.getElementById('viewSection').textContent = schedule.sectionName;
+            document.getElementById('viewRoom').textContent = schedule.room || 'N/A';
+            document.getElementById('viewGrade').textContent = schedule.gradeLevel || 'N/A';
+            document.getElementById('viewStudents').textContent = schedule.studentCount || 0;
+            
+            const modal = new bootstrap.Modal(document.getElementById('viewModal'));
+            modal.show();
+        }
+
+        // Initialize
+        window.addEventListener('load', async () => {
+            const isAuth = await checkAuth();
+            if (isAuth) {
+                await loadSchedule();
+            }
+        });
+    </script>
+</body>
+</html>

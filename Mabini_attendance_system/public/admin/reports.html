@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Reports - Mabini HS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/admin-theme.css">
+    <style>
+        /* Fix modal z-index issue */
+        .modal {
+            z-index: 1060 !important;
+        }
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
+        .modal-dialog {
+            z-index: 1070 !important;
+        }
+    </style>
+    <script src="../assets/js/theme.js" defer></script>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="bi bi-mortarboard-fill"></i>
+                    <span>Mabini HS</span>
+                </div>
+                <div class="sidebar-subtitle">Attendance System</div>
+            </div>
+
+            <div class="sidebar-menu">
+                <div class="menu-label">Main</div>
+                <a href="dashboard.html" class="menu-item">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+
+            <div class="menu-label">Management</div>
+            <a href="students.html" class="menu-item">
+                <i class="bi bi-people-fill"></i>
+                <span>Students</span>
+            </a>
+            <a href="teachers.html" class="menu-item">
+                <i class="bi bi-person-video3"></i>
+                <span>Teachers</span>
+            </a>
+            <a href="sections.html" class="menu-item">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+                <span>Sections & Classes</span>
+            </a>
+            <a href="subjects.html" class="menu-item">
+                <i class="bi bi-book-fill"></i>
+                <span>Subjects</span>
+            </a>
+            <a href="teaching-loads.html" class="menu-item">
+                <i class="bi bi-calendar-check-fill"></i>
+                <span>Teaching Loads</span>
+            </a>
+            <a href="users.html" class="menu-item">
+                <i class="bi bi-person-badge-fill"></i>
+                <span>Users & Staff</span>
+            </a>                <div class="menu-label">Reports</div>
+                <a href="reports.html" class="menu-item active">
+                    <i class="bi bi-bar-chart-fill"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="sms-notifications.html" class="menu-item">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    <span>SMS Notifications</span>
+                </a>
+                <!-- Change Password removed per request -->
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">AD</div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">Admin</div>
+                        <div class="user-role" id="userRole">Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Shared header -->
+            <header class="admin-top" role="banner">
+                <div style="display:flex;flex-direction:column;">
+                    <div class="admin-breadcrumb muted">
+                        <span class="muted">Admin</span>
+                        <span aria-hidden="true">/</span>
+                        <span id="admin-section">Reports</span>
+                    </div>
+                    <div class="admin-title">Attendance Reports</div>
+                </div>
+
+                <div class="admin-top-actions">
+                    <button id="themeToggle" class="theme-toggle" aria-pressed="false" aria-label="Toggle theme">
+                        <span class="icon sun" aria-hidden="true" style="display:inline-block">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="icon moon" aria-hidden="true" style="display:none">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                    </button>
+
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div class="avatar" title="Administrator" aria-hidden="true">
+                            <svg width="38" height="38" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M4 20c1.5-4 6-6 8-6s6.5 2 8 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <button id="logoutBtn" class="btn ghost" aria-label="Logout">Logout</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <div class="filters">
+                    <div class="form-group">
+                        <label for="reportType">Report Type</label>
+                        <select id="reportType" onchange="loadReport()">
+                            <option value="daily">Daily Report</option>
+                            <option value="weekly">Weekly Report</option>
+                            <option value="monthly">Monthly Report</option>
+                            <option value="by-student">By Student</option>
+                            <option value="by-block">By Block</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dateFrom">From Date</label>
+                        <input type="date" id="dateFrom" onchange="loadReport()">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dateTo">To Date</label>
+                        <input type="date" id="dateTo" onchange="loadReport()">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="blockFilter">Block</label>
+                        <select id="blockFilter" onchange="loadReport()">
+                            <option value="">All Sections</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <h3>Total Students</h3>
+                        <div class="value" id="totalStudents">-</div>
+                        <div class="label">Enrolled students</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <h3>Present Today</h3>
+                        <div class="value" id="presentToday">-</div>
+                        <div class="label">Attendance rate: <span id="attendanceRate">-%</span></div>
+                    </div>
+
+                    <div class="stat-card">
+                        <h3>Absent Today</h3>
+                        <div class="value" id="absentToday">-</div>
+                        <div class="label">Missing students</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <h3>Late Arrivals</h3>
+                        <div class="value" id="lateToday">-</div>
+                        <div class="label">After 8:00 AM</div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <h2 style="margin: 20px 25px 15px; color: #001f5b; font-size: 18px; font-weight: 600;">Attendance Details</h2>
+                    <table id="reportTable">
+                        <thead id="reportTableHead">
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Name</th>
+                                <th>Block</th>
+                                <th>Date</th>
+                                <th>Time In</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody">
+                            <tr>
+                                <td colspan="6" class="loading">Loading reports...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <button onclick="exportToCSV()" class="btn btn-primary export-btn">📥 Export to CSV</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Toggle -->
+    <div class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+    </div>
+
+    <script type="module" src="js/admin-common.js"></script>
+    <script type="module">
+        // NOTE: getDocuments function is provided by admin-common.js
+        // Wait for admin-common.js to load
+        
+        let allLogs = [];
+        let allStudents = [];
+        let allSections = [];
+        
+        // Wait for admin-common.js functions to be available
+        await new Promise(resolve => {
+            if (window.getDocuments) {
+                resolve();
+            } else {
+                const checkInterval = setInterval(() => {
+                    if (window.getDocuments) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 50);
+            }
+        });
+        
+        // Set default dates
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        document.getElementById('dateFrom').value = todayStr;
+        document.getElementById('dateTo').value = todayStr;
+        
+        // Load data
+        async function init() {
+            try {
+                // Load students
+                allStudents = await window.getDocuments('students');
+                
+                // Load blocks
+                allSections = await window.getDocuments('sections');
+                const blockFilter = document.getElementById('blockFilter');
+                blockFilter.innerHTML = '<option value="">All Sections</option>' +
+                    allSections.map(block => `<option value="${block.sectionId}">${block.blockName}</option>`).join('');
+                
+                // Load entrance logs once (auto-polling disabled)
+                allLogs = await window.getDocuments('entrance_logs');
+                
+                loadReport();
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+        
+        window.loadReport = async function() {
+            const reportType = document.getElementById('reportType').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const blockFilter = document.getElementById('blockFilter').value;
+            
+            // Filter logs by date range
+            let filteredLogs = allLogs.filter(log => {
+                const logDate = new Date(log.timestamp).toISOString().split('T')[0];
+                return logDate >= dateFrom && logDate <= dateTo;
+            });
+            
+            // Filter by block if selected
+            if (blockFilter) {
+                const studentsInBlock = allStudents
+                    .filter(s => s.sectionId === blockFilter)
+                    .map(s => s.studentId);
+                filteredLogs = filteredLogs.filter(log => studentsInBlock.includes(log.studentId));
+            }
+            
+            // Calculate stats
+            updateStats(filteredLogs);
+            
+            // Render table based on report type
+            renderReport(filteredLogs, reportType);
+        };
+        
+        function updateStats(logs) {
+            const totalStudents = allStudents.length;
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayLogs = logs.filter(log => {
+                const logDate = new Date(log.timestamp).toISOString().split('T')[0];
+                return logDate === todayStr;
+            });
+            
+            const uniqueStudentsToday = new Set(todayLogs.map(log => log.studentId));
+            const presentToday = uniqueStudentsToday.size;
+            const absentToday = totalStudents - presentToday;
+            
+            // Count late arrivals (after 8:00 AM)
+            const lateToday = todayLogs.filter(log => {
+                const hour = new Date(log.timestamp).getHours();
+                return hour >= 8;
+            }).length;
+            
+            const attendanceRate = totalStudents > 0 ? ((presentToday / totalStudents) * 100).toFixed(1) : 0;
+            
+            document.getElementById('totalStudents').textContent = totalStudents;
+            document.getElementById('presentToday').textContent = presentToday;
+            document.getElementById('absentToday').textContent = absentToday;
+            document.getElementById('lateToday').textContent = lateToday;
+            document.getElementById('attendanceRate').textContent = attendanceRate + '%';
+        }
+        
+        function renderReport(logs, reportType) {
+            const tbody = document.getElementById('reportTableBody');
+            
+            if (logs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <h3>No attendance records found</h3>
+                            <p>Try adjusting the filters above</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Sort logs by timestamp (newest first)
+            logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            tbody.innerHTML = logs.map(log => {
+                const student = allStudents.find(s => s.studentId === log.studentId);
+                const block = allSections.find(b => b.sectionId === student?.sectionId);
+                const timestamp = new Date(log.timestamp);
+                const hour = timestamp.getHours();
+                const status = hour >= 8 ? 'Late' : 'Present';
+                const statusClass = hour >= 8 ? 'badge-late' : 'badge-present';
+                
+                return `
+                    <tr>
+                        <td>${log.studentId}</td>
+                        <td>${student ? `${student.firstName} ${student.lastName}` : 'Unknown'}</td>
+                        <td>${block ? block.blockName : '-'}</td>
+                        <td>${timestamp.toLocaleDateString()}</td>
+                        <td>${timestamp.toLocaleTimeString()}</td>
+                        <td><span class="badge ${statusClass}">${status}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        window.exportToCSV = function() {
+            const table = document.getElementById('reportTable');
+            let csv = [];
+            
+            // Get headers
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent);
+            csv.push(headers.join(','));
+            
+            // Get rows
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cols = Array.from(row.querySelectorAll('td')).map(td => {
+                    // Remove badges and get text
+                    return td.textContent.trim().replace(/,/g, ';');
+                });
+                if (cols.length > 1) {
+                    csv.push(cols.join(','));
+                }
+            });
+            
+            // Download
+            const csvContent = csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance-report-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+        
+        // Initialize
+        init();
+    </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

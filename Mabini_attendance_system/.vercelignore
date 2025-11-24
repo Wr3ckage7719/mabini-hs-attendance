@@ -1,0 +1,14 @@
+node_modules
+.env.local
+.env.*.local
+*.log
+.DS_Store
+.vscode
+*.md
+!README.md
+server/logs
+public/logs
+iot_device
+*.sql
+docs/
+public/admin/tools/

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Sections - Mabini HS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/admin-theme.css">
+    <script src="../assets/js/theme.js" defer></script>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="bi bi-mortarboard-fill"></i>
+                <span>Mabini HS</span>
+            </div>
+            <div class="sidebar-subtitle">Attendance System</div>
+        </div>
+        
+        <div class="sidebar-menu">
+            <div class="menu-label">Main</div>
+            <a href="dashboard.html" class="menu-item">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <div class="menu-label">Management</div>
+            <a href="students.html" class="menu-item">
+                <i class="bi bi-people-fill"></i>
+                <span>Students</span>
+            </a>
+            <a href="sections.html" class="menu-item active">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+                <span>Sections & Classes</span>
+            </a>
+            <a href="subjects.html" class="menu-item">
+                <i class="bi bi-book-fill"></i>
+                <span>Subjects</span>
+            </a>
+            <a href="teaching-loads.html" class="menu-item">
+                <i class="bi bi-calendar-check-fill"></i>
+                <span>Teaching Loads</span>
+            </a>
+            <a href="users.html" class="menu-item">
+                <i class="bi bi-person-badge-fill"></i>
+                <span>Users & Staff</span>
+            </a>
+            
+            <div class="menu-label">Reports</div>
+            <a href="reports.html" class="menu-item">
+                <i class="bi bi-bar-chart-fill"></i>
+                <span>Analytics</span>
+            </a>
+            <!-- Change Password removed per request -->
+        </div>
+        
+        <!-- User Profile in Sidebar Footer -->
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar" id="userAvatar">AD</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role" id="userRole">Administrator</div>
+                </div>
+            </div>
+        </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+                <!-- Shared header -->
+                <header class="admin-top" role="banner">
+                    <div style="display:flex;flex-direction:column;">
+                        <div class="admin-breadcrumb muted">
+                            <span class="muted">Admin</span>
+                            <span aria-hidden="true">/</span>
+                            <span id="admin-section">Sections</span>
+                        </div>
+                        <div class="admin-title">Manage Sections</div>
+                    </div>
+
+                    <div class="admin-top-actions">
+                        <div class="admin-search" role="search" aria-label="Admin search">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <input type="search" placeholder="Search..." aria-label="Search" />
+                        </div>
+
+                        <button class="btn btn-primary" style="margin-left:12px;" onclick="openAddModal()" aria-label="Add Section">
+                            <i class="bi bi-plus-lg"></i> Add Section
+                        </button>
+
+                        <button id="themeToggle" class="theme-toggle" aria-pressed="false" aria-label="Toggle theme">
+                            <span class="icon sun" aria-hidden="true" style="display:inline-block">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                            <span class="icon moon" aria-hidden="true" style="display:none">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                        </button>
+
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <div class="avatar" title="Administrator" aria-hidden="true">
+                                <svg width="38" height="38" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M4 20c1.5-4 6-6 8-6s6.5 2 8 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
+                            <button id="logoutBtn" class="btn ghost" aria-label="Logout">Logout</button>
+                        </div>
+                    </div>
+                </header>
+        
+        <div class="content-area">
+            <!-- Search and Filter Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Search & Filters</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search by block name, grade level, or strand..." onkeyup="filterBlocks()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Blocks Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">All Sections & Classes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="blocksTable">
+                            <thead>
+                                <tr>
+                                    <th>Block ID</th>
+                                    <th>Section Name</th>
+                                    <th>Grade Level</th>
+                                    <th>Strand</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="blocksTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </main>
+    </div>
+    
+    <!-- Add/Edit Section Modal -->
+    <div class="modal fade" id="sectionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Add New Block</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="sectionForm" onsubmit="saveBlock(event)">
+                    <div class="modal-body">
+                        <input type="hidden" id="editMode" value="false">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Block ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="sectionId" required placeholder="e.g., BLK-STEM-11A">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Section Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="blockName" required placeholder="e.g., STEM 11-A">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Grade Level <span class="text-danger">*</span></label>
+                            <select class="form-select" id="gradeLevel" required onchange="updateStrandOptions()">
+                                <option value="">Select Grade Level</option>
+                                <option value="7">Grade 7</option>
+                                <option value="8">Grade 8</option>
+                                <option value="9">Grade 9</option>
+                                <option value="10">Grade 10</option>
+                                <option value="11">Grade 11</option>
+                                <option value="12">Grade 12</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Strand <span id="strandRequired" class="text-danger">*</span></label>
+                            <select class="form-select" id="strand" required>
+                                <option value="">Select Strand</option>
+                                <option value="STEM">STEM (Science, Technology, Engineering, Mathematics)</option>
+                                <option value="HUMSS">HUMSS (Humanities and Social Sciences)</option>
+                                <option value="ABM">ABM (Accountancy, Business and Management)</option>
+                                <option value="GAS">GAS (General Academic Strand)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Status <span class="text-danger">*</span></label>
+                            <select class="form-select" id="isActive" required>
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Block</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="js/admin-common.js"></script>
+    <script type="module">
+        // NOTE: CRUD functions are provided by admin-common.js
+        // Wait for admin-common.js to load
+        
+        let allSections = [];
+        let editingBlockId = null;
+        
+        // Wait for admin-common.js functions to be available
+        await new Promise(resolve => {
+            if (window.getDocuments) {
+                resolve();
+            } else {
+                const checkInterval = setInterval(() => {
+                    if (window.getDocuments) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 50);
+            }
+        });
+        
+        // Load initial data immediately
+        async function loadInitialData() {
+            const blocks = await window.getDocuments('sections');
+            allSections = blocks;
+            renderBlocks(blocks);
+        }
+        
+        // Load data on page load
+        loadInitialData();
+        
+        // Note: Auto-polling disabled to prevent login/logout loops
+        // Data will refresh after CRUD operations instead
+        
+        function renderBlocks(blocks) {
+            const tbody = document.getElementById('blocksTableBody');
+            
+            if (blocks.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <h3>No blocks found</h3>
+                            <p>Click "Add Section" to create your first block</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = blocks.map(block => {
+                const gradeLevel = block.grade_level || block.gradeLevel || '-';
+                let strandDisplay = block.strand || '-';
+                
+                // Show "N/A" for Junior High School (Grades 7-10)
+                if (gradeLevel >= '7' && gradeLevel <= '10') {
+                    strandDisplay = 'N/A (JHS)';
+                }
+                
+                const sectionId = block.section_id || block.sectionId || '-';
+                const blockName = block.block_name || block.blockName || '-';
+                const isActive = block.is_active !== undefined ? block.is_active : block.isActive;
+                
+                return `
+                    <tr>
+                        <td>${sectionId}</td>
+                        <td>${blockName}</td>
+                        <td>Grade ${gradeLevel}</td>
+                        <td>${strandDisplay}</td>
+                        <td>
+                            <span class="badge ${isActive ? 'bg-success' : 'bg-secondary'}">
+                                ${isActive ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td>
+                            <button onclick="window.editSection('${block.id}')" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                            <button onclick="window.deleteSection('${block.id}', '${blockName}')" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        window.filterBlocks = function() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            const filtered = allSections.filter(block => {
+                const sectionId = block.section_id || block.sectionId || '';
+                const blockName = block.block_name || block.blockName || '';
+                const gradeLevel = block.grade_level || block.gradeLevel || '';
+                const strand = block.strand || '';
+                
+                return (
+                    sectionId.toLowerCase().includes(searchTerm) ||
+                    blockName.toLowerCase().includes(searchTerm) ||
+                    gradeLevel.toString().toLowerCase().includes(searchTerm) ||
+                    strand.toLowerCase().includes(searchTerm)
+                );
+            });
+            
+            renderBlocks(filtered);
+        };
+        
+        window.openAddModal = function() {
+            editingBlockId = null;
+            document.getElementById('modalTitle').textContent = 'Add New Block';
+            document.getElementById('sectionForm').reset();
+            document.getElementById('sectionModal').style.display = 'block';
+            updateStrandOptions(); // Initialize strand options
+        };
+        
+        window.updateStrandOptions = function() {
+            const gradeLevel = document.getElementById('gradeLevel').value;
+            const strandSelect = document.getElementById('strand');
+            const strandRequired = document.getElementById('strandRequired');
+            
+            // Clear existing options
+            strandSelect.innerHTML = '';
+            
+            // Grades 7-10 are Junior High (no strands)
+            if (gradeLevel >= '7' && gradeLevel <= '10') {
+                strandSelect.innerHTML = '<option value="">N/A (Junior High School)</option>';
+                strandSelect.disabled = true;
+                strandSelect.removeAttribute('required');
+                if (strandRequired) strandRequired.textContent = '';
+            } 
+            // Grades 11-12 are Senior High (with strands)
+            else if (gradeLevel === '11' || gradeLevel === '12') {
+                strandSelect.innerHTML = `
+                    <option value="">Select Strand</option>
+                    <option value="STEM">STEM (Science, Technology, Engineering, Mathematics)</option>
+                    <option value="HUMSS">HUMSS (Humanities and Social Sciences)</option>
+                    <option value="ABM">ABM (Accountancy, Business and Management)</option>
+                    <option value="GAS">GAS (General Academic Strand)</option>
+                    <option value="TVL">TVL (Technical-Vocational-Livelihood)</option>
+                    <option value="ARTS">ARTS & DESIGN</option>
+                    <option value="SPORTS">SPORTS</option>
+                `;
+                strandSelect.disabled = false;
+                strandSelect.setAttribute('required', 'required');
+                if (strandRequired) strandRequired.textContent = '*';
+            } else {
+                strandSelect.innerHTML = '<option value="">Select Grade Level First</option>';
+                strandSelect.disabled = true;
+                strandSelect.removeAttribute('required');
+                if (strandRequired) strandRequired.textContent = '';
+            }
+        };
+        
+        window.editSection = function(sectionId) {
+            const block = allSections.find(b => b.id === sectionId);
+            if (!block) return;
+            
+            editingBlockId = sectionId;
+            document.getElementById('modalTitle').textContent = 'Edit Section';
+            document.getElementById('sectionId').value = block.section_id || block.sectionId || '';
+            document.getElementById('blockName').value = block.block_name || block.blockName || '';
+            document.getElementById('gradeLevel').value = block.grade_level || block.gradeLevel || '';
+            updateStrandOptions(); // Update strand options based on grade
+            document.getElementById('strand').value = block.strand || '';
+            document.getElementById('isActive').value = (block.is_active !== undefined ? block.is_active : block.isActive) ? 'true' : 'false';
+            
+            const modal = new bootstrap.Modal(document.getElementById('sectionModal'));
+            modal.show();
+        };
+        
+        window.saveBlock = async function(event) {
+            event.preventDefault();
+            
+            const gradeLevel = document.getElementById('gradeLevel').value;
+            const strandValue = document.getElementById('strand').value;
+            
+            const blockData = {
+                section_id: document.getElementById('sectionId').value.trim(),
+                block_name: document.getElementById('blockName').value.trim(),
+                grade_level: gradeLevel,
+                strand: (gradeLevel >= '7' && gradeLevel <= '10') ? '' : strandValue, // No strand for JHS
+                is_active: document.getElementById('isActive').value === 'true',
+                updated_at: new Date().toISOString()
+            };
+            
+            try {
+                if (editingBlockId) {
+                    const result = await window.updateDocument('sections', editingBlockId, blockData);
+                    if (result.data || !result.error) {
+                        alert('Block updated successfully!');
+                    } else {
+                        throw new Error(result.error || 'Failed to update block');
+                    }
+                } else {
+                    blockData.created_at = new Date().toISOString();
+                    const result = await window.createDocument('sections', blockData);
+                    if (result.data || !result.error) {
+                        alert('Block created successfully!');
+                    } else {
+                        throw new Error(result.error || 'Failed to create block');
+                    }
+                }
+                
+                // Immediately refresh the blocks list
+                const blocks = await window.getDocuments('sections');
+                allSections = blocks;
+                renderBlocks(blocks);
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('sectionModal'));
+                if (modal) modal.hide();
+                editingBlockId = null;
+            } catch (error) {
+                console.error('Error saving block:', error);
+                alert('Error saving block: ' + error.message);
+            }
+        };
+        
+        window.deleteSection = async function(sectionId, blockName) {
+            if (!confirm(`Are you sure you want to delete block "${blockName}"?\n\nThis action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const result = await window.deleteDocument('sections', sectionId);
+                if (result.success) {
+                    alert('Block deleted successfully!');
+                    
+                    // Immediately refresh the blocks list
+                    const blocks = await window.getDocuments('sections');
+                    allSections = blocks;
+                    renderBlocks(blocks);
+                } else {
+                    throw new Error(result.error || 'Failed to delete block');
+                }
+            } catch (error) {
+                console.error('Error deleting block:', error);
+                alert('Error deleting block: ' + error.message);
+            }
+        };
+        
+        // Reset editingBlockId when modal is hidden
+        document.getElementById('sectionModal').addEventListener('hidden.bs.modal', function() {
+            editingBlockId = null;
+        });
+    </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

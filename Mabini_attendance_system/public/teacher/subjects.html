@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Subjects - Teacher Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/admin-theme.css">
+    <script src="../assets/js/theme.js" defer></script>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="bi bi-mortarboard-fill"></i>
+                    <span>Mabini HS</span>
+                </div>
+                <div class="sidebar-subtitle">Teacher Portal</div>
+            </div>
+            
+            <div class="sidebar-menu">
+                <div class="menu-label">Main</div>
+                <a href="dashboard.html" class="menu-item">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <div class="menu-label">My Classes</div>
+                <a href="sections.html" class="menu-item">
+                    <i class="bi bi-grid-3x3-gap-fill"></i>
+                    <span>My Sections</span>
+                </a>
+                <a href="students.html" class="menu-item">
+                    <i class="bi bi-people-fill"></i>
+                    <span>My Students</span>
+                </a>
+                <a href="subjects.html" class="menu-item active">
+                    <i class="bi bi-book-fill"></i>
+                    <span>My Subjects</span>
+                </a>
+                <a href="teaching-loads.html" class="menu-item">
+                    <i class="bi bi-calendar-check-fill"></i>
+                    <span>Teaching Schedule</span>
+                </a>
+                
+                <div class="menu-label">Account</div>
+                <a href="settings.html" class="menu-item">
+                    <i class="bi bi-gear-fill"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">TE</div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">Teacher</div>
+                        <div class="user-role" id="userRole">Teacher</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-top" role="banner">
+                <div style="display:flex;flex-direction:column;">
+                    <div class="admin-breadcrumb muted">
+                        <span class="muted">Teacher</span>
+                        <span aria-hidden="true">/</span>
+                        <span>My Subjects</span>
+                    </div>
+                    <div class="admin-title">Subjects I Teach</div>
+                </div>
+
+                <div class="admin-top-actions">
+                    <button id="themeToggle" class="theme-toggle" aria-pressed="false" aria-label="Toggle theme">
+                        <span class="icon sun" aria-hidden="true" style="display:inline-block">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="icon moon" aria-hidden="true" style="display:none">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                    </button>
+
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div class="avatar" title="Teacher" aria-hidden="true">
+                            <svg width="38" height="38" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M4 20c1.5-4 6-6 8-6s6.5 2 8 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <button id="logoutBtn" class="btn ghost" aria-label="Logout">Logout</button>
+                    </div>
+                </div>
+            </header>
+        
+            <div class="content-area">
+                <!-- Alert Container -->
+                <div id="alertContainer"></div>
+                
+                <!-- Info Card -->
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    Viewing subjects assigned to you. Contact the administrator to request changes.
+                </div>
+
+                <!-- Search Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Search & Filters</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Search</label>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search by subject name or code..." onkeyup="filterSubjects()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Subjects Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">My Assigned Subjects</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="subjectsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Subject Code</th>
+                                        <th>Subject Name</th>
+                                        <th>Grade Level</th>
+                                        <th>Sections Teaching</th>
+                                        <th>Description</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subjectsTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center">Loading subjects...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Mobile Toggle -->
+    <div class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+    </div>
+
+    <!-- View Details Modal -->
+    <div class="modal fade" id="viewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Subject Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="viewModalBody">
+                    <p><strong>Subject Code:</strong> <span id="viewCode"></span></p>
+                    <p><strong>Subject Name:</strong> <span id="viewName"></span></p>
+                    <p><strong>Grade Level:</strong> <span id="viewGrade"></span></p>
+                    <p><strong>Description:</strong> <span id="viewDescription"></span></p>
+                    <p><strong>Sections Teaching:</strong> <span id="viewSections"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="js/teacher-common.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allSubjects = [];
+        let currentTeacherId = null;
+
+        // Load subjects assigned to this teacher
+        async function loadSubjects() {
+            try {
+                // Get current teacher ID
+                const userData = JSON.parse(sessionStorage.getItem('userData'));
+                currentTeacherId = userData.uid || userData.id;
+                
+                // Get all subjects
+                const subjects = await getDocuments('subjects');
+                
+                // Get teaching loads to find subjects assigned to this teacher
+                const teachingLoads = await getDocuments('teaching_loads');
+                const mySubjects = teachingLoads
+                    .filter(load => load.teacher_id === currentTeacherId)
+                    .map(load => load.subject_id);
+                
+                // Filter subjects and get unique ones
+                const uniqueSubjectIds = [...new Set(mySubjects)];
+                allSubjects = subjects.filter(s => uniqueSubjectIds.includes(s.id));
+                
+                // Get sections for each subject
+                const sections = await getDocuments('sections');
+                allSubjects = allSubjects.map(subject => {
+                    const subjectSections = teachingLoads
+                        .filter(load => load.teacher_id === currentTeacherId && load.subject_id === subject.id)
+                        .map(load => {
+                            const section = sections.find(s => s.id === load.section_id);
+                            return section ? section.name || section.section_name : 'Unknown';
+                        });
+                    
+                    return { ...subject, sections: subjectSections };
+                });
+                
+                renderSubjects(allSubjects);
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+                showAlert('Failed to load subjects', 'error');
+            }
+        }
+
+        // Render subjects table
+        function renderSubjects(subjects) {
+            const tbody = document.getElementById('subjectsTableBody');
+            
+            if (subjects.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No subjects assigned to you yet</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = subjects.map(subject => `
+                <tr>
+                    <td><strong>${subject.code || subject.subject_code || 'N/A'}</strong></td>
+                    <td>${subject.name || subject.subject_name || 'N/A'}</td>
+                    <td>${subject.grade_level || 'All'}</td>
+                    <td><span class="badge bg-primary">${subject.sections.length} section(s)</span></td>
+                    <td>${subject.description ? (subject.description.substring(0, 50) + '...') : 'No description'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewSubject('${subject.id}')">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // View subject details
+        function viewSubject(subjectId) {
+            const subject = allSubjects.find(s => s.id === subjectId);
+            if (!subject) return;
+            
+            document.getElementById('viewCode').textContent = subject.code || subject.subject_code || 'N/A';
+            document.getElementById('viewName').textContent = subject.name || subject.subject_name || 'N/A';
+            document.getElementById('viewGrade').textContent = subject.grade_level || 'All';
+            document.getElementById('viewDescription').textContent = subject.description || 'No description';
+            document.getElementById('viewSections').textContent = subject.sections.join(', ') || 'None';
+            
+            const modal = new bootstrap.Modal(document.getElementById('viewModal'));
+            modal.show();
+        }
+
+        // Filter subjects
+        function filterSubjects() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            const filtered = allSubjects.filter(subject => {
+                const code = (subject.code || subject.subject_code || '').toLowerCase();
+                const name = (subject.name || subject.subject_name || '').toLowerCase();
+                
+                return code.includes(searchTerm) || name.includes(searchTerm);
+            });
+            
+            renderSubjects(filtered);
+        }
+
+        // Initialize
+        window.addEventListener('load', async () => {
+            const isAuth = await checkAuth();
+            if (isAuth) {
+                await loadSubjects();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1030,15 +1030,21 @@ app.use((err, req, res, next) => {
 // START SERVER
 // =====================================================
 
-app.listen(PORT, () => {
-    logger.info(`🚀 Server running on port ${PORT}`);
-    logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    logger.info(`🔗 Supabase URL: ${process.env.VITE_SUPABASE_URL}`);
-    console.log(`\n✅ Mabini HS Attendance Server is running!`);
-    console.log(`📍 http://localhost:${PORT}`);
-    console.log(`📍 Health: http://localhost:${PORT}/health`);
-    console.log(`📍 API Info: http://localhost:${PORT}/api\n`);
-});
+// For Vercel serverless functions
+export default app;
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        logger.info(`🚀 Server running on port ${PORT}`);
+        logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+        logger.info(`🔗 Supabase URL: ${process.env.VITE_SUPABASE_URL}`);
+        console.log(`\n✅ Mabini HS Attendance Server is running!`);
+        console.log(`📍 http://localhost:${PORT}`);
+        console.log(`📍 Health: http://localhost:${PORT}/health`);
+        console.log(`📍 API Info: http://localhost:${PORT}/api\n`);
+    });
+}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

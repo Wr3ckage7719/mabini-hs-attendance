@@ -10,7 +10,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import winston from 'winston';
-import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 
 // Load environment variables from current directory
 dotenv.config();
@@ -67,15 +67,23 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Initialize SendGrid (moved from later in file)
-if (process.env.SENDGRID_API_KEY) {
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Initialize Nodemailer transporter
+let emailTransporter;
+if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+    emailTransporter = nodemailer.createTransport({
+        service: 'gmail', // or 'outlook', 'yahoo', etc.
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD // App password, not regular password
+        }
+    });
+    console.log('✅ Email configured with:', process.env.EMAIL_USER);
 } else {
-    console.warn('⚠️ SendGrid not configured - email features will not work');
+    console.warn('⚠️ Email not configured - EMAIL_USER or EMAIL_PASSWORD missing');
 }
 
-// Default sender email (must be verified in SendGrid)
-const DEFAULT_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'niccolobalon@mabinicolleges.edu.ph';
+// Default sender email
+const DEFAULT_FROM_EMAIL = process.env.EMAIL_USER || 'niccolobalon@gmail.com';
 
 // Middleware
 app.use(helmet({
@@ -124,8 +132,8 @@ app.get('/health', (req, res) => {
         environment: {
             nodeEnv: process.env.NODE_ENV,
             hasSupabaseUrl: !!process.env.VITE_SUPABASE_URL,
-            hasSendGridKey: !!process.env.SENDGRID_API_KEY,
-            hasSendGridFrom: !!process.env.SENDGRID_FROM_EMAIL
+            hasEmailUser: !!process.env.EMAIL_USER,
+            hasEmailPassword: !!process.env.EMAIL_PASSWORD
         }
     });
 });
@@ -317,16 +325,20 @@ app.post('/api/email/send', async (req, res) => {
         };
         
         try {
-            await sgMail.send(emailData);
-            logger.info('Email sent via SendGrid:', { to, subject });
+            if (!emailTransporter) {
+                throw new Error('Email not configured');
+            }
+            
+            await emailTransporter.sendMail(emailData);
+            logger.info('Email sent via Nodemailer:', { to, subject });
             
             res.json({
                 success: true,
                 message: 'Email sent successfully'
             });
         } catch (emailError) {
-            logger.error('SendGrid error:', emailError.response?.body || emailError);
-            throw new Error(emailError.response?.body?.errors?.[0]?.message || 'Failed to send email');
+            logger.error('Nodemailer error:', emailError);
+            throw new Error(emailError.message || 'Failed to send email');
         }
         
     } catch (error) {
@@ -404,14 +416,14 @@ app.post('/api/email/attendance-notification', async (req, res) => {
                     <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">
                         This is an automated message from Mabini High School Attendance System.<br>
                         Please do not reply to this email.
-                    </p>
-                </div>
-            </body>
-            </html>
         `;
         
         try {
-            await sgMail.send({
+            if (!emailTransporter) {
+                throw new Error('Email not configured');
+            }
+            
+            await emailTransporter.sendMail({
                 from: DEFAULT_FROM_EMAIL,
                 to: emailTo,
                 subject,
@@ -426,12 +438,16 @@ app.post('/api/email/attendance-notification', async (req, res) => {
                 sent_at: new Date().toISOString()
             });
             
-            logger.info('Attendance notification sent via SendGrid:', { studentId, type });
+            logger.info('Attendance notification sent via Nodemailer:', { studentId, type });
             
             res.json({
                 success: true,
                 message: 'Notification sent successfully'
             });
+        } catch (emailError) {
+            logger.error('Nodemailer notification error:', emailError);
+            throw new Error('Failed to send notification email');
+        }   });
         } catch (emailError) {
             logger.error('SendGrid notification error:', emailError.response?.body || emailError);
             throw new Error('Failed to send notification email');
@@ -987,13 +1003,13 @@ app.post('/api/account/retrieve', async (req, res) => {
         });
         
         if (insertError) {
-            logger.error('Failed to record retrieval:', insertError);
-            // Continue anyway - we still want to send the email
-        }
-        
-        // Send email with credentials using SendGrid
+        // Send email with credentials using Nodemailer
         try {
-            await sgMail.send({
+            if (!emailTransporter) {
+                throw new Error('Email not configured');
+            }
+            
+            await emailTransporter.sendMail({
                 from: DEFAULT_FROM_EMAIL,
                 to: email,
                 subject: `Your Mabini HS Attendance System Credentials - ${accountType}`,
@@ -1008,20 +1024,24 @@ app.post('/api/account/retrieve', async (req, res) => {
                 `
             });
             
-            logger.info('Account credentials sent via SendGrid:', { email });
+            logger.info('Account credentials sent via Nodemailer:', { email });
             
             res.json({
                 success: true,
                 message: 'Your account credentials have been sent to your email!'
             });
         } catch (emailError) {
-            logger.error('SendGrid credentials email error:', emailError.response?.body || emailError);
+            logger.error('Nodemailer credentials email error:', emailError);
             
             // Rollback the retrieval record since email failed
             await supabase.from('account_retrievals').delete().eq('email', email);
             
             return res.status(500).json({
                 success: false,
+                message: 'Failed to send email. Please try again or contact support.',
+                error: emailError.message || 'Email service error'
+            });
+        }       success: false,
                 message: 'Failed to send email. Please try again or contact support.',
                 error: emailError.response?.body?.errors?.[0]?.message || 'Email service error'
             });

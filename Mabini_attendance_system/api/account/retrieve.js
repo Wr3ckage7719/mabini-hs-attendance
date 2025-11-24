@@ -110,13 +110,25 @@ export default async function handler(req, res) {
         }
         
         // Update credentials
-        await supabase
+        const updateData = { 
+            username: email,
+            password: tempPassword
+        };
+        
+        console.log('Updating user credentials:', { userTable, userId: user.id, updateData });
+        
+        const { data: updateResult, error: updateError } = await supabase
             .from(userTable)
-            .update({ 
-                username: email,
-                password: tempPassword
-            })
-            .eq('id', user.id);
+            .update(updateData)
+            .eq('id', user.id)
+            .select();
+        
+        if (updateError) {
+            console.error('Update error:', updateError);
+            throw new Error('Failed to update credentials');
+        }
+        
+        console.log('Update successful:', updateResult);
         
         // Record retrieval
         await supabase.from('account_retrievals').insert({

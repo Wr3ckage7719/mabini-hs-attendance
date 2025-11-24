@@ -90,6 +90,9 @@ loginForm.addEventListener('submit', async (e) => {
         }
         
         console.log('Student found:', student);
+        console.log('Stored password:', student.password);
+        console.log('Entered password:', password);
+        console.log('Passwords match:', student.password === password);
         
         // Check password
         if (student.password !== password) {

@@ -128,27 +128,41 @@ async function loadTeachingLoads() {
 
 // Populate dropdowns
 function populateTeacherDropdown() {
-    const select = document.getElementById('teacherId');
-    if (!select) return;
+    const modalSelect = document.getElementById('teacherId');
+    if (modalSelect) {
+        modalSelect.innerHTML = '<option value="">Select Teacher</option>' + 
+            teachers.map(t => `<option value="${t.id}">${t.first_name} ${t.last_name}</option>`).join('');
+    }
     
-    select.innerHTML = '<option value="">Select Teacher</option>' + 
-        teachers.map(t => `<option value="${t.id}">${t.first_name} ${t.last_name}</option>`).join('');
+    // Also populate filter dropdown
+    const filterSelect = document.getElementById('teacherFilter');
+    if (filterSelect) {
+        filterSelect.innerHTML = '<option value="">All Teachers</option>' + 
+            teachers.map(t => `<option value="${t.id}">${t.first_name} ${t.last_name}</option>`).join('');
+    }
 }
 
 function populateSubjectDropdown() {
-    const select = document.getElementById('subjectId');
-    if (!select) return;
+    const modalSelect = document.getElementById('subjectId');
+    if (modalSelect) {
+        modalSelect.innerHTML = '<option value="">Select Subject</option>' + 
+            subjects.map(s => `<option value="${s.id}">${s.code} - ${s.name}</option>`).join('');
+    }
     
-    select.innerHTML = '<option value="">Select Subject</option>' + 
-        subjects.map(s => `<option value="${s.id}">${s.code} - ${s.name}</option>`).join('');
+    // Also populate filter dropdown
+    const filterSelect = document.getElementById('subjectFilter');
+    if (filterSelect) {
+        filterSelect.innerHTML = '<option value="">All Subjects</option>' + 
+            subjects.map(s => `<option value="${s.id}">${s.code} - ${s.name}</option>`).join('');
+    }
 }
 
 function populateSectionDropdown() {
-    const select = document.getElementById('sectionId');
-    if (!select) return;
-    
-    select.innerHTML = '<option value="">Select Section</option>' + 
-        sections.map(sec => `<option value="${sec.id}">${sec.section_code} - ${sec.section_name}</option>`).join('');
+    const modalSelect = document.getElementById('sectionId');
+    if (modalSelect) {
+        modalSelect.innerHTML = '<option value="">Select Section</option>' + 
+            sections.map(sec => `<option value="${sec.id}">${sec.section_code} - ${sec.section_name}</option>`).join('');
+    }
 }
 
 // Setup event listeners
@@ -159,28 +173,73 @@ function setupEventListeners() {
     }
 }
 
+// Apply filters
+window.applyFilters = function() {
+    const teacherFilter = document.getElementById('teacherFilter')?.value;
+    const subjectFilter = document.getElementById('subjectFilter')?.value;
+    const gradeLevelFilter = document.getElementById('gradeLevelFilter')?.value;
+    
+    let filtered = [...teachingLoads];
+    
+    // Filter by teacher
+    if (teacherFilter) {
+        filtered = filtered.filter(load => load.teacher_id === teacherFilter);
+    }
+    
+    // Filter by subject
+    if (subjectFilter) {
+        filtered = filtered.filter(load => load.subject_id === subjectFilter);
+    }
+    
+    // Filter by grade level
+    if (gradeLevelFilter) {
+        filtered = filtered.filter(load => {
+            const section = sections.find(s => s.id === load.section_id);
+            return section && section.grade_level == gradeLevelFilter;
+        });
+    }
+    
+    renderTeachingLoads(filtered);
+};
+
+// Clear filters
+window.clearFilters = function() {
+    const teacherFilter = document.getElementById('teacherFilter');
+    const subjectFilter = document.getElementById('subjectFilter');
+    const gradeLevelFilter = document.getElementById('gradeLevelFilter');
+    
+    if (teacherFilter) teacherFilter.value = '';
+    if (subjectFilter) subjectFilter.value = '';
+    if (gradeLevelFilter) gradeLevelFilter.value = '';
+    
+    renderTeachingLoads();
+};
+
 // Render teaching loads table
-function renderTeachingLoads() {
+function renderTeachingLoads(loadsToRender = null) {
     const tbody = document.getElementById('loadsTableBody');
     if (!tbody) return;
     
-    if (teachingLoads.length === 0) {
+    const loads = loadsToRender || teachingLoads;
+    
+    if (loads.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" class="text-center py-5">
                     <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d;"></i>
                     <p class="text-muted mt-3 mb-0" style="font-size: 1.1rem;">No teaching loads found</p>
-                    <p class="text-muted small">Assign teachers to subjects and sections to get started</p>
+                    <p class="text-muted small">${loadsToRender ? 'Try adjusting your filters' : 'Assign teachers to subjects and sections to get started'}</p>
+                    ${!loadsToRender ? `
                     <button class="btn btn-primary mt-2" onclick="window.openAddModal()">
                         <i class="bi bi-plus-circle"></i> Add First Teaching Load
-                    </button>
+                    </button>` : ''}
                 </td>
             </tr>
         `;
         return;
     }
     
-    const rows = teachingLoads.map(load => {
+    const rows = loads.map(load => {
         const teacher = teachers.find(t => t.id === load.teacher_id);
         const subject = subjects.find(s => s.id === load.subject_id);
         const section = sections.find(sec => sec.id === load.section_id);
@@ -188,17 +247,18 @@ function renderTeachingLoads() {
         const teacherName = teacher ? `${teacher.first_name} ${teacher.last_name}` : 'Unknown';
         const subjectName = subject ? `${subject.code} - ${subject.name}` : 'Unknown';
         const sectionName = section ? section.section_code : 'Unknown';
+        const gradeLevel = section ? `Grade ${section.grade_level}` : '-';
         const schedule = load.schedule || '-';
-        const room = load.room || '-';
+        const timeRange = extractTimeFromSchedule(load.schedule);
         
         return `
             <tr>
                 <td>${escapeHtml(teacherName)}</td>
                 <td>${escapeHtml(subjectName)}</td>
                 <td><span class="badge bg-info">${escapeHtml(sectionName)}</span></td>
-                <td>${escapeHtml(schedule)}</td>
-                <td>${escapeHtml(room)}</td>
-                <td>${load.school_year || 'Current'}</td>
+                <td>${escapeHtml(gradeLevel)}</td>
+                <td>${escapeHtml(extractDaysFromSchedule(load.schedule))}</td>
+                <td>${escapeHtml(timeRange)}</td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary" onclick="window.editLoad('${load.id}')">
                         <i class="bi bi-pencil"></i> Edit
@@ -212,6 +272,20 @@ function renderTeachingLoads() {
     });
     
     tbody.innerHTML = rows.join('');
+}
+
+// Helper to extract days from schedule
+function extractDaysFromSchedule(schedule) {
+    if (!schedule) return '-';
+    const parts = schedule.split(/\d{1,2}:\d{2}/);
+    return parts[0].trim() || schedule;
+}
+
+// Helper to extract time from schedule
+function extractTimeFromSchedule(schedule) {
+    if (!schedule) return '-';
+    const timeMatch = schedule.match(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/);
+    return timeMatch ? `${timeMatch[1]}-${timeMatch[2]}` : '-';
 }
 
 // Escape HTML

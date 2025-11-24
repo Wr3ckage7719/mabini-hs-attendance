@@ -2,14 +2,19 @@
   "name": "mabini-hs-attendance-system",
   "version": "1.0.0",
   "description": "Mabini High School Attendance Management System",
+  "type": "module",
   "main": "server/index.js",
   "scripts": {
     "dev": "cd server && npm run dev",
     "start": "cd server && npm start",
-    "vercel-build": "cd server && npm install"
+    "build": "echo 'No build needed'"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@sendgrid/mail": "^8.1.0"
   },
   "keywords": [
     "attendance",

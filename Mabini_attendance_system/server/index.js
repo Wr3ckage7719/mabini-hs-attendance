@@ -75,7 +75,7 @@ if (process.env.SENDGRID_API_KEY) {
 }
 
 // Default sender email (must be verified in SendGrid)
-const DEFAULT_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'Mabini HS Attendance <noreply@mabinicolleges.edu.ph>';
+const DEFAULT_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'niccolobalon@mabinicolleges.edu.ph';
 
 // Middleware
 app.use(helmet({

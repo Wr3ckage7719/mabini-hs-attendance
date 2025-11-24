@@ -288,14 +288,18 @@ app.post('/api/email/send', async (req, res) => {
             ...(text && !html && { text })
         };
         
-        await sgMail.send(emailData);
-        
-        logger.info('Email sent via SendGrid:', { to, subject });
-        
-        res.json({
-            success: true,
-            message: 'Email sent successfully'
-        });
+        try {
+            await sgMail.send(emailData);
+            logger.info('Email sent via SendGrid:', { to, subject });
+            
+            res.json({
+                success: true,
+                message: 'Email sent successfully'
+            });
+        } catch (emailError) {
+            logger.error('SendGrid error:', emailError.response?.body || emailError);
+            throw new Error(emailError.response?.body?.errors?.[0]?.message || 'Failed to send email');
+        }
         
     } catch (error) {
         logger.error('Email send error:', error);
@@ -378,27 +382,32 @@ app.post('/api/email/attendance-notification', async (req, res) => {
             </html>
         `;
         
-        await sgMail.send({
-            from: DEFAULT_FROM_EMAIL,
-            to: emailTo,
-            subject,
-            html
-        });
-        
-        // Log notification
-        await supabase.from('sms_logs').insert({
-            recipient: emailTo,
-            message: `${type} notification for ${studentName}`,
-            status: 'sent',
-            sent_at: new Date().toISOString()
-        });
-        
-        logger.info('Attendance notification sent via SendGrid:', { studentId, type });
-        
-        res.json({
-            success: true,
-            message: 'Notification sent successfully'
-        });
+        try {
+            await sgMail.send({
+                from: DEFAULT_FROM_EMAIL,
+                to: emailTo,
+                subject,
+                html
+            });
+            
+            // Log notification
+            await supabase.from('sms_logs').insert({
+                recipient: emailTo,
+                message: `${type} notification for ${studentName}`,
+                status: 'sent',
+                sent_at: new Date().toISOString()
+            });
+            
+            logger.info('Attendance notification sent via SendGrid:', { studentId, type });
+            
+            res.json({
+                success: true,
+                message: 'Notification sent successfully'
+            });
+        } catch (emailError) {
+            logger.error('SendGrid notification error:', emailError.response?.body || emailError);
+            throw new Error('Failed to send notification email');
+        }
         
     } catch (error) {
         logger.error('Attendance notification error:', error);
@@ -951,27 +960,40 @@ app.post('/api/account/retrieve', async (req, res) => {
         }
         
         // Send email with credentials using SendGrid
-        await sgMail.send({
-            from: DEFAULT_FROM_EMAIL,
-            to: email,
-            subject: `Your Mabini HS Attendance System Credentials - ${accountType}`,
-            html: `
-                <h2>Mabini High School Attendance System</h2>
-                <p>Dear ${user.first_name} ${user.last_name},</p>
-                <p>Here are your ${accountType} account credentials:</p>
-                <p><strong>Username:</strong> ${email}<br>
-                <strong>Password:</strong> ${tempPassword}</p>
-                <p>Please change your password after logging in.</p>
-                <p><small>This is a one-time retrieval. You cannot request your credentials again.</small></p>
-            `
-        });
-        
-        logger.info('Account credentials sent via SendGrid:', { email });
-        
-        res.json({
-            success: true,
-            message: 'Your account credentials have been sent to your email!'
-        });
+        try {
+            await sgMail.send({
+                from: DEFAULT_FROM_EMAIL,
+                to: email,
+                subject: `Your Mabini HS Attendance System Credentials - ${accountType}`,
+                html: `
+                    <h2>Mabini High School Attendance System</h2>
+                    <p>Dear ${user.first_name} ${user.last_name},</p>
+                    <p>Here are your ${accountType} account credentials:</p>
+                    <p><strong>Username:</strong> ${email}<br>
+                    <strong>Password:</strong> ${tempPassword}</p>
+                    <p>Please change your password after logging in.</p>
+                    <p><small>This is a one-time retrieval. You cannot request your credentials again.</small></p>
+                `
+            });
+            
+            logger.info('Account credentials sent via SendGrid:', { email });
+            
+            res.json({
+                success: true,
+                message: 'Your account credentials have been sent to your email!'
+            });
+        } catch (emailError) {
+            logger.error('SendGrid credentials email error:', emailError.response?.body || emailError);
+            
+            // Rollback the retrieval record since email failed
+            await supabase.from('account_retrievals').delete().eq('email', email);
+            
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to send email. Please try again or contact support.',
+                error: emailError.response?.body?.errors?.[0]?.message || 'Email service error'
+            });
+        }
         
     } catch (error) {
         logger.error('Account retrieval error:', error);

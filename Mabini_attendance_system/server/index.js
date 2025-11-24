@@ -10,6 +10,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import winston from 'winston';
+import sgMail from '@sendgrid/mail';
 
 // Load environment variables from current directory
 dotenv.config();
@@ -49,11 +50,32 @@ const logger = winston.createLogger({
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Validate critical environment variables
+if (!process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('❌ Missing Supabase credentials');
+    console.error('VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'present' : 'MISSING');
+    console.error('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'present' : 'MISSING');
+}
+
+if (!process.env.SENDGRID_API_KEY) {
+    console.error('❌ Missing SendGrid API key');
+}
+
 // Initialize Supabase client
 const supabase = createClient(
     process.env.VITE_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// Initialize SendGrid (moved from later in file)
+if (process.env.SENDGRID_API_KEY) {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+} else {
+    console.warn('⚠️ SendGrid not configured - email features will not work');
+}
+
+// Default sender email (must be verified in SendGrid)
+const DEFAULT_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'Mabini HS Attendance <noreply@mabinicolleges.edu.ph>';
 
 // Middleware
 app.use(helmet({
@@ -273,14 +295,6 @@ app.post('/api/auth/update-password', async (req, res) => {
 // =====================================================
 // EMAIL ENDPOINTS
 // =====================================================
-
-import sgMail from '@sendgrid/mail';
-
-// Initialize SendGrid client
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-// Default sender email (must be verified in SendGrid)
-const DEFAULT_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'Mabini HS Attendance <noreply@mabinicolleges.edu.ph>';
 
 // Send email
 app.post('/api/email/send', async (req, res) => {

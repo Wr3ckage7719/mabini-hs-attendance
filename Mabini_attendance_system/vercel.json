@@ -1,31 +1,24 @@
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": null,
+  "outputDirectory": "public",
+  "installCommand": "cd server && npm install",
+  "framework": null,
+  "rewrites": [
     {
-      "src": "server/index.js",
-      "use": "@vercel/node"
+      "source": "/api/(.*)",
+      "destination": "/server/index.js"
     },
     {
-      "src": "public/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/server/index.js"
+      "source": "/health",
+      "destination": "/server/index.js"
     },
     {
-      "src": "/health",
-      "dest": "/server/index.js"
+      "source": "/",
+      "destination": "/public/index.html"
     },
     {
-      "src": "/",
-      "dest": "/public/index.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "source": "/(.*)",
+      "destination": "/public/$1"
     }
   ]
 }

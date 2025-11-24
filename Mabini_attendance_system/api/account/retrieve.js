@@ -97,8 +97,11 @@ export default async function handler(req, res) {
                 user = student;
                 userTable = 'students';
                 userIdField = 'student_number';
-                tempPassword = `Student${student.student_number.slice(-4)}@2025`;
+                // Convert to string and get last 4 digits
+                const studentNumStr = String(student.student_number);
+                tempPassword = `Student${studentNumStr.slice(-4)}@2025`;
                 accountType = 'Student';
+                console.log('Student number:', student.student_number, 'Last 4:', studentNumStr.slice(-4), 'Generated password:', tempPassword);
             }
         }
         

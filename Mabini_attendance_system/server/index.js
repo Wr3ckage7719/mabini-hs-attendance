@@ -260,13 +260,13 @@ app.post('/api/auth/update-password', async (req, res) => {
 // EMAIL ENDPOINTS
 // =====================================================
 
-import { Resend } from 'resend';
+import sgMail from '@sendgrid/mail';
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize SendGrid client
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Default sender email (must be verified domain in Resend)
-const DEFAULT_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Mabini HS Attendance <onboarding@resend.dev>';
+// Default sender email (must be verified in SendGrid)
+const DEFAULT_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'Mabini HS Attendance <noreply@mabinicolleges.edu.ph>';
 
 // Send email
 app.post('/api/email/send', async (req, res) => {
@@ -288,17 +288,12 @@ app.post('/api/email/send', async (req, res) => {
             ...(text && !html && { text })
         };
         
-        const { data, error } = await resend.emails.send(emailData);
+        await sgMail.send(emailData);
         
-        if (error) {
-            throw new Error(error.message);
-        }
-        
-        logger.info('Email sent via Resend:', { to, subject, id: data.id });
+        logger.info('Email sent via SendGrid:', { to, subject });
         
         res.json({
             success: true,
-            id: data.id,
             message: 'Email sent successfully'
         });
         
@@ -383,16 +378,12 @@ app.post('/api/email/attendance-notification', async (req, res) => {
             </html>
         `;
         
-        const { data, error } = await resend.emails.send({
+        await sgMail.send({
             from: DEFAULT_FROM_EMAIL,
             to: emailTo,
             subject,
             html
         });
-        
-        if (error) {
-            throw new Error(error.message);
-        }
         
         // Log notification
         await supabase.from('sms_logs').insert({
@@ -402,11 +393,10 @@ app.post('/api/email/attendance-notification', async (req, res) => {
             sent_at: new Date().toISOString()
         });
         
-        logger.info('Attendance notification sent via Resend:', { studentId, type, emailId: data.id });
+        logger.info('Attendance notification sent via SendGrid:', { studentId, type });
         
         res.json({
             success: true,
-            id: data.id,
             message: 'Notification sent successfully'
         });
         
@@ -960,8 +950,8 @@ app.post('/api/account/retrieve', async (req, res) => {
             // Continue anyway - we still want to send the email
         }
         
-        // Send email with credentials using Resend
-        const { data: emailData, error: emailError } = await resend.emails.send({
+        // Send email with credentials using SendGrid
+        await sgMail.send({
             from: DEFAULT_FROM_EMAIL,
             to: email,
             subject: `Your Mabini HS Attendance System Credentials - ${accountType}`,
@@ -975,16 +965,8 @@ app.post('/api/account/retrieve', async (req, res) => {
                 <p><small>This is a one-time retrieval. You cannot request your credentials again.</small></p>
             `
         });
-
-        if (emailError) {
-            logger.error('Failed to send credentials email:', emailError);
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to send email. Please contact support.'
-            });
-        }
         
-        logger.info('Account credentials sent via Resend:', { email, emailId: emailData?.id });
+        logger.info('Account credentials sent via SendGrid:', { email });
         
         res.json({
             success: true,

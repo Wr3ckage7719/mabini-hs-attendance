@@ -56,11 +56,19 @@ const supabase = createClient(
 );
 
 // Middleware
-app.use(helmet()); // Security headers
+app.use(helmet({
+    contentSecurityPolicy: false, // Disable for API
+    crossOriginEmbedderPolicy: false
+})); // Security headers
+
+// CORS - Allow all origins for Vercel deployment
 app.use(cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost'],
-    credentials: true
+    origin: true, // Allow all origins
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -90,7 +98,13 @@ app.get('/health', (req, res) => {
     res.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        environment: {
+            nodeEnv: process.env.NODE_ENV,
+            hasSupabaseUrl: !!process.env.VITE_SUPABASE_URL,
+            hasSendGridKey: !!process.env.SENDGRID_API_KEY,
+            hasSendGridFrom: !!process.env.SENDGRID_FROM_EMAIL
+        }
     });
 });
 
@@ -834,9 +848,13 @@ app.post('/api/sms/absence', async (req, res) => {
 
 app.post('/api/account/retrieve', async (req, res) => {
     try {
-        const { email, userType } = req.body; // Add userType to support both students and teachers
+        const { email, userType } = req.body;
         
-        logger.info('Account retrieval request:', { email, userType });
+        logger.info('=== Account Retrieval Request ===');
+        logger.info('Email:', email);
+        logger.info('UserType:', userType);
+        logger.info('Has SendGrid Key:', !!process.env.SENDGRID_API_KEY);
+        logger.info('SendGrid From:', process.env.SENDGRID_FROM_EMAIL);
         
         // Validate email
         if (!email || !email.includes('@')) {

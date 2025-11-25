@@ -9,45 +9,86 @@ let currentUser = null;
 // Check authentication
 async function checkAuth() {
     try {
-        // Get current user from Supabase
-        const user = await authClient.getCurrentUser();
+        // Check for teacher session data (direct DB authentication)
+        const teacherData = sessionStorage.getItem('teacherData');
+        const userRole = sessionStorage.getItem('userRole');
         
-        if (!user) {
-            console.log('Not authenticated, redirecting to login');
-            sessionStorage.removeItem('userData');
-            window.location.href = 'login.html';
-            return false;
-        }
-
-        // Get user profile to verify role
-        const profile = await authClient.getUserProfile();
-        
-        if (!profile || profile.role !== 'teacher') {
-            console.log('Auth verification failed or not a teacher');
+        if (!teacherData || userRole !== 'teacher') {
+            console.log('No teacher session found, redirecting to login');
+            sessionStorage.removeItem('teacherData');
+            sessionStorage.removeItem('userRole');
             sessionStorage.removeItem('userData');
             window.location.href = 'login.html';
             return false;
         }
         
-        // Store user data
-        currentUser = {
-            id: user.id,
-            email: user.email,
-            fullName: profile.full_name || profile.first_name + ' ' + profile.last_name,
-            full_name: profile.full_name,
-            role: profile.role,
-            ...profile
-        };
+        // Parse teacher data
+        const teacher = JSON.parse(teacherData);
         
-        // Persist to session
-        sessionStorage.setItem('userData', JSON.stringify(currentUser));
-        
-        // Update UI
-        updateUserProfile(currentUser);
-
-        return true;
+        // Verify teacher still exists and is active
+        try {
+            const teacherResult = await dataClient.getAll('teachers', [
+                { field: 'id', operator: '==', value: teacher.id }
+            ]);
+            
+            const currentTeacher = teacherResult.data && teacherResult.data.length > 0 
+                ? teacherResult.data[0] : null;
+            
+            if (!currentTeacher) {
+                console.log('Teacher not found in database, clearing session');
+                sessionStorage.removeItem('teacherData');
+                sessionStorage.removeItem('userRole');
+                sessionStorage.removeItem('userData');
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            if (currentTeacher.status !== 'active') {
+                console.log('Teacher account is not active');
+                sessionStorage.removeItem('teacherData');
+                sessionStorage.removeItem('userRole');
+                sessionStorage.removeItem('userData');
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            // Update current user with fresh data
+            currentUser = {
+                id: currentTeacher.id,
+                email: currentTeacher.email,
+                fullName: currentTeacher.full_name || currentTeacher.name || `${currentTeacher.first_name || ''} ${currentTeacher.last_name || ''}`,
+                full_name: currentTeacher.full_name,
+                role: 'teacher',
+                ...currentTeacher
+            };
+            
+            // Update session storage
+            sessionStorage.setItem('teacherData', JSON.stringify(currentUser));
+            sessionStorage.setItem('userData', JSON.stringify(currentUser));
+            
+            // Update UI
+            updateUserProfile(currentUser);
+            
+            return true;
+        } catch (verifyError) {
+            console.error('Error verifying teacher:', verifyError);
+            // On verification error, still allow access if we have session data
+            currentUser = {
+                id: teacher.id,
+                email: teacher.email,
+                fullName: teacher.full_name || teacher.name || `${teacher.first_name || ''} ${teacher.last_name || ''}`,
+                full_name: teacher.full_name,
+                role: 'teacher',
+                ...teacher
+            };
+            
+            updateUserProfile(currentUser);
+            return true;
+        }
     } catch (e) {
         console.error('Auth check error:', e);
+        sessionStorage.removeItem('teacherData');
+        sessionStorage.removeItem('userRole');
         sessionStorage.removeItem('userData');
         window.location.href = 'login.html';
         return false;
@@ -124,19 +165,13 @@ window.toggleSidebar = function() {
 // Logout function
 window.doLogout = function() {
     if (confirm('Are you sure you want to logout?')) {
-        // Try to import and use centralized logout
-        import('../../shared/js/auth.js').then(mod => {
-            if (mod && typeof mod.logout === 'function') {
-                mod.logout();
-            } else {
-                sessionStorage.removeItem('userData');
-                window.location.href = '/Mabini_HS_Attendance/Mabini_attendance_system/public/index.html';
-            }
-        }).catch(err => {
-            console.warn('Auth module import failed', err);
-            sessionStorage.removeItem('userData');
-            window.location.href = '/Mabini_HS_Attendance/Mabini_attendance_system/public/index.html';
-        });
+        // Clear all session data
+        sessionStorage.removeItem('teacherData');
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('userData');
+        
+        // Redirect to login
+        window.location.href = 'login.html';
     }
 };
 

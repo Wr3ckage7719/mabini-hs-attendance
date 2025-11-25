@@ -315,13 +315,14 @@ function normalizeAdminTop() {
     }
 }
 
-// Page transitions
+// Page transitions - DISABLED
 function setupPageTransitions() {
     try {
-        document.body.classList.add('page-anim', 'initial');
-        requestAnimationFrame(() => {
-            setTimeout(() => document.body.classList.remove('initial'), 10);
-        });
+        // Removed animation classes
+        // document.body.classList.add('page-anim', 'initial');
+        // requestAnimationFrame(() => {
+        //     setTimeout(() => document.body.classList.remove('initial'), 10);
+        // });
 
         document.addEventListener('click', (e) => {
             const anchor = e.target.closest && e.target.closest('a');
@@ -347,8 +348,8 @@ function setupPageTransitions() {
                 }
             } catch (_) {}
 
-            document.body.classList.add('exit');
-            setTimeout(() => { window.location.href = href; }, 180);
+            // Navigate immediately without animation delay
+            window.location.href = href;
         }, true);
     } catch (err) {
         console.warn('[Admin] Page transition setup failed:', err);

@@ -325,11 +325,11 @@ tbody tr:hover{background:var(--surface-muted)}
 .activity-content .activity-title{font-weight:600}
 .activity-content .activity-time{font-size:13px;color:var(--muted)}
 
-/* Page transition (enter/exit) - horizontal slide only (no fade) */
-body.page-anim{transition:transform .28s cubic-bezier(.2,.9,.2,1);transform:none}
+/* Page transition (enter/exit) - DISABLED */
+/* body.page-anim{transition:transform .28s cubic-bezier(.2,.9,.2,1);transform:none}
 body.page-anim.initial{transform:translateX(10px)}
-body.page-anim.exit{transform:translateX(-10px)}
+body.page-anim.exit{transform:translateX(-10px)} */
 
 /* Keep layout and spacing identical during transitions */
-html, body, .admin-layout { will-change: transform }
+/* html, body, .admin-layout { will-change: transform } */
 

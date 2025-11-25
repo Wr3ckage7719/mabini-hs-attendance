@@ -372,10 +372,7 @@
 
         // Initialize
         window.addEventListener('load', async () => {
-            const isAuth = await checkAuth();
-            if (isAuth) {
-                await loadStudents();
-            }
+            await loadStudents();
         });
     </script>
 </body>

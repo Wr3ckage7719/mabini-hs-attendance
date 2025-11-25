@@ -482,10 +482,7 @@
 
         // Initialize dashboard
         window.addEventListener('load', async () => {
-            const isAuth = await checkAuth();
-            if (isAuth) {
-                await loadDashboard();
-            }
+            await loadDashboard();
         });
     </script>
 </body>

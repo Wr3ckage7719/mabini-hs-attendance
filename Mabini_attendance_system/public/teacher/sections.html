@@ -295,10 +295,7 @@
 
         // Initialize
         window.addEventListener('load', async () => {
-            const isAuth = await checkAuth();
-            if (isAuth) {
-                await loadSections();
-            }
+            await loadSections();
         });
     </script>
 </body>

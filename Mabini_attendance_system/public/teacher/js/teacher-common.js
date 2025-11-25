@@ -149,6 +149,7 @@ async function getDocument(collection, id) {
 }
 
 // Export for use in other teacher scripts
+window.checkAuth = checkAuth;
 window.getDocuments = getDocuments;
 window.getDocument = getDocument;
 window.dataClient = dataClient;

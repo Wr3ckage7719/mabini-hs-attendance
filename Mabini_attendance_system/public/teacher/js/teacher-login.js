@@ -110,6 +110,9 @@ loginForm.addEventListener('submit', async (e) => {
         // Store teacher data in session
         sessionStorage.setItem('teacherData', JSON.stringify(teacher));
         sessionStorage.setItem('userRole', 'teacher');
+        sessionStorage.setItem('userData', JSON.stringify(teacher)); // Required by dashboard and other pages
+        
+        console.log('Session data stored:', { teacherId: teacher.id, role: 'teacher' });
         
         showAlert('Login successful! Redirecting...', 'success');
         // Redirect to teacher dashboard

@@ -197,6 +197,9 @@ function showAlert(message, type = 'info') {
     }, 5000);
 }
 
+// Export showAlert globally
+window.showAlert = showAlert;
+
 // Set active navigation based on current page
 function setActiveNavFromLocation() {
     try {

@@ -201,7 +201,14 @@
             try {
                 // Get current teacher ID
                 const userData = JSON.parse(sessionStorage.getItem('userData'));
-                currentTeacherId = userData.uid || userData.id;
+                if (!userData || !userData.id) {
+                    console.error('No valid user data found');
+                    showAlert('Session expired. Please login again.', 'error');
+                    setTimeout(() => window.location.href = 'login.html', 2000);
+                    return;
+                }
+                currentTeacherId = userData.id;
+                console.log('Loading sections for teacher:', currentTeacherId);
                 
                 // Get all sections
                 const sections = await getDocuments('sections');

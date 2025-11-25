@@ -300,11 +300,34 @@
         async function loadDashboard() {
             try {
                 const userData = JSON.parse(sessionStorage.getItem('userData'));
-                currentTeacherId = userData.uid || userData.id;
+                if (!userData || !userData.id) {
+                    console.error('No valid user data found');
+                    showAlert('Session expired. Please login again.', 'error');
+                    setTimeout(() => window.location.href = 'login.html', 2000);
+                    return;
+                }
+                
+                currentTeacherId = userData.id;
+                console.log('Loading dashboard for teacher:', currentTeacherId);
+                console.log('Teacher data:', userData);
                 
                 // Get teaching loads
                 const teachingLoads = await getDocuments('teaching_loads');
                 const myLoads = teachingLoads.filter(load => load.teacher_id === currentTeacherId);
+                
+                console.log('Teaching loads found:', myLoads.length);
+                
+                if (myLoads.length === 0) {
+                    // No teaching loads assigned
+                    document.getElementById('mySections').textContent = '0';
+                    document.getElementById('totalStudents').textContent = '0';
+                    document.getElementById('totalClasses').textContent = '0';
+                    document.getElementById('totalSubjects').textContent = '0';
+                    
+                    renderTodaySchedule();
+                    renderAllSchedules();
+                    return;
+                }
                 
                 // Get related data
                 const subjects = await getDocuments('subjects');
@@ -312,8 +335,8 @@
                 const students = await getDocuments('students');
                 
                 // Calculate stats
-                const uniqueSections = [...new Set(myLoads.map(l => l.section_id))];
-                const uniqueSubjects = [...new Set(myLoads.map(l => l.subject_id))];
+                const uniqueSections = [...new Set(myLoads.map(l => l.section_id))].filter(Boolean);
+                const uniqueSubjects = [...new Set(myLoads.map(l => l.subject_id))].filter(Boolean);
                 const myStudents = students.filter(s => uniqueSections.includes(s.section_id));
                 
                 document.getElementById('mySections').textContent = uniqueSections.length;

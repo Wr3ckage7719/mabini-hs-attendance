@@ -1,6 +1,8 @@
+import { supabase } from '../../js/supabase-client.js';
+
 export function initForgotPassword({ role = 'student', portalLabel = 'Portal', loginUrl = 'login.html' } = {}) {
-  const API_BASE = '../api/auth.php';
   let userEmail = '';
+  let resetToken = '';
   let resendTimer = null;
   let resendCountdown = 60;
 
@@ -66,35 +68,38 @@ export function initForgotPassword({ role = 'student', portalLabel = 'Portal', l
       btn.textContent = 'Sending OTP...';
 
       try {
-        const response = await fetch(API_BASE, {
+        // Call API to send OTP
+        const response = await fetch('/api/password-reset/send-otp', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'send_otp', email: email, role: role })
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, role })
         });
 
         const result = await response.json();
 
-        if (result.success) {
-          userEmail = email;
-          const disp = document.getElementById('email-display');
-          if (disp) disp.textContent = email;
-
-          if (result.otp_dev) {
-            console.log('🔐 OTP Code:', result.otp_dev);
-            showAlert(`OTP sent! (DEV MODE: ${result.otp_dev})`, 'info');
-          } else {
-            showAlert('OTP sent to your email!', 'success');
-          }
-
-          setTimeout(() => {
-            showStep(2);
-            startResendTimer();
-          }, 600);
-        } else {
-          showAlert(result.error || 'Failed to send OTP. Please try again.');
+        if (!response.ok || !result.success) {
+          showAlert(result.message || 'Failed to send OTP. Please try again.');
+          btn.disabled = false;
+          btn.removeAttribute('aria-busy');
+          btn.textContent = 'Send OTP Code';
+          return;
         }
+
+        userEmail = email;
+        const disp = document.getElementById('email-display');
+        if (disp) disp.textContent = email;
+
+        showAlert('OTP sent to your email! Please check your inbox.', 'success');
+
+        setTimeout(() => {
+          showStep(2);
+          startResendTimer();
+        }, 600);
       } catch (error) {
-        showAlert('Connection error. Please try again.');
+        console.error('Send OTP error:', error);
+        showAlert('Connection error. Please check your internet and try again.');
       } finally {
         btn.disabled = false;
         btn.removeAttribute('aria-busy');
@@ -121,24 +126,35 @@ export function initForgotPassword({ role = 'student', portalLabel = 'Portal', l
       btn.textContent = 'Verifying...';
 
       try {
-        const response = await fetch(API_BASE, {
+        // Call API to verify OTP
+        const response = await fetch('/api/password-reset/verify-otp', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'verify_otp', email: userEmail, otp: otp, role: role })
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email: userEmail, otp, role })
         });
 
         const result = await response.json();
 
-        if (result.success) {
-          showAlert('OTP verified successfully!', 'success');
-          clearInterval(resendTimer);
-          setTimeout(() => showStep(3), 400);
-        } else {
-          showAlert(result.error || 'Invalid OTP. Please try again.');
+        if (!response.ok || !result.success) {
+          showAlert(result.message || 'Invalid OTP. Please try again.');
           otpInputs.forEach(input => input.value = '');
           otpInputs[0].focus();
+          btn.disabled = false;
+          btn.removeAttribute('aria-busy');
+          btn.textContent = 'Verify OTP';
+          return;
         }
+
+        // Store reset token for password reset
+        resetToken = result.resetToken;
+        
+        showAlert('OTP verified successfully!', 'success');
+        clearInterval(resendTimer);
+        setTimeout(() => showStep(3), 400);
       } catch (error) {
+        console.error('Verify OTP error:', error);
         showAlert('Connection error. Please try again.');
       } finally {
         btn.disabled = false;
@@ -148,7 +164,7 @@ export function initForgotPassword({ role = 'student', portalLabel = 'Portal', l
     });
   }
 
-  // Step 3: Reset Password
+  // Step 3: Reset Password  
   const passwordForm = document.getElementById('password-form');
   if (passwordForm) {
     passwordForm.addEventListener('submit', async (e) => {
@@ -172,20 +188,40 @@ export function initForgotPassword({ role = 'student', portalLabel = 'Portal', l
       btn.textContent = 'Resetting Password...';
 
       try {
-        const response = await fetch(API_BASE, {
+        // Call API to reset password
+        const response = await fetch('/api/password-reset/reset-password', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'reset_password_with_otp', email: userEmail, newPassword: newPassword, role: role })
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            email: userEmail, 
+            resetToken, 
+            newPassword, 
+            role 
+          })
         });
 
         const result = await response.json();
 
-        if (result.success) {
-          showStep(4);
-        } else {
-          showAlert(result.error || 'Failed to reset password. Please try again.');
+        if (!response.ok || !result.success) {
+          showAlert(result.message || 'Failed to reset password. Please try again.');
+          btn.disabled = false;
+          btn.removeAttribute('aria-busy');
+          btn.textContent = 'Reset Password';
+          return;
         }
+
+        // Update success screen with email
+        const resetEmailDisplay = document.getElementById('reset-email-display');
+        if (resetEmailDisplay) {
+          resetEmailDisplay.textContent = userEmail;
+        }
+
+        showAlert('Password reset successfully!', 'success');
+        setTimeout(() => showStep(4), 1000);
       } catch (error) {
+        console.error('Password reset error:', error);
         showAlert('Connection error. Please try again.');
       } finally {
         btn.disabled = false;
@@ -204,29 +240,30 @@ export function initForgotPassword({ role = 'student', portalLabel = 'Portal', l
       btn.setAttribute('aria-disabled', 'true');
 
       try {
-        const response = await fetch(API_BASE, {
+        // Call API to resend OTP
+        const response = await fetch('/api/password-reset/send-otp', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'send_otp', email: userEmail, role: role })
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email: userEmail, role })
         });
 
         const result = await response.json();
 
-        if (result.success) {
-          if (result.otp_dev) {
-            console.log('🔐 New OTP Code:', result.otp_dev);
-            showAlert(`New OTP sent! (DEV MODE: ${result.otp_dev})`, 'info');
-          } else {
-            showAlert('New OTP sent!', 'success');
-          }
-          resendCountdown = 60;
-          startResendTimer();
-        } else {
-          showAlert(result.error || 'Failed to resend OTP');
+        if (!response.ok || !result.success) {
+          showAlert(result.message || 'Failed to resend OTP. Please try again.');
           btn.disabled = false;
           btn.setAttribute('aria-disabled', 'false');
+          return;
         }
+        
+        showAlert('New OTP sent to your email!', 'success');
+        
+        resendCountdown = 60;
+        startResendTimer();
       } catch (error) {
+        console.error('Resend OTP error:', error);
         showAlert('Connection error. Please try again.');
         btn.disabled = false;
         btn.setAttribute('aria-disabled', 'false');

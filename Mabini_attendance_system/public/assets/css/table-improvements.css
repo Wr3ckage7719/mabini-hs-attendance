@@ -59,11 +59,44 @@
     font-size: 13px;
     border-radius: 6px;
     transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .table tbody td .btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.table tbody td .btn .btn-label {
+    display: inline;
+}
+
+/* Mobile - Show icons only, hide labels */
+@media (max-width: 767px) {
+    .table tbody td .btn {
+        padding: 8px 10px;
+        font-size: 16px;
+        min-width: 40px;
+        justify-content: center;
+    }
+    
+    .table tbody td .btn .btn-label {
+        display: none;
+    }
+    
+    .table tbody td .btn i {
+        margin: 0;
+    }
+}
+
+/* Tablet - Keep both icon and label */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .table tbody td .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
 }
 
 /* Badge Improvements */

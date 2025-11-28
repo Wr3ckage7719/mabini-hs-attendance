@@ -1,73 +1,114 @@
 /* Responsive Sidebar Navigation */
 
-/* Desktop - Sidebar always visible */
+/* Desktop - Full width sidebar */
 .admin-sidebar {
     position: fixed;
     left: 0;
     top: 0;
     width: 260px;
     height: 100vh;
-    transition: transform 0.3s ease;
+    transition: width 0.3s ease;
+    overflow-x: hidden;
 }
 
 .admin-main {
     margin-left: 260px;
+    transition: margin-left 0.3s ease;
 }
 
-/* Tablet/Mobile - Collapsible sidebar */
-@media (max-width: 1023px) {
+/* Tablet - Compact sidebar */
+@media (max-width: 1023px) and (min-width: 768px) {
     .admin-sidebar {
-        transform: translateX(-100%);
-        z-index: 1050;
-    }
-    
-    .admin-sidebar.show {
-        transform: translateX(0);
+        width: 80px;
     }
     
     .admin-main {
-        margin-left: 0;
+        margin-left: 80px;
     }
     
-    /* Hamburger Toggle Button */
-    .sidebar-toggle {
-        display: block !important;
-        position: fixed;
-        top: 16px;
-        left: 16px;
-        z-index: 1051;
-        background: var(--bs-primary);
-        color: white;
-        border: none;
-        width: 44px;
-        height: 44px;
-        border-radius: 8px;
-        font-size: 20px;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-    
-    .sidebar-toggle:active {
-        transform: scale(0.95);
-    }
-    
-    /* Backdrop Overlay */
-    .sidebar-backdrop {
+    /* Hide text labels on tablet */
+    .sidebar-logo span,
+    .sidebar-subtitle,
+    .menu-label,
+    .menu-item span,
+    .user-details {
         display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 1049;
     }
     
-    .sidebar-backdrop.show {
-        display: block;
+    .sidebar-header {
+        text-align: center;
+    }
+    
+    .sidebar-logo {
+        justify-content: center;
+    }
+    
+    .menu-item {
+        justify-content: center;
+    }
+    
+    .user-profile {
+        justify-content: center;
     }
 }
 
-/* Desktop - Hide toggle button */
-@media (min-width: 1024px) {
-    .sidebar-toggle {
-        display: none !important;
+/* Mobile - Even more compact sidebar */
+@media (max-width: 767px) {
+    .admin-sidebar {
+        width: 60px;
     }
+    
+    .admin-main {
+        margin-left: 60px;
+        padding: 16px;
+    }
+    
+    /* Hide text labels on mobile */
+    .sidebar-logo span,
+    .sidebar-subtitle,
+    .menu-label,
+    .menu-item span,
+    .user-details {
+        display: none;
+    }
+    
+    .sidebar-header {
+        text-align: center;
+        padding: 8px 0;
+    }
+    
+    .sidebar-logo {
+        justify-content: center;
+    }
+    
+    .sidebar-logo i {
+        font-size: 18px;
+    }
+    
+    .menu-item {
+        justify-content: center;
+        padding: 10px 8px;
+    }
+    
+    .menu-item i {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    .user-profile {
+        justify-content: center;
+    }
+    
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 12px;
+    }
+}
+
+/* Hide toggle button and backdrop - not needed anymore */
+.sidebar-toggle,
+.sidebar-backdrop {
+    display: none !important;
 }

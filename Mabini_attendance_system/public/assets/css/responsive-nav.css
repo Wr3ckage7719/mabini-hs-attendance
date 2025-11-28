@@ -1,0 +1,73 @@
+/* Responsive Sidebar Navigation */
+
+/* Desktop - Sidebar always visible */
+.admin-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 260px;
+    height: 100vh;
+    transition: transform 0.3s ease;
+}
+
+.admin-main {
+    margin-left: 260px;
+}
+
+/* Tablet/Mobile - Collapsible sidebar */
+@media (max-width: 1023px) {
+    .admin-sidebar {
+        transform: translateX(-100%);
+        z-index: 1050;
+    }
+    
+    .admin-sidebar.show {
+        transform: translateX(0);
+    }
+    
+    .admin-main {
+        margin-left: 0;
+    }
+    
+    /* Hamburger Toggle Button */
+    .sidebar-toggle {
+        display: block !important;
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        z-index: 1051;
+        background: var(--bs-primary);
+        color: white;
+        border: none;
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        font-size: 20px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .sidebar-toggle:active {
+        transform: scale(0.95);
+    }
+    
+    /* Backdrop Overlay */
+    .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1049;
+    }
+    
+    .sidebar-backdrop.show {
+        display: block;
+    }
+}
+
+/* Desktop - Hide toggle button */
+@media (min-width: 1024px) {
+    .sidebar-toggle {
+        display: none !important;
+    }
+}

@@ -413,8 +413,63 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('[Admin] Restore user from session failed:', e);
     }
 
+    // Initialize responsive features
+    initResponsiveTables();
+
     // Refresh profile in background (non-fatal)
     refreshUserProfile().catch(e => console.warn('[Admin] Profile refresh failed:', e));
 });
+
+// ============================================================================
+// RESPONSIVE NAVIGATION FUNCTIONS
+// ============================================================================
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const backdrop = document.querySelector('.sidebar-backdrop');
+    sidebar.classList.toggle('show');
+    backdrop.classList.toggle('show');
+    if (window.innerWidth <= 1023) {
+        document.body.style.overflow = sidebar.classList.contains('show') ? 'hidden' : '';
+    }
+}
+
+function closeSidebar() {
+    document.querySelector('.admin-sidebar').classList.remove('show');
+    document.querySelector('.sidebar-backdrop').classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// Close sidebar when window is resized to desktop
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 1023) closeSidebar();
+});
+
+// Close sidebar when clicking menu items on tablet/mobile
+if (window.innerWidth <= 1023) {
+    document.querySelectorAll('.admin-sidebar .menu-item').forEach(item => {
+        item.addEventListener('click', closeSidebar);
+    });
+}
+
+// Initialize responsive tables
+function initResponsiveTables() {
+    const tables = document.querySelectorAll('.table-responsive');
+    
+    tables.forEach(table => {
+        function checkScroll() {
+            const hasScroll = table.scrollWidth > table.clientWidth;
+            table.classList.toggle('has-scroll', hasScroll);
+        }
+        
+        checkScroll();
+        table.addEventListener('scroll', checkScroll);
+        window.addEventListener('resize', checkScroll);
+    });
+}
+
+// Make functions global
+window.toggleSidebar = toggleSidebar;
+window.closeSidebar = closeSidebar;
 
 console.log('[Admin] admin-common.js module loaded');

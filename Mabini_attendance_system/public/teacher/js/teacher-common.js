@@ -243,8 +243,60 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Failed to load user profile from session', e);
     }
     
+    // Initialize responsive features
+    initResponsiveTables();
+    
     // Verify authentication
     checkAuth().catch(err => console.error('Auth check failed:', err));
 });
+
+// Sidebar toggle functions for responsive navigation
+function toggleSidebar() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const backdrop = document.querySelector('.sidebar-backdrop');
+    sidebar.classList.toggle('show');
+    backdrop.classList.toggle('show');
+    if (window.innerWidth <= 1023) {
+        document.body.style.overflow = sidebar.classList.contains('show') ? 'hidden' : '';
+    }
+}
+
+function closeSidebar() {
+    document.querySelector('.admin-sidebar').classList.remove('show');
+    document.querySelector('.sidebar-backdrop').classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// Close sidebar when clicking menu items on tablet/mobile
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 1023) closeSidebar();
+});
+
+// Close sidebar when clicking menu items on tablet/mobile
+if (window.innerWidth <= 1023) {
+    document.querySelectorAll('.admin-sidebar .menu-item').forEach(item => {
+        item.addEventListener('click', closeSidebar);
+    });
+}
+
+// Initialize responsive tables
+function initResponsiveTables() {
+    const tables = document.querySelectorAll('.table-responsive');
+    
+    tables.forEach(table => {
+        function checkScroll() {
+            const hasScroll = table.scrollWidth > table.clientWidth;
+            table.classList.toggle('has-scroll', hasScroll);
+        }
+        
+        checkScroll();
+        table.addEventListener('scroll', checkScroll);
+        window.addEventListener('resize', checkScroll);
+    });
+}
+
+// Make functions global
+window.toggleSidebar = toggleSidebar;
+window.closeSidebar = closeSidebar;
 
 console.log('Teacher common script ready');

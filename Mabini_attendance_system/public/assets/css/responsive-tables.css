@@ -1,0 +1,163 @@
+/* Responsive Tables - Horizontal Scroll */
+
+.table-responsive {
+    position: relative;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop - No scroll needed */
+@media (min-width: 1024px) {
+    .table-responsive {
+        overflow-x: visible;
+    }
+}
+
+/* Tablet/Mobile - Scrollable with indicator */
+@media (max-width: 1023px) {
+    .table-responsive {
+        border-radius: 8px;
+        margin: 0 -16px;
+        padding: 0 16px;
+    }
+    
+    /* Scroll indicator shadow */
+    .table-responsive::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 30px;
+        background: linear-gradient(to left, rgba(0,0,0,0.15), transparent);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .table-responsive.has-scroll::after {
+        opacity: 1;
+    }
+    
+    /* Sticky first column (name/ID) */
+    .table thead th:first-child,
+    .table tbody td:first-child {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 1;
+    }
+    
+    [data-theme="dark"] .table thead th:first-child,
+    [data-theme="dark"] .table tbody td:first-child {
+        background: var(--bs-dark-bg-subtle);
+    }
+}
+
+/* Mobile - Compact cells */
+@media (max-width: 767px) {
+    .table {
+        font-size: 13px;
+    }
+    
+    .table thead th,
+    .table tbody td {
+        padding: 10px 8px;
+        white-space: nowrap;
+    }
+    
+    .table .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+
+/* Responsive Forms */
+@media (max-width: 767px) {
+    /* Larger touch targets on mobile */
+    .form-control,
+    .form-select {
+        min-height: 44px;
+        font-size: 16px; /* Prevents iOS zoom */
+    }
+    
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+    
+    /* Full width buttons on mobile */
+    .btn {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    
+    /* Stack modal buttons */
+    .modal-footer {
+        flex-direction: column-reverse;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        margin: 4px 0 !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .btn {
+        min-width: 120px;
+    }
+}
+
+/* Responsive Modals */
+
+/* Desktop - Centered */
+@media (min-width: 768px) {
+    .modal-dialog {
+        max-width: 600px;
+        margin: 1.75rem auto;
+    }
+    
+    .modal-dialog-lg {
+        max-width: 900px;
+    }
+}
+
+/* Mobile - Full screen */
+@media (max-width: 767px) {
+    .modal-dialog {
+        margin: 0;
+        max-width: 100%;
+        height: 100%;
+    }
+    
+    .modal-content {
+        height: 100%;
+        border-radius: 0;
+        border: none;
+    }
+    
+    .modal-header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: white;
+    }
+    
+    .modal-body {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .modal-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 1;
+        background: white;
+    }
+    
+    [data-theme="dark"] .modal-header,
+    [data-theme="dark"] .modal-footer {
+        background: var(--bs-dark-bg-subtle);
+    }
+}

@@ -475,15 +475,18 @@
         // Load profile data
         async function loadProfile() {
             try {
-                // Find student by ID from session
-                const studentResult = await dataClient.query('students', {
-                    filter: { id: currentStudent.id },
-                    single: true
-                });
+                // Find student by ID from session using getOne method
+                const studentResult = await dataClient.getOne('students', currentStudent.id);
 
                 console.log('Load profile result:', studentResult);
                 
-                const profile = studentResult;
+                if (studentResult.error) {
+                    console.error('Error loading profile:', studentResult.error);
+                    showAlert('Failed to load profile: ' + studentResult.error, 'error');
+                    return;
+                }
+                
+                const profile = studentResult.data;
                 if (profile) {
                     currentStudent = profile;
                     

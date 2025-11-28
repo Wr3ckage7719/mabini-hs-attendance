@@ -472,13 +472,21 @@
         // Load profile data
         async function loadProfile() {
             try {
-                // Find teacher by email
-                const teacher = await dataClient.query('teachers', {
-                    filter: { email: userData.email },
-                    single: true
-                });
+                // Find teacher by email using getAll with filters
+                const teacherResult = await dataClient.getAll('teachers', [
+                    { field: 'email', operator: '==', value: userData.email }
+                ]);
 
-                console.log('Load profile result:', teacher);
+                console.log('Load profile result:', teacherResult);
+                
+                if (teacherResult.error) {
+                    console.error('Error loading profile:', teacherResult.error);
+                    showAlert('Failed to load profile: ' + teacherResult.error, 'error');
+                    return;
+                }
+                
+                const teachers = teacherResult.data || [];
+                const teacher = teachers.length > 0 ? teachers[0] : null;
                 
                 if (teacher) {
                     currentTeacher = teacher;

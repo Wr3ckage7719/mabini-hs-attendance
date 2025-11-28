@@ -320,29 +320,15 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Profile Photo</label>
-                        <div class="form-description">Upload a profile picture (optional). Preview will show after selection.</div>
-                        <div style="display:flex;gap:1rem;align-items:center;">
-                            <img id="photoPreview" src="" alt="Profile preview" style="width:80px;height:80px;border-radius:50%;object-fit:cover;display:none;border:2px solid rgba(148,163,184,0.15);" />
-                            <div style="display:flex;flex-direction:column;gap:0.5rem;flex:1;">
-                                <input type="file" id="photoInput" accept="image/*" class="form-input" style="padding:0.35rem;"/>
-                                <button type="button" id="removePhotoBtn" class="btn-secondary" style="width:fit-content;">Remove Photo</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
                         <label class="form-label">Department</label>
-                        <div class="form-description">Assigned by administrator</div>
-                        <input type="text" id="department" class="form-input" readonly>
+                        <div class="form-description">Your department</div>
+                        <input type="text" id="department" class="form-input" placeholder="e.g., Science, Mathematics">
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Position</label>
-                        <div class="form-description">Assigned by administrator</div>
-                        <input type="text" id="position" class="form-input" readonly>
+                        <div class="form-description">Your position/role</div>
+                        <input type="text" id="position" class="form-input" placeholder="e.g., Teacher, Department Head">
                     </div>
                 </div>
             </div>
@@ -356,51 +342,6 @@
                         <label class="form-label">Phone Number</label>
                         <div class="form-description">Your contact number</div>
                         <input type="tel" id="phone" class="form-input" placeholder="09XXXXXXXXX">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Contact Email</label>
-                        <div class="form-description">Alternative contact email</div>
-                        <input type="email" id="contactEmail" class="form-input" placeholder="your.email@example.com">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Address</label>
-                    <div class="form-description">Your complete address</div>
-                    <textarea id="address" class="form-input" placeholder="Enter your address"></textarea>
-                </div>
-            </div>
-
-            <!-- Personal Information -->
-            <div class="settings-section">
-                <h2 class="section-title">Personal Information</h2>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Sex</label>
-                        <select id="sex" class="form-select">
-                            <option value="">Select</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Nationality</label>
-                        <input type="text" id="nationality" class="form-input" placeholder="e.g., Filipino">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Birth Date</label>
-                        <input type="date" id="birthDate" class="form-input">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Birth Place</label>
-                        <input type="text" id="birthPlace" class="form-input" placeholder="City, Province">
                     </div>
                 </div>
             </div>
@@ -492,28 +433,15 @@
                     currentTeacher = teacher;
                     const profile = teacher;
                     
-                    // Populate form fields - use correct column names from teachers table
-                    document.getElementById('fullName').value = profile.full_name || '';
+                    // Populate form fields - use actual database columns
+                    // Combine first_name and last_name for display
+                    const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+                    document.getElementById('fullName').value = fullName;
                     document.getElementById('email').value = profile.email || '';
                     document.getElementById('department').value = profile.department || '';
                     document.getElementById('position').value = profile.position || '';
                     document.getElementById('phone').value = profile.phone || '';
-                    document.getElementById('contactEmail').value = profile.contact_email || '';
-                    document.getElementById('address').value = profile.address || '';
-                    document.getElementById('sex').value = profile.sex || '';
-                    document.getElementById('nationality').value = profile.nationality || '';
-                    document.getElementById('birthDate').value = profile.birth_date || '';
-                    document.getElementById('birthPlace').value = profile.birth_place || '';
-                    // Load profile photo if present
-                    if (profile.profile_photo) {
-                        profilePhotoBase64 = profile.profile_photo;
-                        photoPreview.src = profilePhotoBase64;
-                        photoPreview.style.display = 'block';
-                    } else {
-                        profilePhotoBase64 = null;
-                        photoPreview.src = '';
-                        photoPreview.style.display = 'none';
-                    }
+                    // Note: employee_number is read-only, managed by admin
                 } else {
                     console.error('Failed to load profile:', result.error);
                     showAlert('Failed to load profile: ' + (result.error || 'Unknown error'), 'error');
@@ -533,17 +461,18 @@
             saveBtn.innerHTML = 'Saving...';
 
             try {
+                // Split full name into first and last name
+                const fullName = document.getElementById('fullName').value.trim();
+                const nameParts = fullName.split(' ');
+                const firstName = nameParts[0] || '';
+                const lastName = nameParts.slice(1).join(' ') || '';
+                
                 const profileData = {
-                    full_name: document.getElementById('fullName').value.trim(),
-                    phone: document.getElementById('phone').value.trim(),
-                    contact_email: document.getElementById('contactEmail').value.trim(),
-                    address: document.getElementById('address').value.trim(),
-                    sex: document.getElementById('sex').value,
-                    nationality: document.getElementById('nationality').value.trim(),
-                    birth_date: document.getElementById('birthDate').value,
-                    birth_place: document.getElementById('birthPlace').value.trim(),
-                    updated_at: new Date().toISOString(),
-                    profile_photo: profilePhotoBase64
+                    first_name: firstName,
+                    last_name: lastName,
+                    phone: document.getElementById('phone').value.trim() || null,
+                    department: document.getElementById('department').value.trim() || null,
+                    position: document.getElementById('position').value.trim() || null
                 };
 
                 console.log('Updating teacher profile:', currentTeacher.id, profileData);
@@ -588,32 +517,6 @@
         });
 
         // Profile photo data (base64)
-        let profilePhotoBase64 = null;
-
-        // Handle photo input
-        const photoInput = document.getElementById('photoInput');
-        const photoPreview = document.getElementById('photoPreview');
-        const removePhotoBtn = document.getElementById('removePhotoBtn');
-
-        photoInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                profilePhotoBase64 = evt.target.result;
-                photoPreview.src = profilePhotoBase64;
-                photoPreview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        });
-
-        removePhotoBtn.addEventListener('click', () => {
-            profilePhotoBase64 = null;
-            photoPreview.src = '';
-            photoPreview.style.display = 'none';
-            photoInput.value = '';
-        });
-
         // Change Password handler
         document.getElementById('changePasswordBtn').addEventListener('click', async () => {
             const current = document.getElementById('currentPassword').value.trim();

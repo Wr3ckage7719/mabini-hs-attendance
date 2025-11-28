@@ -145,13 +145,15 @@ async function updateProfile(teacher) {
 async function loadStats() {
     try {
         // Get all students
-        const students = await dataClient.getAll('students');
+        const studentsResult = await dataClient.getAll('students');
+        const students = studentsResult.data || studentsResult || [];
         const totalStudentsEl = document.getElementById('totalStudents');
         if (totalStudentsEl) totalStudentsEl.textContent = students.length;
 
         // Get active sections
-        const sections = await dataClient.getAll('sections');
-        const activeSections = sections.filter(s => s.status === 'active' || !s.status);
+        const sectionsResult = await dataClient.getAll('sections');
+        const allSections = sectionsResult.data || sectionsResult || [];
+        const activeSections = allSections.filter(s => s.status === 'active' || !s.status);
         const activeClassesEl = document.getElementById('activeClasses');
         if (activeClassesEl) activeClassesEl.textContent = activeSections.length;
 
@@ -160,12 +162,13 @@ async function loadStats() {
         const todayStart = new Date(today + 'T00:00:00').toISOString();
         const todayEnd = new Date(today + 'T23:59:59').toISOString();
         
-        const todayAttendance = await dataClient.query('attendance', {
+        const attendanceResult = await dataClient.query('attendance', {
             filter: {
                 date: today,
                 status: { in: ['present', 'late'] }
             }
         });
+        const todayAttendance = attendanceResult.data || attendanceResult || [];
 
         const presentToday = todayAttendance.length;
         const todayPresentEl = document.getElementById('todayPresent');

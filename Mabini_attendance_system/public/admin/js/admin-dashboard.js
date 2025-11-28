@@ -29,14 +29,16 @@ function updateUserProfile(profile) {
 async function loadStats() {
     try {
         // Get total students
-        const students = await dataClient.getAll('students');
+        const studentsResult = await dataClient.getAll('students');
+        const students = studentsResult.data || studentsResult || [];
         const totalStudentsEl = document.getElementById('totalStudents');
         if (totalStudentsEl) {
             totalStudentsEl.textContent = students.length;
         }
         
         // Get total sections (blocks)
-        const sections = await dataClient.getAll('sections');
+        const sectionsResult = await dataClient.getAll('sections');
+        const sections = sectionsResult.data || sectionsResult || [];
         const totalBlocksEl = document.getElementById('totalBlocks');
         if (totalBlocksEl) {
             totalBlocksEl.textContent = sections.length;
@@ -48,11 +50,12 @@ async function loadStats() {
         const todayEnd = new Date(today + 'T23:59:59').toISOString();
         
         // Query entrance logs for today
-        const todayLogs = await dataClient.query('entrance_logs', {
+        const logsResult = await dataClient.query('entrance_logs', {
             filter: {
                 timestamp: { gte: todayStart, lte: todayEnd }
             }
         });
+        const todayLogs = logsResult.data || logsResult || [];
         
         // Count unique students who checked in today
         const uniqueStudents = new Set(todayLogs.map(log => log.student_id));

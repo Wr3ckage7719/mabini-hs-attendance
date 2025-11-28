@@ -364,12 +364,6 @@
                         <div class="form-description">Your contact number</div>
                         <input type="tel" id="phone" class="form-input" placeholder="09XXXXXXXXX">
                     </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Contact Email</label>
-                        <div class="form-description">Alternative contact email</div>
-                        <input type="email" id="contactEmail" class="form-input" placeholder="your.email@example.com">
-                    </div>
                 </div>
 
                 <div class="form-group">
@@ -466,13 +460,11 @@
                     document.getElementById('fullName').value = profile.full_name || '';
                     document.getElementById('email').value = profile.email || '';
                     document.getElementById('phone').value = profile.phone || '';
-                    document.getElementById('contactEmail').value = profile.contact_email || '';
                     document.getElementById('address').value = profile.address || '';
                     document.getElementById('sex').value = profile.sex || '';
                     document.getElementById('nationality').value = profile.nationality || '';
                     document.getElementById('birthDate').value = profile.birth_date || '';
                     document.getElementById('birthPlace').value = profile.birth_place || '';
-                    document.getElementById('nationality').value = profile.nationality || '';
                     document.getElementById('birthDate').value = profile.birth_date || '';
                     document.getElementById('birthPlace').value = profile.birth_place || '';
                     // Load profile photo if present
@@ -507,7 +499,6 @@
                 const profileData = {
                     full_name: document.getElementById('fullName').value.trim(),
                     phone: document.getElementById('phone').value.trim(),
-                    contact_email: document.getElementById('contactEmail').value.trim(),
                     address: document.getElementById('address').value.trim(),
                     sex: document.getElementById('sex').value,
                     nationality: document.getElementById('nationality').value.trim(),

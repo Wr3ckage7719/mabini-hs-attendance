@@ -352,34 +352,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Student Number</label>
-                        <div class="form-description">Assigned by administrator</div>
-                        <input type="text" id="studentId" class="form-input" readonly>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Grade Level</label>
-                        <div class="form-description">Assigned by administrator</div>
-                        <input type="text" id="gradeLevel" class="form-input" readonly>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Section</label>
-                        <div class="form-description">Assigned by administrator</div>
-                        <input type="text" id="section" class="form-input" readonly>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Strand (for SHS)</label>
-                        <div class="form-description">Assigned by administrator</div>
-                        <input type="text" id="strand" class="form-input" readonly>
-                    </div>
-                </div>
             </div>
 
             <!-- Contact Information -->
@@ -493,14 +465,13 @@
                     // Populate form fields - use correct column names from students table
                     document.getElementById('fullName').value = profile.full_name || '';
                     document.getElementById('email').value = profile.email || '';
-                    document.getElementById('studentId').value = profile.student_id || '';
-                    document.getElementById('gradeLevel').value = profile.grade_level || '';
-                    document.getElementById('section').value = profile.section || '';
-                    document.getElementById('strand').value = profile.strand || '';
                     document.getElementById('phone').value = profile.phone || '';
                     document.getElementById('contactEmail').value = profile.contact_email || '';
                     document.getElementById('address').value = profile.address || '';
                     document.getElementById('sex').value = profile.sex || '';
+                    document.getElementById('nationality').value = profile.nationality || '';
+                    document.getElementById('birthDate').value = profile.birth_date || '';
+                    document.getElementById('birthPlace').value = profile.birth_place || '';
                     document.getElementById('nationality').value = profile.nationality || '';
                     document.getElementById('birthDate').value = profile.birth_date || '';
                     document.getElementById('birthPlace').value = profile.birth_place || '';

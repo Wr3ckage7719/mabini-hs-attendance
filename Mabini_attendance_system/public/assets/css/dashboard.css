@@ -1,9 +1,15 @@
-/* Modern Reset & Base */
+/* Modern Reset & Base - Theme Aware */
 body.portal-bg {
-    background: linear-gradient(135deg, #f6f8ff 0%, #f0f3ff 100%);
+    background: linear-gradient(135deg, #f6f8ff 0%, #f0f3ff 100%); /* light mode */
     font-family: 'Inter', sans-serif;
     color: #2d3748;
     min-height: 100vh;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+html[data-theme='dark'] body.portal-bg {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); /* dark mode */
+    color: #e2e8f0;
 }
 
 /* Header Redesign */
@@ -256,15 +262,21 @@ body.portal-bg {
 .profile-status-label.not-enrolled {
 	color: #dc2626;
 }
-/* Portal Header */
+/* Portal Header - Theme Aware */
 .portal-header {
 	/* full-bleed header so elements can sit near viewport edges */
 	width: 100%;
-	background: #111827; /* dark header to match page theme */
-	border-bottom: 1.5px solid rgba(255,255,255,0.06);
+	background: #ffffff; /* light mode: white background */
+	border-bottom: 1.5px solid rgba(0,0,0,0.1);
 	padding: 0.8rem 0;
 	margin-bottom: 1.5rem;
 	box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+	transition: background 0.3s ease, border-color 0.3s ease;
+}
+/* Dark mode header */
+html[data-theme='dark'] .portal-header {
+	background: #111827;
+	border-bottom: 1.5px solid rgba(255,255,255,0.06);
 }
 .portal-header-content {
 	/* span full viewport so logo and actions can sit very close to edges */
@@ -277,24 +289,27 @@ body.portal-bg {
 	padding: 0 10px; /* small padding to avoid touching the absolute edge */
 }
 .portal-logo {
-	/* Make the STUDENT label bright and a touch larger for visibility */
+	/* Make the STUDENT/TEACHER label bright and a touch larger for visibility */
 	font-size: 1.5rem;
-	color: #ffffff;
-	/* Ensure any earlier gradient / clipped text rules are neutralized so the
-	   label renders solid white in all themes and browsers */
+	color: #111827; /* light mode: dark text */
 	background: none !important;
 	-webkit-background-clip: unset !important;
-	-webkit-text-fill-color: #ffffff !important;
+	-webkit-text-fill-color: currentColor !important;
 	letter-spacing: 1px;
 	display: flex;
 	align-items: center;
 	padding-left: 6px; /* keep it close to the left edge */
+	transition: color 0.3s ease;
+}
+/* Dark mode logo */
+html[data-theme='dark'] .portal-logo {
+	color: #ffffff;
 }
 .logo-bar {
 	display: inline-block;
 	width: 6px;
 	height: 22px;
-	background: #ffffff; /* match the logo color */
+	background: currentColor; /* inherit logo color */
 	margin-right: 10px;
 	border-radius: 4px;
 }
@@ -304,11 +319,17 @@ body.portal-bg {
 	.portal-logo { font-size: 1.7rem; }
 	.logo-bar { width: 7px; height: 24px; margin-right: 12px; }
 }
-.portal-logout {
-	color: #4b5563;
+/* Portal actions buttons - theme aware */
+.portal-logout,
+.portal-settings button {
+	color: #4b5563; /* light mode: medium gray */
 	font-size: 0.95rem;
 	cursor: pointer;
 	transition: color 0.2s;
+}
+html[data-theme='dark'] .portal-logout,
+html[data-theme='dark'] .portal-settings button {
+	color: #9ca3af; /* dark mode: lighter gray for visibility */
 }
 
 body.portal-bg {
@@ -845,11 +866,16 @@ body.portal-bg {
 
 .sun-icon {
     display: none;
+    fill: #4b5563; /* light mode icon color */
 }
 
 [data-theme="dark"] .sun-icon {
     display: block;
-    color: #f59e0b;
+    fill: #f59e0b; /* bright yellow for dark mode */
+}
+
+.moon-icon {
+    fill: #4b5563; /* light mode icon color */
 }
 
 [data-theme="dark"] .moon-icon {

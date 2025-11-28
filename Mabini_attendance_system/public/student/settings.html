@@ -5,31 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings - Student Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <script src="../assets/js/theme.js" defer></script>
     <!-- Icons removed as requested -->
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background: linear-gradient(135deg, #f6f8ff 0%, #f0f3ff 100%); /* light mode */
             min-height: 100vh;
+            color: #2d3748;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        
+        html[data-theme='dark'] body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); /* dark mode */
             color: #e2e8f0;
         }
         
         .header {
-            background: rgba(15, 23, 42, 0.95);
+            background: rgba(255, 255, 255, 0.95); /* light mode */
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+        
+        html[data-theme='dark'] .header {
+            background: rgba(15, 23, 42, 0.95); /* dark mode */
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
         }
         
         .header-title {
             font-size: 1.25rem;
             font-weight: 700;
-            color: white;
+            color: #111827; /* light mode */
+            transition: color 0.3s ease;
+        }
+        
+        html[data-theme='dark'] .header-title {
+            color: white; /* dark mode */
         }
         
         .header-actions {
@@ -112,7 +131,12 @@
             font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 1.5rem;
-            color: white;
+            color: #111827; /* light mode */
+            transition: color 0.3s ease;
+        }
+        
+        html[data-theme='dark'] .section-title {
+            color: white; /* dark mode */
         }
         
         .form-row {
@@ -130,30 +154,51 @@
         .form-label {
             font-weight: 600;
             margin-bottom: 0.5rem;
-            color: #cbd5e1;
+            color: #475569; /* light mode */
             font-size: 0.875rem;
+            transition: color 0.3s ease;
+        }
+        
+        html[data-theme='dark'] .form-label {
+            color: #cbd5e1; /* dark mode */
         }
         
         .form-description {
             font-size: 0.75rem;
-            color: #94a3b8;
+            color: #64748b; /* light mode */
             margin-bottom: 0.5rem;
+            transition: color 0.3s ease;
+        }
+        
+        html[data-theme='dark'] .form-description {
+            color: #94a3b8; /* dark mode */
         }
         
         .form-input, .form-select {
             width: 100%;
             padding: 0.75rem 1rem;
-            background: rgba(15, 23, 42, 0.8);
-            border: 2px solid rgba(148, 163, 184, 0.2);
+            background: #ffffff; /* light mode */
+            border: 2px solid rgba(0, 0, 0, 0.1);
             border-radius: 10px;
-            color: white;
+            color: #111827;
             font-size: 0.95rem;
             transition: all 0.3s;
+        }
+        
+        html[data-theme='dark'] .form-input,
+        html[data-theme='dark'] .form-select {
+            background: rgba(15, 23, 42, 0.8); /* dark mode */
+            border: 2px solid rgba(148, 163, 184, 0.2);
+            color: white;
         }
         
         .form-input:focus, .form-select:focus {
             outline: none;
             border-color: #60a5fa;
+        }
+        
+        html[data-theme='dark'] .form-input:focus,
+        html[data-theme='dark'] .form-select:focus {
             background: rgba(15, 23, 42, 0.95);
         }
         
@@ -240,19 +285,39 @@
             resize: vertical;
             font-family: inherit;
         }
+        
+        .settings-section {
+            background: #ffffff; /* light mode */
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        html[data-theme='dark'] .settings-section {
+            background: rgba(15, 23, 42, 0.6); /* dark mode */
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-title">STUDENT SETTINGS</div>
         <div class="header-actions">
-            <a class="text-action" href="login.html">Log in</a>
+            <div id="themeToggle" class="theme-toggle-wrap" style="display:inline-flex; align-items:center; margin-right:0.6rem;">
+                <label class="toggle-switch" style="display:inline-flex; align-items:center; cursor:pointer;">
+                    <input id="themeToggleInput" type="checkbox" role="switch" aria-label="Toggle theme" style="display:none;">
+                    <span class="switch-track" style="width:44px; height:24px; display:inline-block; border-radius:999px; padding:2px; box-sizing:content-box; background:#e5e7eb;">
+                        <span class="switch-thumb" style="display:inline-block; width:20px; height:20px; background:#fff; border-radius:50%; transition:transform .18s ease; box-shadow:0 1px 2px rgba(0,0,0,0.1); transform:translateX(0);"></span>
+                    </span>
+                </label>
+            </div>
+            <a class="text-action" href="dashboard.html">Back to Dashboard</a>
         </div>
     </div>
 
     <div class="container">
-        <a href="dashboard.html" class="back-link">Back to Dashboard</a>
-
         <div id="alert-container"></div>
 
         <form id="profile-form">
@@ -387,30 +452,40 @@
     <script type="module">
         import { authClient } from '../js/auth-client.js';
         import { dataClient } from '../js/data-client.js';
-        import { protectPage } from '../js/session-guard.js';
 
         let userData = null;
         let currentStudent = null;
 
-        // Require authentication
-        await protectPage();
-        userData = await authClient.getCurrentUser();
-        console.log('Current user:', userData);
+        // Check authentication via sessionStorage (student login)
+        const studentData = sessionStorage.getItem('studentData');
+        const userRole = sessionStorage.getItem('userRole');
+        
+        if (!studentData || userRole !== 'student') {
+            window.location.href = 'login.html';
+            throw new Error('Not authenticated');
+        }
+        
+        const student = JSON.parse(studentData);
+        currentStudent = student;
+        
+        // Set userData for compatibility with existing code
+        userData = { email: student.email };
+        console.log('Current student:', currentStudent);
 
         // Load profile data
         async function loadProfile() {
             try {
-                // Find student by email
-                const student = await dataClient.query('students', {
-                    filter: { email: userData.email },
+                // Find student by ID from session
+                const studentResult = await dataClient.query('students', {
+                    filter: { id: currentStudent.id },
                     single: true
                 });
 
-                console.log('Load profile result:', student);
+                console.log('Load profile result:', studentResult);
                 
-                if (student) {
-                    currentStudent = student;
-                    const profile = student;
+                const profile = studentResult;
+                if (profile) {
+                    currentStudent = profile;
                     
                     // Populate form fields
                     document.getElementById('fullName').value = profile.full_name || profile.fullName || (profile.first_name + ' ' + profile.last_name) || '';
@@ -437,8 +512,8 @@
                         photoPreview.style.display = 'none';
                     }
                 } else {
-                    console.error('Failed to load profile:', result.error);
-                    showAlert('Failed to load profile: ' + (result.error || 'Unknown error'), 'error');
+                    console.error('Failed to load profile');
+                    showAlert('Failed to load profile: Student not found', 'error');
                 }
             } catch (error) {
                 console.error('Load profile error:', error);

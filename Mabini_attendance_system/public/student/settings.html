@@ -546,16 +546,25 @@
                     profile_photo: profilePhotoBase64
                 };
 
-                await dataClient.update('students', currentStudent.id, profileData);
-                console.log('Update complete');
+                console.log('Updating student profile:', currentStudent.id, profileData);
+                const result = await dataClient.update('students', currentStudent.id, profileData);
+                console.log('Update result:', result);
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
 
                 showAlert('Profile updated successfully!', 'success');
+                
+                // Update session storage with new data
+                currentStudent = { ...currentStudent, ...result.data };
+                sessionStorage.setItem('studentData', JSON.stringify(currentStudent));
                 
                 // Reload profile to show updated data
                 setTimeout(() => loadProfile(), 1000);
             } catch (error) {
                 console.error('Save error:', error);
-                showAlert('Failed to save changes. Please try again.', 'error');
+                showAlert('Failed to save changes: ' + (error.message || 'Unknown error'), 'error');
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'Save Changes';

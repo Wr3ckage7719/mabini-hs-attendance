@@ -546,25 +546,26 @@
                     profile_photo: profilePhotoBase64
                 };
 
-                await dataClient.update('teachers', currentTeacher.id, profileData);
-                const result = { success: true };
+                console.log('Updating teacher profile:', currentTeacher.id, profileData);
+                const result = await dataClient.update('teachers', currentTeacher.id, profileData);
                 console.log('Update result:', result);
 
-                if (result.success) {
-                    showAlert('Profile updated successfully!', 'success');
-                    
-                    // Update session storage
-                    userData.fullName = profileData.full_name;
-                    sessionStorage.setItem('userData', JSON.stringify(userData));
-                    
-                    // Reload profile to show updated data
-                    setTimeout(() => loadProfile(), 1000);
-                } else {
-                    showAlert(result.error || 'Failed to update profile', 'error');
+                if (result.error) {
+                    throw new Error(result.error);
                 }
+
+                showAlert('Profile updated successfully!', 'success');
+                
+                // Update session storage with new data
+                currentTeacher = { ...currentTeacher, ...result.data };
+                userData = { ...userData, ...result.data };
+                sessionStorage.setItem('teacherData', JSON.stringify(currentTeacher));
+                
+                // Reload profile to show updated data
+                setTimeout(() => loadProfile(), 1000);
             } catch (error) {
                 console.error('Save error:', error);
-                showAlert('Failed to save changes. Please try again.', 'error');
+                showAlert('Failed to save changes: ' + (error.message || 'Unknown error'), 'error');
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = 'Save Changes';

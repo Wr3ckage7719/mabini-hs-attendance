@@ -44,14 +44,19 @@
     .table tbody td:first-child {
         position: sticky;
         left: 0;
-        background: white;
+        background: var(--table-bg);
         z-index: 1;
-        box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+        box-shadow: 2px 0 4px var(--table-hover-shadow);
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
     }
     
-    [data-theme="dark"] .table thead th:first-child,
-    [data-theme="dark"] .table tbody td:first-child {
-        background: #0f1724;
+    /* Override for striped rows */
+    .table-striped tbody tr:nth-of-type(odd) td:first-child {
+        background: var(--table-striped-bg);
+    }
+    
+    .table tbody tr:hover td:first-child {
+        background: var(--table-hover-bg) !important;
     }
     
     /* Sticky action column (last column) */
@@ -59,14 +64,19 @@
     .table tbody td:last-child {
         position: sticky;
         right: 0;
-        background: white;
+        background: var(--table-bg);
         z-index: 1;
-        box-shadow: -2px 0 4px rgba(0,0,0,0.05);
+        box-shadow: -2px 0 4px var(--table-hover-shadow);
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
     }
     
-    [data-theme="dark"] .table thead th:last-child,
-    [data-theme="dark"] .table tbody td:last-child {
-        background: #0f1724;
+    /* Override for striped rows */
+    .table-striped tbody tr:nth-of-type(odd) td:last-child {
+        background: var(--table-striped-bg);
+    }
+    
+    .table tbody tr:hover td:last-child {
+        background: var(--table-hover-bg) !important;
     }
     
     /* Ensure action buttons don't wrap */
@@ -191,8 +201,18 @@
         background: white;
     }
     
+    .modal-header,
+    .modal-footer {
+        transition: background-color 0.3s ease;
+    }
+    
     [data-theme="dark"] .modal-header,
     [data-theme="dark"] .modal-footer {
-        background: var(--bs-dark-bg-subtle);
+        background: var(--panel, #1a2332);
+    }
+    
+    [data-theme="dark"] .modal-content {
+        background: var(--panel, #0f1724);
+        color: var(--text, #e2e8f0);
     }
 }

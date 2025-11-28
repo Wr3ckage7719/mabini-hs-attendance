@@ -1,19 +1,49 @@
-/* Enhanced Table Styling */
+/* Enhanced Table Styling - Dynamic Light/Dark Mode */
+
+:root {
+    /* Light mode table colors */
+    --table-bg: #ffffff;
+    --table-header-bg: #f8fafc;
+    --table-header-text: #334155;
+    --table-text: #475569;
+    --table-border: #e2e8f0;
+    --table-hover-bg: #f1f5f9;
+    --table-hover-shadow: rgba(0, 0, 0, 0.05);
+    --table-striped-bg: #fafbfc;
+    --table-accent: #3b82f6;
+}
+
+[data-theme="dark"] {
+    /* Dark mode table colors */
+    --table-bg: #0f1724;
+    --table-header-bg: #1a2332;
+    --table-header-text: #e2e8f0;
+    --table-text: #cbd5e1;
+    --table-border: #334155;
+    --table-hover-bg: #1e293b;
+    --table-hover-shadow: rgba(0, 0, 0, 0.3);
+    --table-striped-bg: #141d2e;
+    --table-accent: #60a5fa;
+}
 
 .table-responsive {
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px var(--table-hover-shadow);
+    background: var(--table-bg);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .table {
     margin-bottom: 0;
+    background: var(--table-bg);
+    transition: background-color 0.3s ease;
 }
 
 /* Table Header */
 .table thead th {
-    background: #1e293b;
-    color: white;
+    background: var(--table-header-bg);
+    color: var(--table-header-text);
     font-weight: 600;
     font-size: 13px;
     text-transform: uppercase;
@@ -21,36 +51,52 @@
     padding: 16px 12px;
     border: none;
     white-space: nowrap;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Table Body */
 .table tbody td {
     padding: 14px 12px;
     vertical-align: middle;
-    color: #475569;
+    color: var(--table-text);
     font-size: 14px;
-    border-bottom: 1px solid #f1f5f9;
-    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--table-border);
+    background: var(--table-bg);
+    transition: all 0.3s ease;
 }
 
 /* Hover Effect */
 .table tbody tr {
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    background: var(--table-bg);
 }
 
 .table tbody tr:hover {
-    background-color: #f8fafc;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background-color: var(--table-hover-bg);
+    box-shadow: 0 2px 4px var(--table-hover-shadow);
     transform: translateY(-1px);
+}
+
+.table tbody tr:hover td {
+    background-color: var(--table-hover-bg);
+    color: var(--table-header-text);
 }
 
 /* Striped Rows */
 .table-striped tbody tr:nth-of-type(odd) {
-    background-color: #fafbfc;
+    background-color: var(--table-striped-bg);
+}
+
+.table-striped tbody tr:nth-of-type(odd) td {
+    background-color: var(--table-striped-bg);
 }
 
 .table-striped tbody tr:nth-of-type(odd):hover {
-    background-color: #f1f5f9;
+    background-color: var(--table-hover-bg);
+}
+
+.table-striped tbody tr:nth-of-type(odd):hover td {
+    background-color: var(--table-hover-bg);
 }
 
 /* Action Buttons in Tables */
@@ -99,46 +145,155 @@
     }
 }
 
-/* Badge Improvements */
+/* Badge Improvements - Dynamic Theming */
 .badge {
     padding: 6px 12px;
     font-weight: 500;
     font-size: 12px;
     border-radius: 6px;
     letter-spacing: 0.3px;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .badge.bg-success {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: white;
 }
 
 .badge.bg-danger {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: white;
 }
 
 .badge.bg-warning {
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    color: white;
 }
 
 .badge.bg-primary {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: white;
 }
 
-/* Dark Mode Support */
-[data-theme="dark"] .table thead th {
-    background: #1e293b;
-    color: #ffffff;
+/* Dark mode badge adjustments for better visibility */
+[data-theme="dark"] .badge.bg-success {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
 }
 
-[data-theme="dark"] .table tbody td {
-    color: #e2e8f0;
-    border-color: #334155;
+[data-theme="dark"] .badge.bg-danger {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
 }
 
-[data-theme="dark"] .table tbody tr:hover {
-    background-color: #1e293b;
+[data-theme="dark"] .badge.bg-warning {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+    color: #1f2937;
 }
 
-[data-theme="dark"] .table tbody tr:hover td {
-    color: #f1f5f9;
+[data-theme="dark"] .badge.bg-primary {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+}
+
+/* Status-specific badges for attendance */
+.badge-active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.badge-inactive {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    color: white;
+}
+
+[data-theme="dark"] .badge-active {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+[data-theme="dark"] .badge-inactive {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+/* Action Buttons in Tables */
+.table tbody td .btn {
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    cursor: pointer;
+}
+
+.table tbody td .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.table tbody td .btn .btn-label {
+    display: inline;
+}
+
+/* Button color support for dark mode */
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+[data-theme="dark"] .btn-primary {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+}
+
+[data-theme="dark"] .btn-success {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+[data-theme="dark"] .btn-danger {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+}
+
+[data-theme="dark"] .btn-warning {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #1f2937;
+}
+
+/* Mobile - Show icons only, hide labels */
+@media (max-width: 767px) {
+    .table tbody td .btn {
+        padding: 8px 10px;
+        font-size: 16px;
+        min-width: 40px;
+        justify-content: center;
+    }
+    
+    .table tbody td .btn .btn-label {
+        display: none;
+    }
+    
+    .table tbody td .btn i {
+        margin: 0;
+    }
+}
+
+/* Tablet - Keep both icon and label */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .table tbody td .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
 }

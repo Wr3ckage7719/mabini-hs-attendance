@@ -304,5 +304,13 @@ window.doLogout = async function() {
     }
 };
 
+// Attach logout to button
+document.addEventListener('DOMContentLoaded', () => {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', doLogout);
+    }
+});
+
 // Initialize dashboard when DOM is ready
 initDashboard();

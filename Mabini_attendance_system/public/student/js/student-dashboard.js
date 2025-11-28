@@ -319,14 +319,5 @@ function formatTime(timeString) {
     }
 }
 
-// Logout function
-window.doLogout = async function() {
-    if (confirm('Are you sure you want to logout?')) {
-        sessionStorage.removeItem('studentData');
-        sessionStorage.removeItem('userRole');
-        window.location.href = 'login.html';
-    }
-};
-
 // Initialize dashboard when DOM is ready
 initDashboard();

@@ -271,6 +271,15 @@
     </div>
     <!-- Defensive theme toggle sync: ensure switch works and icons update -->
     <script>
+        // Define logout function immediately to ensure it's always available
+        window.doLogout = function() {
+            if (confirm('Are you sure you want to logout?')) {
+                sessionStorage.removeItem('studentData');
+                sessionStorage.removeItem('userRole');
+                window.location.href = 'login.html';
+            }
+        };
+        
         (function(){
             const wrapper = document.getElementById('themeToggle');
             if (!wrapper) return;

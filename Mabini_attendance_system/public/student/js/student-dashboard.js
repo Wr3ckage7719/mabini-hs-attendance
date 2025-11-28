@@ -28,7 +28,15 @@ async function initDashboard() {
             { field: 'id', operator: '==', value: student.id }
         ]);
         
-        const students = studentResult.data || studentResult || [];\n        const currentStudentData = students.length > 0 ? students[0] : null;
+        const students = studentResult.data || studentResult || [];
+        const currentStudentData = students.length > 0 ? students[0] : null;
+        
+        console.log('Database fetch result:', {
+            rawResult: studentResult,
+            students: students,
+            currentStudentData: currentStudentData,
+            fields: currentStudentData ? Object.keys(currentStudentData) : []
+        });
         
         if (!currentStudentData || currentStudentData.status !== 'active') {
             sessionStorage.removeItem('studentData');
@@ -60,14 +68,14 @@ async function updateProfile(student) {
         if (student) {
             currentStudent = student;
             
-            // Update name and email
-            const fullName = `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Student';
+            // Update name - use full_name if available, otherwise combine first_name + last_name
+            const fullName = student.full_name || `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Student';
             const studentNameEl = document.getElementById('studentName');
             if (studentNameEl) studentNameEl.textContent = fullName;
             
-            // Update student info
+            // Update student info - use student_id as primary field
             const studentIdEl = document.getElementById('studentId');
-            if (studentIdEl) studentIdEl.textContent = `Student ID: ${student.student_number || 'N/A'}`;
+            if (studentIdEl) studentIdEl.textContent = `Student ID: ${student.student_id || student.student_number || 'N/A'}`;
             
             // Update grade level, section, strand
             const gradeLevelEl = document.getElementById('gradeLevel');
@@ -79,9 +87,9 @@ async function updateProfile(student) {
             const strandEl = document.getElementById('strand');
             if (strandEl) strandEl.textContent = student.strand || 'N/A';
             
-            // Update contact info
+            // Update contact info - use phone as primary field
             const contactPhoneEl = document.getElementById('contactPhone');
-            if (contactPhoneEl) contactPhoneEl.textContent = student.contact_number || '09xxxxxxxx';
+            if (contactPhoneEl) contactPhoneEl.textContent = student.phone || student.contact_number || '09xxxxxxxx';
             
             const contactEmailEl = document.getElementById('contactEmail');
             if (contactEmailEl) contactEmailEl.textContent = student.contact_email || student.email || '';
@@ -109,7 +117,7 @@ async function updateProfile(student) {
             const studentBirthPlaceEl = document.getElementById('studentBirthPlace');
             if (studentBirthPlaceEl) studentBirthPlaceEl.textContent = student.birth_place || student.place_of_birth || 'Not provided';
             
-            // Set profile initials
+            // Set profile initials from full name
             const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
             const profileInitialsEl = document.getElementById('profileInitials');
             if (profileInitialsEl) profileInitialsEl.textContent = initials || 'ST';
@@ -131,10 +139,10 @@ async function updateProfile(student) {
         } else {
             // No student found - might be admin or teacher
             const studentNameEl = document.getElementById('studentName');
-            if (studentNameEl) studentNameEl.textContent = user.email.split('@')[0];
+            if (studentNameEl) studentNameEl.textContent = 'Student';
             
             const studentIdEl = document.getElementById('studentId');
-            if (studentIdEl) studentIdEl.textContent = `Email: ${user.email}`;
+            if (studentIdEl) studentIdEl.textContent = 'No ID';
         }
     } catch (error) {
         console.error('Error loading profile:', error);

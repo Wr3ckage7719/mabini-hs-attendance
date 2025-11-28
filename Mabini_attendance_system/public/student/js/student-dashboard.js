@@ -28,8 +28,7 @@ async function initDashboard() {
             { field: 'id', operator: '==', value: student.id }
         ]);
         
-        const currentStudentData = studentResult.data && studentResult.data.length > 0 
-            ? studentResult.data[0] : null;
+        const students = studentResult.data || studentResult || [];\n        const currentStudentData = students.length > 0 ? students[0] : null;
         
         if (!currentStudentData || currentStudentData.status !== 'active') {
             sessionStorage.removeItem('studentData');
@@ -157,35 +156,56 @@ async function loadStudentData() {
 // Load attendance statistics
 async function loadAttendanceStats(studentId) {
     try {
-        // Get attendance stats
-        const stats = await attendanceClient.getAttendanceStats(studentId);
+        // Define date range - current school year or last 6 months
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 6); // Last 6 months
         
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
+        
+        // Get attendance records from entrance_logs
+        const logsResult = await attendanceClient.getAttendanceRange(
+            studentId, 
+            startDateStr,
+            endDateStr
+        );
+        
+        const logs = logsResult.data || logsResult || [];
+        
+        // Calculate statistics from entrance logs
+        const uniqueDates = new Set();
+        logs.forEach(log => {
+            if (log.scan_time) {
+                const date = log.scan_time.split('T')[0];
+                uniqueDates.add(date);
+            }
+        });
+        
+        const daysPresent = uniqueDates.size;
+        
+        // Get total school days (approximate based on weekdays in range)
+        const totalDays = calculateSchoolDays(startDate, endDate);
+        const daysAbsent = Math.max(0, totalDays - daysPresent);
+        const attendanceRate = totalDays > 0 ? (daysPresent / totalDays) * 100 : 0;
+        
+        // Update UI
         const daysPresentEl = document.getElementById('daysPresent');
-        if (daysPresentEl) daysPresentEl.textContent = stats.totalPresent || 0;
+        if (daysPresentEl) daysPresentEl.textContent = daysPresent;
 
         const totalDaysEl = document.getElementById('totalDays');
-        if (totalDaysEl) totalDaysEl.textContent = stats.totalDays || 0;
+        if (totalDaysEl) totalDaysEl.textContent = totalDays;
 
         const daysAbsentEl = document.getElementById('daysAbsent');
-        if (daysAbsentEl) daysAbsentEl.textContent = stats.totalAbsent || 0;
+        if (daysAbsentEl) daysAbsentEl.textContent = daysAbsent;
 
         const attendanceRateEl = document.getElementById('attendanceRate');
         if (attendanceRateEl) {
-            attendanceRateEl.textContent = (stats.attendanceRate || 0).toFixed(1) + '%';
+            attendanceRateEl.textContent = attendanceRate.toFixed(1) + '%';
         }
 
         // Load attendance records for table
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 30); // Last 30 days
-        
-        const records = await attendanceClient.getAttendanceRange(
-            studentId, 
-            startDate.toISOString().split('T')[0],
-            endDate.toISOString().split('T')[0]
-        );
-        
-        loadAttendanceTable(records);
+        loadAttendanceTable(logs);
     } catch (error) {
         console.error('Error loading attendance stats:', error);
         // Set defaults
@@ -203,34 +223,73 @@ async function loadAttendanceStats(studentId) {
     }
 }
 
+// Calculate school days (weekdays) between two dates
+function calculateSchoolDays(startDate, endDate) {
+    let count = 0;
+    const current = new Date(startDate);
+    
+    while (current <= endDate) {
+        const dayOfWeek = current.getDay();
+        // Count Monday (1) to Friday (5)
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+            count++;
+        }
+        current.setDate(current.getDate() + 1);
+    }
+    
+    return count;
+}
+
 // Load attendance table
-function loadAttendanceTable(records) {
+function loadAttendanceTable(logs) {
     const tbody = document.getElementById('attendanceTableBody');
     if (!tbody) return;
 
-    if (!records || records.length === 0) {
+    if (!logs || logs.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">No attendance records found</td></tr>';
         return;
     }
 
-    // Take recent 15 records
-    const recentRecords = records.slice(-15).reverse();
+    // Group logs by date and get first entry per day
+    const logsByDate = {};
+    logs.forEach(log => {
+        if (log.scan_time) {
+            const date = log.scan_time.split('T')[0];
+            if (!logsByDate[date] || log.scan_time < logsByDate[date].scan_time) {
+                logsByDate[date] = log;
+            }
+        }
+    });
+    
+    // Convert to array and sort by date descending
+    const sortedLogs = Object.values(logsByDate)
+        .sort((a, b) => new Date(b.scan_time) - new Date(a.scan_time))
+        .slice(0, 15); // Take recent 15 records
 
-    tbody.innerHTML = recentRecords.map(record => {
-        const date = new Date(record.date).toLocaleDateString();
-        const timeIn = record.time_in ? formatTime(record.time_in) : '-';
-        const timeOut = record.time_out ? formatTime(record.time_out) : '-';
+    tbody.innerHTML = sortedLogs.map(log => {
+        const scanDate = new Date(log.scan_time);
+        const date = scanDate.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+        });
+        const timeIn = scanDate.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+        const timeOut = '-'; // Entrance logs don't track exit
+        
+        // Determine status based on time (before 8 AM = on time, after = late)
+        const hour = scanDate.getHours();
+        const status = hour < 8 ? 'present' : 'late';
         
         let statusBadge = '';
-        switch(record.status) {
+        switch(status) {
             case 'present':
                 statusBadge = '<span class="badge bg-success">Present</span>';
                 break;
             case 'late':
                 statusBadge = '<span class="badge bg-warning">Late</span>';
-                break;
-            case 'absent':
-                statusBadge = '<span class="badge bg-danger">Absent</span>';
                 break;
             default:
                 statusBadge = '<span class="badge bg-secondary">Unknown</span>';

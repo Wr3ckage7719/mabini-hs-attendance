@@ -46,29 +46,64 @@
         left: 0;
         background: white;
         z-index: 1;
+        box-shadow: 2px 0 4px rgba(0,0,0,0.05);
     }
     
     [data-theme="dark"] .table thead th:first-child,
     [data-theme="dark"] .table tbody td:first-child {
-        background: var(--bs-dark-bg-subtle);
+        background: #0f1724;
+    }
+    
+    /* Sticky action column (last column) */
+    .table thead th:last-child,
+    .table tbody td:last-child {
+        position: sticky;
+        right: 0;
+        background: white;
+        z-index: 1;
+        box-shadow: -2px 0 4px rgba(0,0,0,0.05);
+    }
+    
+    [data-theme="dark"] .table thead th:last-child,
+    [data-theme="dark"] .table tbody td:last-child {
+        background: #0f1724;
+    }
+    
+    /* Ensure action buttons don't wrap */
+    .table tbody td:last-child {
+        white-space: nowrap;
+        min-width: 120px;
     }
 }
 
-/* Mobile - Compact cells */
+/* Mobile - Compact cells and stacked buttons */
 @media (max-width: 767px) {
     .table {
-        font-size: 13px;
+        font-size: 12px;
     }
     
     .table thead th,
     .table tbody td {
-        padding: 10px 8px;
+        padding: 8px 6px;
         white-space: nowrap;
     }
     
-    .table .btn {
-        padding: 6px 10px;
-        font-size: 12px;
+    /* Stack action buttons vertically on mobile */
+    .table tbody td:last-child {
+        min-width: 80px;
+        padding: 6px 4px;
+    }
+    
+    .table tbody td:last-child .btn {
+        display: block;
+        width: 100%;
+        margin: 2px 0;
+        padding: 8px 4px;
+        font-size: 14px;
+    }
+    
+    .table tbody td:last-child .btn i {
+        font-size: 16px;
     }
 }
 

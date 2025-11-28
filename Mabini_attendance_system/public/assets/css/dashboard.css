@@ -1408,13 +1408,29 @@ body.portal-bg {
         font-size: 0.95rem;
     }
     
+    /* Make table wrapper scrollable on mobile */
+    .table-responsive-wrapper {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+    
+    html[data-theme='dark'] .table-responsive-wrapper {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
     /* Compact table cells */
     .attendance-schedule-table th,
     .attendance-schedule-table td,
     .attendance-history-table th,
     .attendance-history-table td {
-        padding: 0.5rem 0.3rem;
-        font-size: 0.8rem;
+        padding: 0.6rem 0.4rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    
+    .attendance-history-table {
+        min-width: 500px;
     }
     
     /* Badge sizes */

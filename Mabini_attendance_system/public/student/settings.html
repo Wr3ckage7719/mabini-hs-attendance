@@ -487,20 +487,20 @@
                 if (profile) {
                     currentStudent = profile;
                     
-                    // Populate form fields
-                    document.getElementById('fullName').value = profile.full_name || profile.fullName || (profile.first_name + ' ' + profile.last_name) || '';
+                    // Populate form fields - use correct column names from students table
+                    document.getElementById('fullName').value = profile.full_name || '';
                     document.getElementById('email').value = profile.email || '';
-                    document.getElementById('studentId').value = profile.student_id || profile.studentId || '';
-                    document.getElementById('gradeLevel').value = profile.grade_level || profile.gradeLevel || '';
+                    document.getElementById('studentId').value = profile.student_id || '';
+                    document.getElementById('gradeLevel').value = profile.grade_level || '';
                     document.getElementById('section').value = profile.section || '';
                     document.getElementById('strand').value = profile.strand || '';
                     document.getElementById('phone').value = profile.phone || '';
-                    document.getElementById('contactEmail').value = profile.contact_email || profile.contactEmail || '';
+                    document.getElementById('contactEmail').value = profile.contact_email || '';
                     document.getElementById('address').value = profile.address || '';
                     document.getElementById('sex').value = profile.sex || '';
                     document.getElementById('nationality').value = profile.nationality || '';
-                    document.getElementById('birthDate').value = profile.birth_date || profile.birthDate || '';
-                    document.getElementById('birthPlace').value = profile.birth_place || profile.birthPlace || '';
+                    document.getElementById('birthDate').value = profile.birth_date || '';
+                    document.getElementById('birthPlace').value = profile.birth_place || '';
                     // Load profile photo if present
                     if (profile.profile_photo) {
                         profilePhotoBase64 = profile.profile_photo;
@@ -603,6 +603,46 @@
 
         // Load profile on page load
         loadProfile();
+        
+        // Initialize theme toggle switch
+        (function initThemeToggle() {
+            const toggleInput = document.getElementById('themeToggleInput');
+            const track = document.querySelector('.switch-track');
+            const thumb = document.querySelector('.switch-thumb');
+            
+            if (!toggleInput || !track || !thumb) return;
+            
+            // Get current theme
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            
+            // Set initial state
+            if (currentTheme === 'dark') {
+                toggleInput.checked = true;
+                track.style.background = '#4f46e5';
+                thumb.style.transform = 'translateX(20px)';
+            } else {
+                toggleInput.checked = false;
+                track.style.background = '#e5e7eb';
+                thumb.style.transform = 'translateX(0)';
+            }
+            
+            // Handle toggle
+            toggleInput.addEventListener('change', (e) => {
+                const newTheme = e.target.checked ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                document.documentElement.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                
+                // Animate switch
+                if (newTheme === 'dark') {
+                    track.style.background = '#4f46e5';
+                    thumb.style.transform = 'translateX(20px)';
+                } else {
+                    track.style.background = '#e5e7eb';
+                    thumb.style.transform = 'translateX(0)';
+                }
+            });
+        })();
     </script>
 </body>
 </html>

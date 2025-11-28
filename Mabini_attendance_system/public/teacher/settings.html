@@ -484,18 +484,18 @@
                     currentTeacher = teacher;
                     const profile = teacher;
                     
-                    // Populate form fields
-                    document.getElementById('fullName').value = profile.full_name || profile.fullName || (profile.first_name + ' ' + profile.last_name) || '';
+                    // Populate form fields - use correct column names from teachers table
+                    document.getElementById('fullName').value = profile.full_name || '';
                     document.getElementById('email').value = profile.email || '';
                     document.getElementById('department').value = profile.department || '';
                     document.getElementById('position').value = profile.position || '';
                     document.getElementById('phone').value = profile.phone || '';
-                    document.getElementById('contactEmail').value = profile.contact_email || profile.contactEmail || '';
+                    document.getElementById('contactEmail').value = profile.contact_email || '';
                     document.getElementById('address').value = profile.address || '';
                     document.getElementById('sex').value = profile.sex || '';
                     document.getElementById('nationality').value = profile.nationality || '';
-                    document.getElementById('birthDate').value = profile.birth_date || profile.birthDate || '';
-                    document.getElementById('birthPlace').value = profile.birth_place || profile.birthPlace || '';
+                    document.getElementById('birthDate').value = profile.birth_date || '';
+                    document.getElementById('birthPlace').value = profile.birth_place || '';
                     // Load profile photo if present
                     if (profile.profile_photo) {
                         profilePhotoBase64 = profile.profile_photo;

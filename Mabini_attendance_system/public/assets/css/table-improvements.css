@@ -12,7 +12,7 @@
 
 /* Table Header */
 .table thead th {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: #1e293b;
     color: white;
     font-weight: 600;
     font-size: 13px;
@@ -92,10 +92,20 @@
 }
 
 /* Dark Mode Support */
+[data-theme="dark"] .table thead th {
+    background: #1e293b;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .table tbody td {
+    color: #e2e8f0;
+    border-color: #334155;
+}
+
 [data-theme="dark"] .table tbody tr:hover {
     background-color: #1e293b;
 }
 
-[data-theme="dark"] .table tbody td {
-    border-color: #334155;
+[data-theme="dark"] .table tbody tr:hover td {
+    color: #f1f5f9;
 }

@@ -106,7 +106,7 @@ body{
   box-sizing:border-box;
 }
 [data-theme="dark"] .admin-sidebar{
-  background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  background: #0f1724;
   border-right: 1px solid var(--border);
 }
 .admin-sidebar .nav-icon{display:block;margin:12px 0;text-align:center;color:var(--muted)}

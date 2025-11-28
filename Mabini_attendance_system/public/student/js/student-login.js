@@ -114,6 +114,13 @@ loginForm.addEventListener('submit', async (e) => {
         sessionStorage.setItem('studentData', JSON.stringify(student));
         sessionStorage.setItem('userRole', 'student');
         
+        // Check if this is a first login after password retrieval
+        // You can add a flag in the database or check if password was recently reset
+        // For now, we'll check if password hasn't been changed yet
+        if (!sessionStorage.getItem('passwordChanged')) {
+            sessionStorage.setItem('showPasswordPrompt', 'true');
+        }
+        
         showAlert('Login successful! Redirecting...', 'success');
         // Redirect to student dashboard
         setTimeout(() => {

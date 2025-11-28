@@ -374,6 +374,56 @@
                 </button>
             </div>
         </form>
+
+        <!-- Change Password Section -->
+        <form id="password-form">
+            <div class="settings-section">
+                <h2 class="section-title">Change Password</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" id="currentPassword" class="form-input" placeholder="Enter your current password">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" id="newPassword" class="form-input" placeholder="Enter your new password">
+                        <div class="form-description">Password must be at least 8 characters, include uppercase, lowercase and a number.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" id="confirmNewPassword" class="form-input" placeholder="Re-enter your new password">
+                    </div>
+                </div>
+
+                <div style="margin-top:1rem; display:flex; gap:1rem; align-items:center; flex-wrap: wrap;">
+                    <button type="button" id="changePasswordBtn" class="btn-primary">Update Password</button>
+                    <div id="changePasswordStatus" style="color:#cbd5e1; font-size:0.95rem;"></div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Password Change Prompt Modal -->
+    <div id="passwordPromptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; padding:2rem; border-radius:16px; max-width:500px; width:90%; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+            <h2 style="color:#111827; margin-bottom:1rem; font-size:1.5rem;">Welcome! Please Change Your Password</h2>
+            <p style="color:#64748b; margin-bottom:1.5rem; line-height:1.6;">
+                For your security, we recommend changing your password after retrieving your account. 
+                Please go to Settings to update your password.
+            </p>
+            <div style="display:flex; gap:1rem; justify-content:flex-end;">
+                <button id="remindLaterBtn" style="background:#94a3b8; color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                    Remind Me Later
+                </button>
+                <button id="goToSettingsBtn" style="background:#001f5b; color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                    Go to Settings
+                </button>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -534,6 +584,74 @@
             photoPreview.src = '';
             photoPreview.style.display = 'none';
             photoInput.value = '';
+        });
+
+        // Change Password handler
+        document.getElementById('changePasswordBtn').addEventListener('click', async () => {
+            const current = document.getElementById('currentPassword').value.trim();
+            const next = document.getElementById('newPassword').value.trim();
+            const confirm = document.getElementById('confirmNewPassword').value.trim();
+            const statusEl = document.getElementById('changePasswordStatus');
+
+            function showLocalError(msg) {
+                statusEl.textContent = msg;
+                statusEl.style.color = '#fca5a5';
+                setTimeout(() => statusEl.textContent = '', 5000);
+            }
+
+            // Basic client-side validation
+            if (!current) return showLocalError('Enter your current password');
+            if (!next) return showLocalError('Enter a new password');
+            if (next !== confirm) return showLocalError('New passwords do not match');
+            if (next.length < 8) return showLocalError('Password must be at least 8 characters');
+            if (!/[A-Z]/.test(next)) return showLocalError('Include at least one uppercase letter');
+            if (!/[a-z]/.test(next)) return showLocalError('Include at least one lowercase letter');
+            if (!/[0-9]/.test(next)) return showLocalError('Include at least one number');
+
+            // Verify current password matches stored password
+            if (currentStudent.password !== current) {
+                return showLocalError('Current password is incorrect');
+            }
+
+            const btn = document.getElementById('changePasswordBtn');
+            btn.disabled = true;
+            const prevText = btn.textContent;
+            btn.textContent = 'Updating...';
+
+            try {
+                // Update password in database
+                const result = await dataClient.update('students', currentStudent.id, {
+                    password: next
+                });
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                showAlert('Password updated successfully!', 'success');
+                
+                // Update session storage
+                currentStudent.password = next;
+                sessionStorage.setItem('studentData', JSON.stringify(currentStudent));
+                
+                // Clear password fields
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmNewPassword').value = '';
+
+                // Mark that password has been changed
+                sessionStorage.setItem('passwordChanged', 'true');
+                
+                statusEl.textContent = 'Password updated successfully!';
+                statusEl.style.color = '#34d399';
+                setTimeout(() => statusEl.textContent = '', 5000);
+            } catch (err) {
+                console.error('Change password error', err);
+                showLocalError('Error updating password: ' + (err.message || 'Unknown error'));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = prevText;
+            }
         });
 
         // Load profile on page load

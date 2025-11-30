@@ -122,16 +122,21 @@ async function updateProfile(student) {
             const profileInitialsEl = document.getElementById('profileInitials');
             if (profileInitialsEl) profileInitialsEl.textContent = initials || 'ST';
 
-            // Show profile photo if available
+            // Show profile photo if available - check both qr_code and profile_photo
             const photoEl = document.getElementById('profilePhoto');
             const initialsEl = document.getElementById('profileInitials');
-            if (student.profile_photo && photoEl && initialsEl) {
-                photoEl.src = student.profile_photo;
+            const photoData = student.qr_code || student.profile_photo;
+            
+            if (photoData && photoEl && initialsEl) {
+                photoEl.src = photoData;
                 photoEl.style.display = 'block';
                 initialsEl.style.display = 'none';
+            } else if (photoEl && initialsEl) {
+                photoEl.style.display = 'none';
+                initialsEl.style.display = 'flex';
             }
             
-            // Update QR code if available
+            // Update QR code display (keeping for backwards compatibility)
             const qrImg = document.querySelector('.qr-img');
             if (qrImg && student.qr_code) {
                 qrImg.src = student.qr_code;
@@ -179,7 +184,11 @@ async function loadAttendanceStats(studentId) {
             endDateStr
         );
         
-        const logs = logsResult.data || logsResult || [];
+        // Ensure we have an array
+        const logs = Array.isArray(logsResult.data) ? logsResult.data : 
+                     Array.isArray(logsResult) ? logsResult : [];
+        
+        console.log('Attendance logs:', logs);
         
         // Calculate statistics from entrance logs
         const uniqueDates = new Set();
@@ -253,14 +262,17 @@ function loadAttendanceTable(logs) {
     const tbody = document.getElementById('attendanceTableBody');
     if (!tbody) return;
 
-    if (!logs || logs.length === 0) {
+    // Ensure logs is an array
+    const logsArray = Array.isArray(logs) ? logs : [];
+
+    if (logsArray.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">No attendance records found</td></tr>';
         return;
     }
 
     // Group logs by date and get first entry per day
     const logsByDate = {};
-    logs.forEach(log => {
+    logsArray.forEach(log => {
         if (log.scan_time) {
             const date = log.scan_time.split('T')[0];
             if (!logsByDate[date] || log.scan_time < logsByDate[date].scan_time) {

@@ -123,6 +123,9 @@ loginForm.addEventListener('submit', async (e) => {
         sessionStorage.setItem('loginMethod', 'email');
         sessionStorage.setItem('loginTime', new Date().toISOString());
         
+        // Clear any logout flag
+        sessionStorage.removeItem('justLoggedOut');
+        
         // Check if this is a first login after password retrieval
         // You can add a flag in the database or check if password was recently reset
         // For now, we'll check if password hasn't been changed yet
@@ -274,6 +277,9 @@ async function handleQRLogin(qrData) {
         sessionStorage.setItem('loginMethod', 'qr');
         sessionStorage.setItem('loginTime', new Date().toISOString());
         
+        // Clear any logout flag
+        sessionStorage.removeItem('justLoggedOut');
+        
         qrStatus.textContent = 'Login successful! Redirecting...';
         showAlert('QR Login successful! Welcome, ' + student.first_name + '!', 'success');
         
@@ -294,6 +300,14 @@ async function handleQRLogin(qrData) {
 // Check if already logged in
 window.addEventListener('load', async () => {
     try {
+        // Check if user just logged out - prevent auto-login
+        const justLoggedOut = sessionStorage.getItem('justLoggedOut');
+        if (justLoggedOut === 'true') {
+            // Clear the flag and don't auto-login
+            sessionStorage.removeItem('justLoggedOut');
+            return;
+        }
+        
         // Check if student is logged in via session storage
         const studentData = sessionStorage.getItem('studentData');
         const userRole = sessionStorage.getItem('userRole');
@@ -314,15 +328,13 @@ window.addEventListener('load', async () => {
                 return;
             } else {
                 // Student no longer exists or inactive - clear session
-                sessionStorage.removeItem('studentData');
-                sessionStorage.removeItem('userRole');
+                sessionStorage.clear();
             }
         }
     } catch (error) {
         console.error('Auto-login check error:', error);
         // On error, clear session to be safe
-        sessionStorage.removeItem('studentData');
-        sessionStorage.removeItem('userRole');
+        sessionStorage.clear();
     }
 });
 

@@ -100,6 +100,13 @@ form.addEventListener('submit', async (e) => {
 // Check if already authenticated (with timeout)
 window.addEventListener('load', async () => {
     try {
+        // Check if user just logged out - prevent auto-login
+        const justLoggedOut = sessionStorage.getItem('justLoggedOut');
+        if (justLoggedOut === 'true') {
+            sessionStorage.removeItem('justLoggedOut');
+            return;
+        }
+        
         // Set timeout for auth check (5 seconds)
         const checkPromise = (async () => {
             const user = await authClient.getCurrentUser();

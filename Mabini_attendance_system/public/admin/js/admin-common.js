@@ -214,22 +214,14 @@ window.toggleSidebar = function() {
 // Logout function
 window.doLogout = function() {
     if (confirm('Are you sure you want to logout?')) {
-        if (typeof logout === 'function') {
-            logout();
-        } else {
-            import('../../shared/js/auth.js').then(mod => {
-                if (mod && typeof mod.logout === 'function') {
-                    mod.logout();
-                } else {
-                    sessionStorage.clear();
-                    window.location.href = '/index.html';
-                }
-            }).catch(err => {
-                console.warn('[Admin] Logout import failed:', err);
-                sessionStorage.clear();
-                window.location.href = '/index.html';
-            });
-        }
+        // Clear ALL session data
+        sessionStorage.clear();
+        
+        // Set logout flag to prevent auto-login on back button
+        sessionStorage.setItem('justLoggedOut', 'true');
+        
+        // Redirect to admin login
+        window.location.href = 'login.html';
     }
 };
 

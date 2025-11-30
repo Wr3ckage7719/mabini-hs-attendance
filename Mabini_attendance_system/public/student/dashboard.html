@@ -275,8 +275,13 @@
         // Define logout function immediately to ensure it's always available
         window.doLogout = function() {
             if (confirm('Are you sure you want to logout?')) {
-                sessionStorage.removeItem('studentData');
-                sessionStorage.removeItem('userRole');
+                // Clear ALL session data
+                sessionStorage.clear();
+                
+                // Set logout flag to prevent auto-login on back button
+                sessionStorage.setItem('justLoggedOut', 'true');
+                
+                // Redirect to login page
                 window.location.href = 'login.html';
             }
         };

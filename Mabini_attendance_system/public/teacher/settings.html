@@ -511,7 +511,12 @@
         // Initialize logout button
         document.getElementById('logoutBtn')?.addEventListener('click', () => {
             if (confirm('Are you sure you want to logout?')) {
-                sessionStorage.removeItem('userData');
+                // Clear ALL session data
+                sessionStorage.clear();
+                
+                // Set logout flag to prevent auto-login on back button
+                sessionStorage.setItem('justLoggedOut', 'true');
+                
                 window.location.href = 'login.html';
             }
         });

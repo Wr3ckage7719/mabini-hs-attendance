@@ -32,8 +32,8 @@ async function initDashboard() {
             ? teacherResult.data[0] : null;
         
         if (!currentTeacherData || currentTeacherData.status !== 'active') {
-            sessionStorage.removeItem('teacherData');
-            sessionStorage.removeItem('userRole');
+            sessionStorage.clear();
+            sessionStorage.setItem('justLoggedOut', 'true');
             window.location.href = 'login.html';
             return;
         }
@@ -47,7 +47,8 @@ async function initDashboard() {
         await loadStats();
     } catch (error) {
         console.error('Error initializing dashboard:', error);
-        sessionStorage.removeItem('teacherData');
+        sessionStorage.clear();
+        sessionStorage.setItem('justLoggedOut', 'true');
         sessionStorage.removeItem('userRole');
         window.location.href = 'login.html';
     }

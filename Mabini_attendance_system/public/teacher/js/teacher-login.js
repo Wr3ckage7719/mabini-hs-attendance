@@ -226,6 +226,13 @@ async function handleQRLogin(qrData) {
 // Check if already logged in
 window.addEventListener('load', async () => {
     try {
+        // Check if user just logged out - prevent auto-login
+        const justLoggedOut = sessionStorage.getItem('justLoggedOut');
+        if (justLoggedOut === 'true') {
+            sessionStorage.removeItem('justLoggedOut');
+            return;
+        }
+        
         // Check if teacher is logged in via session storage
         const teacherData = sessionStorage.getItem('teacherData');
         const userRole = sessionStorage.getItem('userRole');
@@ -246,14 +253,12 @@ window.addEventListener('load', async () => {
                 return;
             } else {
                 // Teacher no longer exists or inactive - clear session
-                sessionStorage.removeItem('teacherData');
-                sessionStorage.removeItem('userRole');
+                sessionStorage.clear();
             }
         }
     } catch (error) {
         console.error('Auto-login check error:', error);
         // On error, clear session to be safe
-        sessionStorage.removeItem('teacherData');
-        sessionStorage.removeItem('userRole');
+        sessionStorage.clear();
     }
 });

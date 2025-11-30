@@ -8,6 +8,31 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/admin-theme.css">
+    <script>
+        // Restore user profile immediately to prevent label flickering
+        (function(){
+            try{
+                const userData=sessionStorage.getItem('userData');
+                if(userData){
+                    const user=JSON.parse(userData);
+                    document.addEventListener('DOMContentLoaded',function(){
+                        const userNameEl=document.getElementById('userName');
+                        const userRoleEl=document.getElementById('userRole');
+                        const userAvatarEl=document.getElementById('userAvatar');
+                        if(userNameEl)userNameEl.textContent=user.fullName||'Admin';
+                        if(userRoleEl){
+                            const role=user.role||'Administrator';
+                            userRoleEl.textContent=role.charAt(0).toUpperCase()+role.slice(1);
+                        }
+                        if(userAvatarEl){
+                            const initials=(user.fullName||'AD').split(' ').map(function(n){return n[0]}).join('').toUpperCase().slice(0,2);
+                            userAvatarEl.textContent=initials;
+                        }
+                    });
+                }
+            }catch(e){}
+        })();
+    </script>
     <link rel="stylesheet" href="../assets/css/responsive-nav.css">
     <link rel="stylesheet" href="../assets/css/responsive-tables.css">
     <link rel="stylesheet" href="../assets/css/table-improvements.css">

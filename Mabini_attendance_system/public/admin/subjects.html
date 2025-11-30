@@ -12,6 +12,31 @@
     <link rel="stylesheet" href="../assets/css/table-improvements.css">
     <link rel="stylesheet" href="../assets/css/modal-responsive-fix.css">
     <script>(function(){const t=localStorage.getItem('theme'),p=window.matchMedia('(prefers-color-scheme: dark)').matches,theme=t||(p?'dark':'light');document.documentElement.setAttribute('data-theme',theme);document.documentElement.setAttribute('data-bs-theme',theme);})();</script>
+    <script>
+        // Restore user profile immediately to prevent label flickering
+        (function(){
+            try{
+                const userData=sessionStorage.getItem('userData');
+                if(userData){
+                    const user=JSON.parse(userData);
+                    document.addEventListener('DOMContentLoaded',function(){
+                        const userNameEl=document.getElementById('userName');
+                        const userRoleEl=document.getElementById('userRole');
+                        const userAvatarEl=document.getElementById('userAvatar');
+                        if(userNameEl)userNameEl.textContent=user.fullName||'Admin';
+                        if(userRoleEl){
+                            const role=user.role||'Administrator';
+                            userRoleEl.textContent=role.charAt(0).toUpperCase()+role.slice(1);
+                        }
+                        if(userAvatarEl){
+                            const initials=(user.fullName||'AD').split(' ').map(function(n){return n[0]}).join('').toUpperCase().slice(0,2);
+                            userAvatarEl.textContent=initials;
+                        }
+                    });
+                }
+            }catch(e){}
+        })();
+    </script>
     <style>
         /* Fix modal z-index issue */
         .modal {

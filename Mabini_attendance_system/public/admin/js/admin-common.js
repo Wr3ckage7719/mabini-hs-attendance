@@ -387,6 +387,17 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('[Admin] Page DOM ready');
 
+    // Restore user from sessionStorage IMMEDIATELY (before anything else)
+    try {
+        const userData = sessionStorage.getItem('userData');
+        if (userData) {
+            const user = JSON.parse(userData);
+            updateUserProfileUI(user);
+        }
+    } catch (e) {
+        console.warn('[Admin] Restore user from session failed:', e);
+    }
+
     // Protect page - verify admin access ONCE per page load
     (async () => {
         try {
@@ -401,17 +412,6 @@ document.addEventListener('DOMContentLoaded', () => {
     normalizeAdminTop();
     setActiveNavFromLocation();
     setupPageTransitions();
-
-    // Restore user from sessionStorage
-    try {
-        const userData = sessionStorage.getItem('userData');
-        if (userData) {
-            const user = JSON.parse(userData);
-            updateUserProfileUI(user);
-        }
-    } catch (e) {
-        console.warn('[Admin] Restore user from session failed:', e);
-    }
 
     // Initialize responsive features
     initResponsiveTables();

@@ -99,10 +99,10 @@
         <!-- User Profile in Sidebar Footer -->
         <div class="sidebar-footer">
             <div class="user-profile">
-                <div class="user-avatar" id="userAvatar"></div>
+                <div class="user-avatar" id="userAvatar"><script>document.write(window.__userProfileData.initials)</script></div>
                 <div class="user-details">
-                    <div class="user-name" id="userName"></div>
-                    <div class="user-role" id="userRole"></div>
+                    <div class="user-name" id="userName"><script>document.write(window.__userProfileData.name)</script></div>
+                    <div class="user-role" id="userRole"><script>document.write(window.__userProfileData.role)</script></div>
                 </div>
             </div>
         </div>

@@ -13,28 +13,23 @@
     <link rel="stylesheet" href="../assets/css/modal-responsive-fix.css">
     <script>(function(){const t=localStorage.getItem('theme'),p=window.matchMedia('(prefers-color-scheme: dark)').matches,theme=t||(p?'dark':'light');document.documentElement.setAttribute('data-theme',theme);document.documentElement.setAttribute('data-bs-theme',theme);})();</script>
     <script>
-        // Restore user profile immediately to prevent label flickering
+        // Inject user profile data immediately during page parse to prevent blank labels
         (function(){
             try{
                 const userData=sessionStorage.getItem('userData');
                 if(userData){
                     const user=JSON.parse(userData);
-                    document.addEventListener('DOMContentLoaded',function(){
-                        const userNameEl=document.getElementById('userName');
-                        const userRoleEl=document.getElementById('userRole');
-                        const userAvatarEl=document.getElementById('userAvatar');
-                        if(userNameEl)userNameEl.textContent=user.fullName||'Admin';
-                        if(userRoleEl){
-                            const role=user.role||'Administrator';
-                            userRoleEl.textContent=role.charAt(0).toUpperCase()+role.slice(1);
-                        }
-                        if(userAvatarEl){
-                            const initials=(user.fullName||'AD').split(' ').map(function(n){return n[0]}).join('').toUpperCase().slice(0,2);
-                            userAvatarEl.textContent=initials;
-                        }
-                    });
+                    window.__userProfileData = {
+                        name: user.fullName||'System Administrator',
+                        role: user.role ? user.role.charAt(0).toUpperCase()+user.role.slice(1) : 'Admin',
+                        initials: (user.fullName||'SA').split(' ').map(function(n){return n[0]}).join('').toUpperCase().slice(0,2)
+                    };
+                } else {
+                    window.__userProfileData = {name:'System Administrator',role:'Admin',initials:'SA'};
                 }
-            }catch(e){}
+            }catch(e){
+                window.__userProfileData = {name:'System Administrator',role:'Admin',initials:'SA'};
+            }
         })();
     </script>
     <style>
@@ -115,10 +110,10 @@
         <!-- User Profile in Sidebar Footer -->
         <div class="sidebar-footer">
             <div class="user-profile">
-                <div class="user-avatar" id="userAvatar"></div>
+                <div class="user-avatar" id="userAvatar"><script>document.write(window.__userProfileData.initials)</script></div>
                 <div class="user-details">
-                    <div class="user-name" id="userName"></div>
-                    <div class="user-role" id="userRole"></div>
+                    <div class="user-name" id="userName"><script>document.write(window.__userProfileData.name)</script></div>
+                    <div class="user-role" id="userRole"><script>document.write(window.__userProfileData.role)</script></div>
                 </div>
             </div>
         </div>

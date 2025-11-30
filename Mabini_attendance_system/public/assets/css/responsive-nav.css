@@ -17,16 +17,26 @@
 /* Tablet/Mobile - Collapsible sidebar */
 @media (max-width: 1023px) {
     .admin-sidebar {
+        position: fixed !important;
         transform: translateX(-100%);
         z-index: 1050;
+        overflow-y: auto;
     }
     
     .admin-sidebar.show {
         transform: translateX(0);
+        position: fixed !important;
     }
     
     .admin-main {
         margin-left: 0;
+    }
+    
+    /* Prevent body scroll when sidebar is open */
+    body.sidebar-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
     }
     
     /* Hamburger Toggle Button */

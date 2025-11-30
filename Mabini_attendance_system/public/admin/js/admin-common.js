@@ -430,14 +430,14 @@ function toggleSidebar() {
     sidebar.classList.toggle('show');
     backdrop.classList.toggle('show');
     if (window.innerWidth <= 1023) {
-        document.body.style.overflow = sidebar.classList.contains('show') ? 'hidden' : '';
+        document.body.classList.toggle('sidebar-open', sidebar.classList.contains('show'));
     }
 }
 
 function closeSidebar() {
     document.querySelector('.admin-sidebar').classList.remove('show');
     document.querySelector('.sidebar-backdrop').classList.remove('show');
-    document.body.style.overflow = '';
+    document.body.classList.remove('sidebar-open');
 }
 
 // Close sidebar when window is resized to desktop

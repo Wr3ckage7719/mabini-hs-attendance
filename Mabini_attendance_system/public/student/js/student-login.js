@@ -39,9 +39,14 @@ emailTabBtn.addEventListener('click', () => {
     emailTab.classList.add('active');
     qrTab.classList.remove('active');
     
-    // Stop QR scanner
+    // Stop QR scanner when switching away
     if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop();
+        html5QrCode.stop().then(() => {
+            console.log('QR Scanner stopped');
+            qrStatus.textContent = 'Scanner stopped';
+        }).catch(err => {
+            console.error('Error stopping scanner:', err);
+        });
     }
 });
 
@@ -51,8 +56,10 @@ qrTabBtn.addEventListener('click', () => {
     qrTab.classList.add('active');
     emailTab.classList.remove('active');
     
-    // Start QR scanner
-    startQRScanner();
+    // Start QR scanner when switching to QR tab
+    setTimeout(() => {
+        startQRScanner();
+    }, 300); // Small delay to ensure DOM is ready
 });
 
 // Handle email login form submission
@@ -113,6 +120,8 @@ loginForm.addEventListener('submit', async (e) => {
         // Store student data in session
         sessionStorage.setItem('studentData', JSON.stringify(student));
         sessionStorage.setItem('userRole', 'student');
+        sessionStorage.setItem('loginMethod', 'email');
+        sessionStorage.setItem('loginTime', new Date().toISOString());
         
         // Check if this is a first login after password retrieval
         // You can add a flag in the database or check if password was recently reset
@@ -154,6 +163,7 @@ function startQRScanner() {
     }
     
     if (html5QrCode.isScanning) {
+        console.log('Scanner already running');
         return;
     }
     
@@ -161,25 +171,44 @@ function startQRScanner() {
     
     const config = {
         fps: 10,
-        qrbox: { width: 250, height: 250 }
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
     };
     
     html5QrCode.start(
-        { facingMode: "environment" },
+        { facingMode: "environment" }, // Use back camera on mobile
         config,
         async (decodedText) => {
+            console.log('QR Code detected:', decodedText);
             qrStatus.textContent = 'QR Code detected! Authenticating...';
+            
+            // Process the QR code login
             await handleQRLogin(decodedText);
         },
         (errorMessage) => {
-            // Ignore common scanning errors
+            // Ignore scanning errors - they're normal during continuous scanning
+            // Only log if it's a real error
+            if (!errorMessage.includes('NotFoundException')) {
+                console.debug('Scan frame error:', errorMessage);
+            }
         }
-    ).catch((err) => {
-        console.error('QR Scanner error:', err);
-        qrStatus.textContent = 'Camera access denied or unavailable';
+    ).then(() => {
+        qrStatus.textContent = 'Ready to scan - Point camera at QR code';
+        console.log('QR Scanner started successfully');
+    }).catch((err) => {
+        console.error('QR Scanner start error:', err);
+        
+        if (err.toString().includes('NotAllowedError') || err.toString().includes('Permission')) {
+            qrStatus.textContent = 'Camera permission denied. Please allow camera access.';
+            showAlert('Please allow camera access to use QR login', 'error');
+        } else if (err.toString().includes('NotFoundError')) {
+            qrStatus.textContent = 'No camera found on this device';
+            showAlert('No camera detected. Please use email login.', 'error');
+        } else {
+            qrStatus.textContent = 'Camera unavailable. Please use email login.';
+            showAlert('Camera error: ' + err.message, 'error');
+        }
     });
-    
-    qrStatus.textContent = 'Ready to scan - Point camera at QR code';
 }
 
 // Handle QR code login
@@ -187,13 +216,18 @@ async function handleQRLogin(qrData) {
     try {
         console.log('QR Code scanned:', qrData);
         
-        // QR code should contain just the student number
+        // QR code contains the student number
         const studentNumber = qrData.trim();
         
         if (!studentNumber) {
             showAlert('Invalid QR code. No student number found.');
             qrStatus.textContent = 'Invalid QR code - Ready to scan again';
             return;
+        }
+        
+        // Stop the scanner to prevent multiple scans
+        if (html5QrCode && html5QrCode.isScanning) {
+            await html5QrCode.stop();
         }
         
         qrStatus.textContent = 'Authenticating student...';
@@ -206,49 +240,54 @@ async function handleQRLogin(qrData) {
         const student = studentResult.data && studentResult.data.length > 0 ? studentResult.data[0] : null;
         
         if (!student) {
-            showAlert('Student not found. Please check your QR code.');
+            showAlert('Student not found. Invalid QR code.');
             qrStatus.textContent = 'Student not found - Ready to scan again';
+            // Restart scanner
+            setTimeout(() => startQRScanner(), 2000);
             return;
         }
         
+        console.log('Student found via QR:', student);
+        
+        // Check if student account is active
         if (student.status !== 'active') {
             showAlert('Your account is not active. Please contact administration.');
             qrStatus.textContent = 'Account inactive - Ready to scan again';
+            // Restart scanner
+            setTimeout(() => startQRScanner(), 2000);
             return;
         }
         
-        // Check if student has auth account setup
-        const result = await authClient.verifyStudentCredentials(studentNumber);
-        
-        if (result.success && result.hasAuth) {
-            // Student has auth account - auto login
-            // Note: For true QR login, we'd need a special token system
-            // For now, redirect to email login
-            showAlert('QR verified! Please log in with your email and password.', 'success');
-            qrStatus.textContent = 'Please use email login';
-            
-            // Switch to email tab
-            emailTabBtn.click();
-            emailInput.value = student.email || '';
-            emailInput.focus();
-        } else {
-            // Account not setup - show retrieval option
-            showAlert('Your account is not set up yet. Please retrieve your account credentials first.', 'error');
-            qrStatus.textContent = 'Account not set up - Please retrieve credentials';
-            
-            // Show account retrieval modal after a short delay
-            setTimeout(() => {
-                const retrieveModal = document.getElementById('retrieve-account-modal');
-                if (retrieveModal) {
-                    retrieveModal.style.display = 'flex';
-                }
-            }, 2000);
+        // Check enrollment status
+        if (student.enrollment_status && student.enrollment_status !== 'enrolled') {
+            showAlert('Your enrollment status is ' + student.enrollment_status + '. Please contact administration.');
+            qrStatus.textContent = 'Enrollment issue - Ready to scan again';
+            // Restart scanner
+            setTimeout(() => startQRScanner(), 2000);
+            return;
         }
+        
+        // Direct QR login - no password required
+        // Store student data in session
+        sessionStorage.setItem('studentData', JSON.stringify(student));
+        sessionStorage.setItem('userRole', 'student');
+        sessionStorage.setItem('loginMethod', 'qr');
+        sessionStorage.setItem('loginTime', new Date().toISOString());
+        
+        qrStatus.textContent = 'Login successful! Redirecting...';
+        showAlert('QR Login successful! Welcome, ' + student.first_name + '!', 'success');
+        
+        // Redirect to student dashboard
+        setTimeout(() => {
+            window.location.href = 'dashboard.html';
+        }, 1000);
         
     } catch (error) {
         console.error('QR Login error:', error);
         showAlert('Network error. Please check your connection and try again.');
         qrStatus.textContent = 'Network error - Ready to scan again';
+        // Restart scanner
+        setTimeout(() => startQRScanner(), 2000);
     }
 }
 
@@ -284,5 +323,26 @@ window.addEventListener('load', async () => {
         // On error, clear session to be safe
         sessionStorage.removeItem('studentData');
         sessionStorage.removeItem('userRole');
+    }
+});
+
+// Cleanup: Stop scanner when leaving page
+window.addEventListener('beforeunload', () => {
+    if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(err => {
+            console.error('Error stopping scanner on unload:', err);
+        });
+    }
+});
+
+// Cleanup: Stop scanner when page is hidden (mobile)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(err => {
+            console.error('Error stopping scanner on visibility change:', err);
+        });
+    } else if (!document.hidden && qrTab.classList.contains('active') && html5QrCode && !html5QrCode.isScanning) {
+        // Restart scanner if QR tab is active and page becomes visible again
+        startQRScanner();
     }
 });

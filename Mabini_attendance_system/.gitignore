@@ -16,6 +16,7 @@ uploads/temp/*
 # Logs
 *.log
 logs/
+public/logs/*.txt
 error.log
 access.log
 
@@ -65,8 +66,13 @@ database-backup/
 # Vercel
 .vercel
 .vercel/
+.vercel-build-trigger
 
 # Test files
 test-output/
+test-supabase.html
 phpunit.xml
 .phpunit.result.cache
+
+# Archived documentation
+docs/archived/

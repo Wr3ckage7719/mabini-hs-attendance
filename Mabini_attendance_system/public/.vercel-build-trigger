@@ -1,6 +1,0 @@
-<!-- 
-    CACHE BUSTER - Add this to force Vercel to rebuild
-    Updated: 2025-11-24 22:30:00 
-    Version: 2.0.1
--->
-<!-- All admin pages now use direct Supabase authentication -->

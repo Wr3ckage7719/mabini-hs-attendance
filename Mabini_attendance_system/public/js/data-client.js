@@ -154,6 +154,8 @@ export const dataClient = {
         throw new Error('No data to update')
       }
 
+      console.log(`[dataClient] Updating ${table} with id:`, id, 'data:', data);
+
       // For students and teachers tables, skip auth check since they use sessionStorage
       const skipAuthCheck = ['students', 'teachers'].includes(table);
       
@@ -174,11 +176,18 @@ export const dataClient = {
         .update(data)
         .eq('id', id)
         .select()
-        .single()
 
-      if (error) throw error
+      if (error) {
+        console.error(`[dataClient] Supabase update error:`, error);
+        throw error;
+      }
 
-      return { data: result, error: null }
+      console.log(`[dataClient] Update result:`, result);
+
+      // Return the first item if array, otherwise return as-is
+      const returnData = Array.isArray(result) ? result[0] : result;
+      
+      return { data: returnData, error: null }
     } catch (error) {
       console.error(`[dataClient] Update error on ${table}:`, error)
       return { data: null, error: error.message }

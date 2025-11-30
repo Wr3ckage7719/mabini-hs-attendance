@@ -317,10 +317,10 @@ function loadAttendanceTable(logs) {
 
         return `
             <tr>
-                <td>${date}</td>
-                <td>${timeIn}</td>
-                <td>${timeOut}</td>
-                <td>${statusBadge}</td>
+                <td data-label="Date">${date}</td>
+                <td data-label="Time In">${timeIn}</td>
+                <td data-label="Time Out">${timeOut}</td>
+                <td data-label="Status">${statusBadge}</td>
             </tr>
         `;
     }).join('');

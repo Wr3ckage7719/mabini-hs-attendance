@@ -1298,7 +1298,7 @@ body.portal-bg {
         border-radius: 16px;
     }
     
-    /* Tables - make scrollable */
+    /* Tables - convert to card-based layout for mobile */
     .attendance-schedule-table,
     .attendance-history-table,
     .class-details-table,
@@ -1306,10 +1306,68 @@ body.portal-bg {
         font-size: 0.85rem;
     }
     
-    .attendance-schedule-table th,
-    .attendance-schedule-table td,
-    .attendance-history-table th,
-    .attendance-history-table td,
+    /* Hide table headers on mobile */
+    .attendance-history-table thead,
+    .attendance-schedule-table thead {
+        display: none;
+    }
+    
+    /* Make table rows display as cards */
+    .attendance-history-table tbody tr,
+    .attendance-schedule-table tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        background: white;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Make table cells display as rows with labels */
+    .attendance-history-table tbody td,
+    .attendance-schedule-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+        background: transparent !important;
+    }
+    
+    .attendance-history-table tbody td:last-child,
+    .attendance-schedule-table tbody td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Add labels before each cell using data attributes */
+    .attendance-history-table tbody td::before,
+    .attendance-schedule-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #374151;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+        margin-right: 1rem;
+    }
+    
+    /* Override hover effects for card layout */
+    .attendance-history-table tr:hover td,
+    .attendance-schedule-table tr:hover td {
+        background: transparent !important;
+    }
+    
+    /* Other tables keep horizontal scroll */
+    .class-details-table,
+    .student-monitoring-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
     .class-details-table th,
     .class-details-table td {
         padding: 0.6rem 0.4rem;
@@ -1318,8 +1376,7 @@ body.portal-bg {
     
     /* Table wrapper for horizontal scroll */
     .main-card > section {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow-x: visible;
     }
     
     /* Search forms */

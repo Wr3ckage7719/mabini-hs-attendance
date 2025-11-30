@@ -433,6 +433,7 @@
 
         let userData = null;
         let currentStudent = null;
+        let profilePhotoBase64 = null;
 
         // Check authentication via sessionStorage (student login)
         const studentData = sessionStorage.getItem('studentData');
@@ -474,9 +475,11 @@
                     document.getElementById('fullName').value = fullName;
                     document.getElementById('email').value = profile.email || '';
                     document.getElementById('phone').value = profile.parent_guardian_contact || profile.emergency_contact || '';
-                    // Load profile photo if present
-                    if (profile.qr_code) {
-                        profilePhotoBase64 = profile.qr_code;
+                    
+                    // Load profile photo if present - check both qr_code and profile_photo
+                    const photoData = profile.qr_code || profile.profile_photo;
+                    if (photoData) {
+                        profilePhotoBase64 = photoData;
                         photoPreview.src = profilePhotoBase64;
                         photoPreview.style.display = 'block';
                     } else {
@@ -515,10 +518,8 @@
                     parent_guardian_contact: document.getElementById('phone').value.trim() || null
                 };
                 
-                // Only include qr_code if there's a photo
-                if (profilePhotoBase64) {
-                    profileData.qr_code = profilePhotoBase64;
-                }
+                // Always include qr_code - set to base64 if exists, null if removed
+                profileData.qr_code = profilePhotoBase64;
 
                 console.log('Updating student profile:', currentStudent.id, profileData);
                 const result = await dataClient.update('students', currentStudent.id, profileData);
@@ -560,10 +561,7 @@
             }
         };
 
-        // Profile photo data (base64)
-        let profilePhotoBase64 = null;
-
-        // Handle photo input
+        // Handle photo input - must be after DOM is ready
         const photoInput = document.getElementById('photoInput');
         const photoPreview = document.getElementById('photoPreview');
         const removePhotoBtn = document.getElementById('removePhotoBtn');

@@ -473,7 +473,7 @@
                     const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
                     document.getElementById('fullName').value = fullName;
                     document.getElementById('email').value = profile.email || '';
-                    document.getElementById('phone').value = profile.phone || '';
+                    document.getElementById('phone').value = profile.parent_guardian_contact || profile.emergency_contact || '';
                     // Load profile photo if present
                     if (profile.qr_code) {
                         profilePhotoBase64 = profile.qr_code;
@@ -512,7 +512,7 @@
                 const profileData = {
                     first_name: firstName,
                     last_name: lastName,
-                    phone: document.getElementById('phone').value.trim() || null
+                    parent_guardian_contact: document.getElementById('phone').value.trim() || null
                 };
                 
                 // Only include qr_code if there's a photo

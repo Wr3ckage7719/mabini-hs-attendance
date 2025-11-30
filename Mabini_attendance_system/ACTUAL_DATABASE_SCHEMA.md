@@ -9,24 +9,37 @@ This document shows the **actual columns** in each table, based on the working a
 - `student_number` - Unique student ID
 - `first_name` - Student's first name
 - `last_name` - Student's last name
-- `grade_level` - Grade level (e.g., "Grade 7", "Grade 10")
+- `middle_name` - Student's middle name (optional)
+- `suffix` - Name suffix (optional)
+- `grade_level` - Grade level (e.g., "7", "10")
 - `section` - Section name (nullable)
+- `section_id` - Foreign key to sections table
 - `email` - Student email for login/notifications
-- `status` - Account status ('active', 'inactive')
+- `username` - Login username
+- `password` - Hashed password
+- `lrn` - Learner Reference Number (optional)
+- `sex` - Gender ('Male', 'Female', 'Other')
+- `nationality` - Nationality (optional)
+- `birth_date` - Date of birth
+- `birth_place` - Place of birth (optional)
+- `strand` - Academic strand (optional)
+- `parent_guardian_name` - Parent/guardian name
+- `parent_guardian_contact` - Parent/guardian phone number
+- `parent_guardian_email` - Parent/guardian email
+- `emergency_contact` - Emergency contact number
+- `address` - Home address
+- `status` - Account status ('active', 'inactive', 'suspended')
+- `enrollment_status` - Enrollment status ('enrolled', 'transferred', 'graduated', 'dropped')
 - `qr_code` - Profile photo stored as base64 (optional)
-- `phone` - Contact phone number (optional)
+- `profile_photo` - Alternative profile photo field (optional)
 - `created_at` - Timestamp (auto-generated)
 - `updated_at` - Timestamp (auto-updated)
+- `created_by` - Foreign key to users table
 
 **Fields that DO NOT exist:**
 - ❌ `full_name` - Use `first_name` + `last_name` instead
+- ❌ `phone` - Use `parent_guardian_contact` or `emergency_contact` instead
 - ❌ `contact_email` - Use `email` instead
-- ❌ `address` - Not in schema
-- ❌ `sex` - Not in schema
-- ❌ `nationality` - Not in schema
-- ❌ `birth_date` - Not in schema
-- ❌ `birth_place` - Not in schema
-- ❌ `profile_photo` - Use `qr_code` instead
 
 ## Teachers Table Schema
 
@@ -79,7 +92,7 @@ const lastName = nameParts.slice(1).join(' ') || '';
 const profileData = {
     first_name: firstName,
     last_name: lastName,
-    phone: document.getElementById('phone').value.trim() || null,
+    parent_guardian_contact: document.getElementById('phone').value.trim() || null,
     qr_code: profilePhotoBase64 // if photo exists
 };
 

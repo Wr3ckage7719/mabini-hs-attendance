@@ -1,0 +1,117 @@
+/* Modal Responsive Fix - Keep desktop appearance on mobile */
+
+/* Override Bootstrap's mobile modal styles to maintain desktop appearance */
+@media (max-width: 576px) {
+    .modal-dialog {
+        max-width: 90% !important;
+        margin: 1.75rem auto !important;
+    }
+    
+    .modal-dialog-centered {
+        min-height: calc(100% - 3.5rem) !important;
+    }
+    
+    /* Prevent full-screen modal on mobile */
+    .modal-fullscreen-sm-down {
+        max-width: 90% !important;
+        margin: 1.75rem auto !important;
+    }
+    
+    .modal-fullscreen-sm-down .modal-content {
+        height: auto !important;
+        border-radius: 0.5rem !important;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-dialog {
+        max-width: 92% !important;
+        margin: 1.75rem auto !important;
+    }
+    
+    .modal-dialog-centered {
+        min-height: calc(100% - 3.5rem) !important;
+    }
+    
+    /* Keep modal-lg responsive but not full screen */
+    .modal-lg {
+        max-width: 92% !important;
+    }
+    
+    /* Ensure proper spacing and scrolling */
+    .modal-body {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+}
+
+/* Additional improvements for better mobile UX */
+@media (max-width: 992px) {
+    .modal-dialog {
+        max-width: 95% !important;
+    }
+    
+    .modal-lg {
+        max-width: 95% !important;
+    }
+    
+    /* Maintain desktop-like appearance */
+    .modal-content {
+        border-radius: 0.5rem !important;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .modal-header {
+        padding: 1rem 1.25rem;
+    }
+    
+    .modal-body {
+        padding: 1.25rem;
+    }
+    
+    .modal-footer {
+        padding: 1rem 1.25rem;
+    }
+}
+
+/* Ensure modals are always centered and not full-height on mobile */
+.modal-dialog-centered {
+    display: flex !important;
+    align-items: center !important;
+    min-height: calc(100% - 3.5rem) !important;
+}
+
+/* Fix for modal backdrop */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Dark theme support */
+[data-theme="dark"] .modal-content {
+    background-color: var(--panel, #0f1724);
+    color: var(--text, #e6eef8);
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .modal-header {
+    border-bottom-color: var(--border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .modal-footer {
+    border-top-color: var(--border, rgba(255, 255, 255, 0.1));
+}
+
+/* Smooth transitions */
+.modal {
+    transition: opacity 0.15s linear;
+}
+
+.modal-dialog {
+    transition: transform 0.3s ease-out;
+}
+
+/* Prevent modal from jumping on mobile */
+.modal.show .modal-dialog {
+    transform: none !important;
+}

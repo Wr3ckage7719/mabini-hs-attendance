@@ -319,9 +319,6 @@
     <script src="../shared/js/loading.js"></script>
     <script type="module" src="js/admin-common.js"></script>
     
-    <!-- QR Code Generation Library - Must load before usage -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    
     <script type="module">
         // Import storage client for image uploads
         import { storageClient } from '../js/storage-client.js';
@@ -662,6 +659,19 @@
             document.getElementById('qrContent').textContent = '';
         });
         
+        // Load QR Code library dynamically
+        async function loadQRCodeLibrary() {
+            if (window.QRCode) return true;
+            
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+                script.onload = () => resolve(true);
+                script.onerror = () => reject(new Error('Failed to load QR Code library'));
+                document.head.appendChild(script);
+            });
+        }
+        
         // QR Code Generation
         document.getElementById('generateQR')?.addEventListener('click', async function() {
             const studentNumber = document.getElementById('studentNumber').value.trim();
@@ -672,15 +682,11 @@
             }
             
             try {
-                // Wait for QRCode library to be available
-                let attempts = 0;
-                while (typeof window.QRCode === 'undefined' && attempts < 50) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    attempts++;
-                }
+                // Dynamically load QR library if not already loaded
+                await loadQRCodeLibrary();
                 
                 if (typeof window.QRCode === 'undefined') {
-                    throw new Error('QR Code library not loaded. Please refresh the page.');
+                    throw new Error('QR Code library failed to load. Please check your internet connection.');
                 }
                 
                 // Generate QR code with student number as content

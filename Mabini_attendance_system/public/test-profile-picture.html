@@ -62,6 +62,7 @@
 
     <div class="test-section">
         <h2>2. Check Current Student Data</h2>
+        <p>Student ID: <input type="text" id="studentId" placeholder="e.g., 233294" style="padding: 5px; width: 200px;"></p>
         <button onclick="checkStudentData()">Get Student Data</button>
         <div id="output2"></div>
     </div>
@@ -129,14 +130,35 @@
             output.innerHTML = 'Getting student data...';
             
             try {
+                // First try from session
+                let student = null;
                 const studentData = sessionStorage.getItem('studentData');
-                if (!studentData) {
-                    output.innerHTML = '<span class="error">❌ No student logged in</span>';
-                    return;
+                
+                if (studentData) {
+                    student = JSON.parse(studentData);
+                    output.innerHTML = `<span class="success">✅ Student found in session</span>\n\n`;
+                } else {
+                    // Try to get by ID from input
+                    const studentIdInput = document.getElementById('studentId').value.trim();
+                    if (!studentIdInput) {
+                        output.innerHTML = '<span class="error">❌ No student logged in. Please enter Student ID.</span>';
+                        return;
+                    }
+                    
+                    // Search by student_number
+                    const result = await dataClient.getAll('students', [
+                        { field: 'student_number', operator: '==', value: studentIdInput }
+                    ]);
+                    
+                    if (!result.data || result.data.length === 0) {
+                        output.innerHTML = '<span class="error">❌ Student not found with ID: ' + studentIdInput + '</span>';
+                        return;
+                    }
+                    
+                    student = result.data[0];
+                    output.innerHTML = `<span class="success">✅ Student found by ID</span>\n\n`;
                 }
 
-                const student = JSON.parse(studentData);
-                output.innerHTML = `<span class="success">✅ Student found in session</span>\n\n`;
                 output.innerHTML += `ID: ${student.id}\n`;
                 output.innerHTML += `Student Number: ${student.student_number || student.student_id}\n`;
                 output.innerHTML += `Name: ${student.first_name} ${student.last_name}\n\n`;
@@ -155,16 +177,8 @@
                     ? `<span class="success">✅ qr_code: ${student.qr_code.substring(0, 50)}...</span>\n`
                     : `<span class="warning">⚠️ qr_code: empty</span>\n`;
 
-                // Fetch fresh data from database
-                output.innerHTML += `\n<strong>Fresh data from database:</strong>\n`;
-                const result = await dataClient.getAll('students', [
-                    { field: 'id', operator: '==', value: student.id }
-                ]);
-                
-                const dbStudent = result.data[0];
-                output.innerHTML += dbStudent.profile_picture_url 
-                    ? `<span class="success">✅ profile_picture_url: ${dbStudent.profile_picture_url.substring(0, 80)}...</span>\n`
-                    : `<span class="warning">⚠️ profile_picture_url: empty</span>\n`;
+                // Store for other tests
+                window.currentTestStudent = student;
 
             } catch (err) {
                 output.innerHTML = `<span class="error">❌ Error: ${err.message}</span>`;
@@ -177,21 +191,35 @@
             output.innerHTML = 'Testing image load...';
             
             try {
-                const studentData = sessionStorage.getItem('studentData');
-                if (!studentData) {
-                    output.innerHTML = '<span class="error">❌ No student logged in</span>';
-                    return;
+                let student = window.currentTestStudent;
+                
+                if (!student) {
+                    const studentData = sessionStorage.getItem('studentData');
+                    if (studentData) {
+                        student = JSON.parse(studentData);
+                    } else {
+                        const studentIdInput = document.getElementById('studentId').value.trim();
+                        if (!studentIdInput) {
+                            output.innerHTML = '<span class="error">❌ Please run "Get Student Data" first or enter Student ID</span>';
+                            return;
+                        }
+                        
+                        const result = await dataClient.getAll('students', [
+                            { field: 'student_number', operator: '==', value: studentIdInput }
+                        ]);
+                        
+                        if (!result.data || result.data.length === 0) {
+                            output.innerHTML = '<span class="error">❌ Student not found</span>';
+                            return;
+                        }
+                        
+                        student = result.data[0];
+                    }
                 }
-
-                const student = JSON.parse(studentData);
                 
-                // Fetch fresh from database
-                const result = await dataClient.getAll('students', [
-                    { field: 'id', operator: '==', value: student.id }
-                ]);
-                
-                const dbStudent = result.data[0];
-                const url = dbStudent.profile_picture_url || 'https://ddblgwzylvwuucnpmtzi.supabase.co/storage/v1/object/public/student-images/profile-pictures/student-233294-profile.jpg';
+                const url = student.profile_picture_url || 
+                           'https://ddblgwzylvwuucnpmtzi.supabase.co/storage/v1/object/public/student-images/profile-pictures/student-' + 
+                           (student.student_number || student.student_id) + '-profile.jpg';
                 
                 output.innerHTML = `Testing URL:\n${url}\n\n`;
                 
@@ -203,7 +231,7 @@
                 };
                 
                 img.onerror = (e) => {
-                    output.innerHTML += `<span class="error">❌ Image failed to load</span>\nError: ${e.message || 'Unknown error'}`;
+                    output.innerHTML += `<span class="error">❌ Image failed to load</span>\nThis could mean:\n- File doesn't exist in Storage\n- Wrong filename\n- Storage bucket not public`;
                 };
                 
             } catch (err) {
@@ -223,13 +251,31 @@
             output.innerHTML = 'Updating database...';
             
             try {
-                const studentData = sessionStorage.getItem('studentData');
-                if (!studentData) {
-                    output.innerHTML = '<span class="error">❌ No student logged in</span>';
-                    return;
+                let student = window.currentTestStudent;
+                
+                if (!student) {
+                    const studentData = sessionStorage.getItem('studentData');
+                    if (studentData) {
+                        student = JSON.parse(studentData);
+                    } else {
+                        const studentIdInput = document.getElementById('studentId').value.trim();
+                        if (!studentIdInput) {
+                            output.innerHTML = '<span class="error">❌ Please run "Get Student Data" first or enter Student ID</span>';
+                            return;
+                        }
+                        
+                        const result = await dataClient.getAll('students', [
+                            { field: 'student_number', operator: '==', value: studentIdInput }
+                        ]);
+                        
+                        if (!result.data || result.data.length === 0) {
+                            output.innerHTML = '<span class="error">❌ Student not found</span>';
+                            return;
+                        }
+                        
+                        student = result.data[0];
+                    }
                 }
-
-                const student = JSON.parse(studentData);
                 
                 const result = await dataClient.update('students', student.id, {
                     profile_picture_url: url
@@ -237,13 +283,17 @@
                 
                 if (result.error) throw new Error(result.error);
                 
-                // Update session
-                student.profile_picture_url = url;
-                sessionStorage.setItem('studentData', JSON.stringify(student));
+                // Update session if logged in
+                if (sessionStorage.getItem('studentData')) {
+                    student.profile_picture_url = url;
+                    sessionStorage.setItem('studentData', JSON.stringify(student));
+                }
                 
                 output.innerHTML = '<span class="success">✅ Database updated successfully!</span>\n';
                 output.innerHTML += `Updated student ID: ${student.id}\n`;
-                output.innerHTML += `New URL: ${url}`;
+                output.innerHTML += `Student: ${student.first_name} ${student.last_name}\n`;
+                output.innerHTML += `New URL: ${url}\n\n`;
+                output.innerHTML += '<span class="success">✅ Now refresh the dashboard to see the profile picture!</span>';
                 
             } catch (err) {
                 output.innerHTML = `<span class="error">❌ Error: ${err.message}</span>`;

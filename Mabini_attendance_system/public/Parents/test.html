@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Portal - Test Page</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+        .section h2 {
+            color: #2d3748;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            color: #4a5568;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn-secondary {
+            background: #48bb78;
+            margin-top: 10px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff5f5;
+            border-radius: 8px;
+            border-left: 4px solid #f56565;
+            display: none;
+        }
+        .result.success {
+            background: #f0fff4;
+            border-left-color: #48bb78;
+        }
+        .result.info {
+            background: #ebf8ff;
+            border-left-color: #4299e1;
+        }
+        .link-display {
+            margin-top: 10px;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .copy-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .students-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .student-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid #e2e8f0;
+        }
+        .student-item:hover {
+            background: #edf2f7;
+        }
+        .loading {
+            text-align: center;
+            color: #718096;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Parent Portal Test Page</h1>
+        <p class="subtitle">Test and generate parent attendance viewing links</p>
+
+        <!-- Step 1: Load Students -->
+        <div class="section">
+            <h2>Step 1: Load Students from Database</h2>
+            <button class="btn" onclick="loadStudents()">📚 Load Students from Supabase</button>
+            <div id="studentsResult" class="result"></div>
+            <div id="studentsList" class="students-list"></div>
+        </div>
+
+        <!-- Step 2: Manual Entry -->
+        <div class="section">
+            <h2>Step 2: Or Enter Student ID Manually</h2>
+            <div class="input-group">
+                <label for="studentId">Student ID (UUID):</label>
+                <input type="text" id="studentId" placeholder="e.g., 550e8400-e29b-41d4-a716-446655440000">
+            </div>
+            <div class="input-group">
+                <label for="expiryHours">Link Expiry (hours):</label>
+                <select id="expiryHours">
+                    <option value="24">24 hours (1 day)</option>
+                    <option value="168" selected>168 hours (7 days)</option>
+                    <option value="720">720 hours (30 days)</option>
+                    <option value="0">No expiration</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Step 3: Generate Link -->
+        <div class="section">
+            <h2>Step 3: Generate & Test Link</h2>
+            <button class="btn" onclick="generateLink()">🔗 Generate Parent Link</button>
+            <button class="btn btn-secondary" onclick="openLink()">🚀 Open in New Tab</button>
+            <div id="linkResult" class="result"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const SUPABASE_URL = 'https://ddblgwzylvwuucnpmtzi.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkYmxnd3p5bHZ3dXVjbnBtdHppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4MDM4MjIsImV4cCI6MjA3OTM3OTgyMn0.EL7xhE0SbgvJ_R8ZAlkawOqRMi3yYMGFbGkqBMWMaJI';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let generatedLink = '';
+
+        window.loadStudents = async function() {
+            const resultDiv = document.getElementById('studentsResult');
+            const listDiv = document.getElementById('studentsList');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '<div class="loading">⏳ Loading students...</div>';
+            listDiv.innerHTML = '';
+
+            try {
+                const { data, error } = await supabase
+                    .from('students')
+                    .select('id, student_number, first_name, last_name, grade_level, section')
+                    .limit(20);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    resultDiv.className = 'result';
+                    resultDiv.innerHTML = '⚠️ No students found in database';
+                    return;
+                }
+
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `✅ Found ${data.length} students`;
+
+                data.forEach(student => {
+                    const item = document.createElement('div');
+                    item.className = 'student-item';
+                    item.innerHTML = `
+                        <strong>${student.first_name} ${student.last_name}</strong><br>
+                        <small>ID: ${student.student_number} | Grade: ${student.grade_level || 'N/A'} | Section: ${student.section || 'N/A'}</small>
+                    `;
+                    item.onclick = () => selectStudent(student);
+                    listDiv.appendChild(item);
+                });
+
+            } catch (error) {
+                resultDiv.className = 'result';
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+                console.error(error);
+            }
+        }
+
+        window.selectStudent = function(student) {
+            document.getElementById('studentId').value = student.id;
+            document.getElementById('linkResult').style.display = 'none';
+            
+            // Highlight selected
+            document.querySelectorAll('.student-item').forEach(item => {
+                item.style.background = 'white';
+            });
+            event.target.closest('.student-item').style.background = '#e6fffa';
+        }
+
+        window.generateLink = async function() {
+            const studentId = document.getElementById('studentId').value.trim();
+            const expiryHours = parseInt(document.getElementById('expiryHours').value);
+            const resultDiv = document.getElementById('linkResult');
+
+            if (!studentId) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result';
+                resultDiv.innerHTML = '⚠️ Please enter a student ID or select from the list';
+                return;
+            }
+
+            const baseUrl = window.location.origin + window.location.pathname.replace('test.html', 'View.html');
+            
+            let link;
+            if (expiryHours === 0) {
+                // No expiration
+                link = `${baseUrl}?student_id=${studentId}`;
+            } else {
+                // With expiration
+                const expires = Date.now() + (expiryHours * 60 * 60 * 1000);
+                const signature = btoa(`${studentId}:${expires}`).substring(0, 32); // Simple signature
+                link = `${baseUrl}?student_id=${studentId}&expires=${expires}&sig=${signature}`;
+            }
+
+            generatedLink = link;
+
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `
+                ✅ Link Generated Successfully!
+                <div class="link-display">${link}</div>
+                <button class="copy-btn" onclick="copyLink()">📋 Copy Link</button>
+                <div style="margin-top:15px;font-size:12px;color:#718096">
+                    ${expiryHours > 0 ? `⏰ Expires in ${expiryHours} hours` : '♾️ No expiration'}
+                </div>
+            `;
+        }
+
+        window.copyLink = async function() {
+            try {
+                await navigator.clipboard.writeText(generatedLink);
+                alert('✅ Link copied to clipboard!');
+            } catch (err) {
+                prompt('Copy this link:', generatedLink);
+            }
+        }
+
+        window.openLink = function() {
+            if (!generatedLink) {
+                alert('⚠️ Please generate a link first');
+                return;
+            }
+            window.open(generatedLink, '_blank');
+        }
+
+        // Auto-load students on page load
+        window.addEventListener('load', () => {
+            console.log('Test page ready! Click "Load Students" to begin.');
+        });
+    </script>
+</body>
+</html>

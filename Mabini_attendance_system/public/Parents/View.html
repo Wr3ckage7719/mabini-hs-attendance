@@ -3,110 +3,164 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width,initial-scale=1">
-        <title>Parent — Student Report Card</title>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+        <title>Parent Portal — Student Attendance Report</title>
         <style>
-            :root{--bg:#071027;--panel:#0c1726;--muted:#9aa9bf;--accent:#6c5ce7;--success:#22c55e}
-            *{box-sizing:border-box}
-            body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(180deg,#071027 0%,#071832 100%);color:#eaf1fb}
-            .wrap{width:100%;max-width:none;margin:0;padding:28px 20px;display:grid;grid-template-columns:340px minmax(0,1fr) 360px;gap:32px}
-            .card-left{background:linear-gradient(180deg,#081226,#0a1630);border-radius:14px;padding:28px;box-shadow:0 18px 48px rgba(2,7,23,.6)}
-            .avatar{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:linear-gradient(135deg,#6c5ce7,#4ade80);font-weight:700}
+            :root{--bg:#071027;--panel:#0c1726;--muted:#9aa9bf;--accent:#6c5ce7;--success:#22c55e;--danger:#ef4444;--warning:#f59e0b}
+            *{box-sizing:border-box;margin:0;padding:0}
+            body{margin:0;padding:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(180deg,#071027 0%,#071832 100%);color:#eaf1fb;overflow-x:hidden;width:100vw;min-height:100vh}
+            .wrap{width:100%;max-width:100%;margin:0;padding:28px 0;display:grid;grid-template-columns:minmax(300px,1fr) minmax(0,2fr) minmax(300px,1fr);gap:20px;box-sizing:border-box}
+            .card-left{background:linear-gradient(180deg,#081226,#0a1630);border-radius:14px;padding:28px;box-shadow:0 18px 48px rgba(2,7,23,.6);margin-left:20px}
+            .avatar{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;background:linear-gradient(135deg,#6c5ce7,#4ade80);font-weight:700;font-size:32px;overflow:hidden}
+            .avatar img{width:100%;height:100%;object-fit:cover}
             .student-name{text-align:center;font-size:20px;font-weight:700}
             .student-meta{text-align:center;color:var(--muted);font-size:14px;margin-top:8px}
             .badge{display:inline-block;padding:6px 10px;border-radius:10px;background:#07361a;color:#aef5bf;font-weight:600;margin:12px auto}
+            .badge.inactive{background:#3f1919;color:#fca5a5}
             .section{margin-top:18px;background:rgba(255,255,255,0.02);padding:14px;border-radius:12px}
+            .section-title{font-weight:700;margin-bottom:10px;color:#eaf1fb}
             .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
             .row:last-child{border-bottom:0}
             .main{display:flex;flex-direction:column;gap:14px}
-            .top-stat{display:flex;gap:16px}
-            .stat{flex:1;background:linear-gradient(180deg,#08142a,#061026);padding:16px;border-radius:12px;display:flex;align-items:center;gap:14px}
+            .top-stat{display:flex;gap:16px;flex-wrap:wrap}
+            .stat{flex:1;min-width:150px;background:linear-gradient(180deg,#08142a,#061026);padding:16px;border-radius:12px;text-align:center}
+            .stat .label{font-size:12px;color:var(--muted);margin-bottom:8px}
             .stat .value{font-size:22px;font-weight:800}
             .panel{background:linear-gradient(180deg,#071229,#051023);padding:20px;border-radius:14px}
-            .report-header{display:flex;justify-content:space-between;align-items:center;gap:16px}
-            .controls{display:flex;gap:10px;align-items:center}
-            select,input{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#eaf1fb;padding:10px 12px;border-radius:10px}
-            button{background:linear-gradient(90deg,var(--accent),#4f46e5);color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer}
-            .subjects{margin-top:22px;border-radius:10px;overflow:hidden}
-            table{width:100%;border-collapse:collapse}
+            .report-header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+            .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+            select,input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#eaf1fb;padding:10px 12px;border-radius:10px;font-size:14px}
+            select:focus,input:focus{outline:none;border-color:var(--accent)}
+            button{background:linear-gradient(90deg,var(--accent),#4f46e5);color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;transition:opacity 0.2s}
+            button:hover{opacity:0.9}
+            button:disabled{opacity:0.5;cursor:not-allowed}
+            .subjects{margin-top:22px;border-radius:10px;overflow-x:auto}
+            table{width:100%;border-collapse:collapse;min-width:600px}
             th,td{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left;vertical-align:middle}
-            th{font-size:13px;color:var(--muted);letter-spacing:0.6px}
-            tbody tr{line-height:1.8}
-            td .grade{font-weight:700}
-            .progress{height:8px;background:rgba(255,255,255,0.04);border-radius:6px;overflow:hidden}
-            .progress>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#22c1c3)}
-            .subject-row{cursor:pointer}
-            .subject-details{display:none;padding:12px 14px;background:rgba(255,255,255,0.02);font-size:13px;color:var(--muted)}
-            .summary{display:flex;gap:14px;margin-top:20px}
-            .summary .box{flex:1;background:rgba(255,255,255,0.02);padding:14px;border-radius:10px;text-align:center}
-            .card-right{background:linear-gradient(180deg,#081226,#0a1630);border-radius:14px;padding:18px;box-shadow:0 18px 48px rgba(2,7,23,.6);display:none;flex-direction:column;align-items:center;gap:12px}
-            .card-right img{max-width:100%;max-height:320px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);object-fit:cover}
+            th{font-size:13px;color:var(--muted);letter-spacing:0.6px;text-transform:uppercase;background:rgba(255,255,255,0.02)}
+            tbody tr{line-height:1.8;transition:background 0.2s}
+            tbody tr:hover{background:rgba(255,255,255,0.02)}
+            .status-badge{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;text-transform:uppercase}
+            .status-present{background:rgba(34,197,94,.2);color:#86efac}
+            .status-late{background:rgba(251,191,36,.2);color:#fde047}
+            .status-absent{background:rgba(239,68,68,.2);color:#fca5a5}
+            .status-excused{background:rgba(59,130,246,.2);color:#93c5fd}
+            .view-btn{padding:6px 12px;border-radius:6px;background:rgba(108,92,231,.2);color:#c5bcff;border:1px solid rgba(108,92,231,.3);cursor:pointer;font-size:12px;transition:all 0.2s}
+            .view-btn:hover{background:rgba(108,92,231,.3)}
+            .view-btn:disabled{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.06);opacity:.4}
+            .summary{display:flex;gap:14px;margin-top:20px;flex-wrap:wrap}
+            .summary .box{flex:1;min-width:150px;background:rgba(255,255,255,0.02);padding:14px;border-radius:10px;text-align:center}
+            .card-right{background:linear-gradient(180deg,#081226,#0a1630);border-radius:14px;padding:18px;box-shadow:0 18px 48px rgba(2,7,23,.6);display:flex;flex-direction:column;align-items:center;gap:12px;margin-right:20px}
+            .card-right img{width:100%;height:auto;min-height:220px;max-height:400px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);object-fit:cover;background:#081a2b}
             .card-right .caption{font-size:14px;color:var(--muted);text-align:center;margin-top:10px}
-            @media(max-width:980px){.wrap{grid-template-columns:1fr}.card-left{order:2}.main{order:1}.card-right{order:3;display:none}}
+            .loading{text-align:center;color:var(--muted);padding:40px}
+            .error{text-align:center;color:var(--danger);padding:40px}
+            .error-container{grid-column:1/-1;text-align:center;padding:60px 20px}
+            .error-icon{font-size:48px;margin-bottom:20px}
+            @media print{.controls,button,.card-right{display:none!important}.wrap{grid-template-columns:1fr}body{background:#fff;color:#000}}
+            @media(max-width:980px){.wrap{grid-template-columns:1fr;padding:16px 20px;gap:16px}.card-left{order:2;margin:0 20px}.main{order:1;margin:0 20px}.card-right{order:3;display:none;margin:0 20px}}
         </style>
     </head>
     <body>
         <div class="wrap">
             <aside class="card-left">
-                <div class="avatar">NB</div>
-                <div class="student-name">Niccolo Balon</div>
-                <div class="student-meta">Student ID: <strong>233294</strong></div>
-                <div style="text-align:center;margin-top:10px"><span class="badge">Enrolled</span></div>
+                <div class="avatar" id="studentAvatar">...</div>
+                <div class="student-name" id="studentName">Loading...</div>
+                <div class="student-meta">Student ID: <strong id="studentNumber">...</strong></div>
+                <div style="text-align:center;margin-top:10px"><span class="badge" id="enrollmentStatus">Loading...</span></div>
+                
                 <div class="section">
-                    <div class="row"><div>Last Enrollment</div><div style="color:var(--muted)">2023-2024 1st</div></div>
-                    <div class="row"><div>Year/Grade</div><div style="color:var(--muted)">7</div></div>
-                    <div class="row"><div>Graduating</div><div style="color:var(--muted)">No</div></div>
+                    <div class="row"><div>Grade Level</div><div style="color:var(--muted)" id="gradeLevel">N/A</div></div>
+                    <div class="row"><div>Section</div><div style="color:var(--muted)" id="sectionName">N/A</div></div>
+                    <div class="row"><div>LRN</div><div style="color:var(--muted)" id="lrn">N/A</div></div>
                 </div>
+                
                 <div class="section">
-                    <div style="font-weight:700;margin-bottom:6px">Contact</div>
-                    <div style="color:var(--muted)">09xxxxxxxx</div>
-                    <div style="color:var(--muted)">parent1@email.com</div>
+                    <div class="section-title">Guardian Contact</div>
+                    <div style="color:var(--muted);margin-top:6px" id="guardianName">N/A</div>
+                    <div style="color:var(--muted);margin-top:4px" id="guardianPhone">N/A</div>
+                    <div style="color:var(--muted);margin-top:4px" id="guardianEmail">N/A</div>
                 </div>
             </aside>
 
             <main class="main">
                 <div class="top-stat">
-                    <div class="stat"><div style="font-size:12px;color:var(--muted)">Attendance Rate</div><div class="value" id="attendanceRate">0%</div></div>
-                    <div class="stat"><div style="font-size:12px;color:var(--muted)">GPA</div><div class="value" id="gpa">0.00</div></div>
-                    <div class="stat"><div style="font-size:12px;color:var(--muted)">Days Present</div><div class="value" id="daysPresent">0</div></div>
-                    <div class="stat"><div style="font-size:12px;color:var(--muted)">Days Absent</div><div class="value" id="daysAbsent">0</div></div>
+                    <div class="stat">
+                        <div class="label">Attendance Rate</div>
+                        <div class="value" id="attendanceRate">0%</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">Days Present</div>
+                        <div class="value" id="daysPresent">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">Days Late</div>
+                        <div class="value" id="daysLate">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">Days Absent</div>
+                        <div class="value" id="daysAbsent">0</div>
+                    </div>
                 </div>
 
                 <div class="panel">
                     <div class="report-header">
-                        <h3 style="margin:0">Report Card</h3>
+                        <h3 style="margin:0">Attendance Records</h3>
                         <div class="controls">
-                            <label style="color:var(--muted);font-size:13px">Year</label>
-                            <select id="yearSelect"><option>2023-2024</option><option>2024-2025</option></select>
-                            <label style="color:var(--muted);font-size:13px">Term</label>
-                            <select id="termSelect"><option>1st</option><option>2nd</option></select>
-                            <div class="actions">
-                                <button id="printBtn">Print / Save PDF</button>
-                                <button id="exportCsv">Export CSV</button>
-                            </div>
+                            <select id="monthFilter">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                            <button id="printBtn">Print / Save PDF</button>
+                            <button id="exportCsv">Export CSV</button>
                         </div>
                     </div>
 
                     <div class="subjects" id="attendanceContainer">
                         <table>
                             <thead>
-                                <tr><th>DATE</th><th>TIME IN</th><th>TIME OUT</th><th>STATUS</th><th style="text-align:right">VIEW</th></tr>
+                                <tr>
+                                    <th>DATE</th>
+                                    <th>TIME IN</th>
+                                    <th>TIME OUT</th>
+                                    <th>STATUS</th>
+                                    <th style="text-align:right">VIEW</th>
+                                </tr>
                             </thead>
-                            <tbody id="attendanceBody"></tbody>
+                            <tbody id="attendanceBody">
+                                <tr><td colspan="5" class="loading">Loading attendance records...</td></tr>
+                            </tbody>
                         </table>
                     </div>
 
                     <div class="summary">
-                        <div class="box"><div style="font-size:12px;color:var(--muted)">Remarks</div><div id="remarks" style="font-weight:700">No remarks</div></div>
-                        <div class="box"><div style="font-size:12px;color:var(--muted)">Advisory</div><div id="advisory" style="font-weight:700">N/A</div></div>
-                    </div>
-                </div>
-
-                <div class="panel">
-                    <h3 style="margin-top:0">Attendance Summary</h3>
-                    <div style="display:flex;gap:12px;margin-top:10px">
-                        <div style="flex:1;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;text-align:center"><div style="color:var(--muted);font-size:12px">Total Days</div><div id="totalDays" style="font-weight:700">0</div></div>
-                        <div style="flex:1;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;text-align:center"><div style="color:var(--muted);font-size:12px">Present</div><div id="presentDays" style="font-weight:700">0</div></div>
-                        <div style="flex:1;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;text-align:center"><div style="color:var(--muted);font-size:12px">Absent</div><div id="absentDays" style="font-weight:700">0</div></div>
+                        <div class="box">
+                            <div style="font-size:12px;color:var(--muted)">Total Days</div>
+                            <div id="totalDays" style="font-weight:700">0</div>
+                        </div>
+                        <div class="box">
+                            <div style="font-size:12px;color:var(--muted)">Present</div>
+                            <div id="presentDays" style="font-weight:700">0</div>
+                        </div>
+                        <div class="box">
+                            <div style="font-size:12px;color:var(--muted)">Late</div>
+                            <div id="lateDays" style="font-weight:700">0</div>
+                        </div>
+                        <div class="box">
+                            <div style="font-size:12px;color:var(--muted)">Absent</div>
+                            <div id="absentDays" style="font-weight:700">0</div>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -114,107 +168,346 @@
             <aside class="card-right" id="photoViewer">
                 <div style="width:100%;display:flex;justify-content:space-between;align-items:center">
                     <div style="font-weight:700">Camera Snapshot</div>
-                    <button id="closePhoto" style="background:transparent;border:0;color:var(--muted);cursor:pointer">✕</button>
+                    <button id="closePhoto" style="background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:20px;padding:4px 8px">✕</button>
                 </div>
                 <img id="cameraPhoto" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='220'><rect width='100%' height='100%' fill='%23081a2b'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23aab9cc' font-family='Arial' font-size='16'>No photo selected</text></svg>" alt="Camera scan">
                 <div class="caption" id="photoCaption">Click 'View' on a row to show the scan</div>
             </aside>
         </div>
 
-        <script>
-            // Mock attendance data — replace with API calls later
-            const mockData = {
-                '2023-2024': {
-                    '1st': {
-                        student:{name:'Niccolo Balon', id:'233294'},
-                        attendance:{
-                            total:40, present:38, absent:2,
-                            records:[
-                                {date:'2024-06-01', timeIn:'08:05', timeOut:'12:00', status:'Present'},
-                                {date:'2024-06-02', timeIn:'08:10', timeOut:'12:00', status:'Present'},
-                                {date:'2024-06-03', timeIn:'08:00', timeOut:'12:00', status:'Absent'},
-                                {date:'2024-06-04', timeIn:'08:07', timeOut:'12:00', status:'Present'},
-                                {date:'2024-06-05', timeIn:'08:09', timeOut:'12:00', status:'Present'}
-                            ]
-                        },
-                        remarks:'Good attendance overall.'
-                    }
+        <script type="module">
+            // Supabase Configuration
+            import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+            
+            const SUPABASE_URL = 'https://ddblgwzylvwuucnpmtzi.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkYmxnd3p5bHZ3dXVjbnBtdHppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4MDM4MjIsImV4cCI6MjA3OTM3OTgyMn0.EL7xhE0SbgvJ_R8ZAlkawOqRMi3yYMGFbGkqBMWMaJI';
+            
+            const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            // Get URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const studentId = urlParams.get('student_id');
+            const expires = urlParams.get('expires');
+            const sig = urlParams.get('sig');
+
+            // Global data storage
+            let allAttendanceRecords = [];
+            let studentData = null;
+
+            // Verify signed URL
+            async function verifySignedURL() {
+                // If no signature, allow access (backward compatibility)
+                if (!sig || !expires) {
+                    console.log('No signature - using legacy unsigned URL');
+                    return { valid: true, student_id: studentId };
                 }
-            };
 
-            const yearSelect = document.getElementById('yearSelect');
-            const termSelect = document.getElementById('termSelect');
-            const attendanceBody = document.getElementById('attendanceBody');
+                // Check if link is expired
+                const expiryTime = parseInt(expires);
+                if (Date.now() > expiryTime) {
+                    return { valid: false, error: 'This link has expired. Please request a new one.' };
+                }
 
-            function render(){
-                const year = yearSelect.value; const term = termSelect.value;
-                const data = (mockData[year] && mockData[year][term]) ? mockData[year][term] : null;
-                attendanceBody.innerHTML = '';
-                if (!data) return;
-                const total=data.attendance.total||0; const present=data.attendance.present||0; const absent=data.attendance.absent||0;
-                document.getElementById('attendanceRate').textContent = total?Math.round((present/total)*100)+'%':'0%';
-                // Keep GPA placeholder but recalc from attendance as N/A
-                document.getElementById('gpa').textContent = 'N/A';
-                document.getElementById('daysPresent').textContent = present; document.getElementById('daysAbsent').textContent = absent;
-                document.getElementById('totalDays').textContent = total; document.getElementById('presentDays').textContent = present; document.getElementById('absentDays').textContent = absent;
-                document.getElementById('remarks').textContent = data.remarks||'No remarks'; document.getElementById('advisory').textContent='Class Adviser: Mr. Santos';
-
-                (data.attendance.records||[]).forEach((rec, idx)=>{
-                    const tr=document.createElement('tr');
-                    tr.className = 'attendance-row';
-                    tr.setAttribute('data-idx', idx);
-                    if(rec.photo){ tr.setAttribute('data-photo', rec.photo); }
-                    // add view button in last column
-                    const viewBtn = rec.photo ? `<button class="view-btn" data-idx="${idx}">View</button>` : `<button class="view-btn" disabled style="opacity:.4;cursor:default">View</button>`;
-                    tr.innerHTML = `<td>${rec.date}</td><td>${rec.timeIn}</td><td>${rec.timeOut}</td><td>${rec.status}</td><td style="text-align:right">${viewBtn}</td>`;
-                    attendanceBody.appendChild(tr);
-                });
-
-                // wire view buttons to show photo in the right-side viewer
-                document.querySelectorAll('.view-btn').forEach(btn=>{
-                    btn.addEventListener('click', (ev)=>{
-                        ev.stopPropagation();
-                        const idx = btn.getAttribute('data-idx');
-                        const rec = (data.attendance.records||[])[idx];
-                        const url = rec && rec.photo ? rec.photo : null;
-                        showPhoto(url, rec);
-                    });
-                });
+                // In production, you would verify the signature here
+                // For now, we'll allow access if studentId and expires are present
+                return { valid: true, student_id: studentId };
             }
 
-            document.getElementById('printBtn').addEventListener('click',()=>window.print());
+            // Load student information
+            async function loadStudentInfo() {
+                if (!studentId) {
+                    showError('No student ID provided. Please use the link from your SMS or email.');
+                    return null;
+                }
 
-            document.getElementById('exportCsv').addEventListener('click',()=>{
-                const rows=[['Date','Time In','Time Out','Status']];
-                document.querySelectorAll('#attendanceBody tr').forEach(r=>{ const cols=r.querySelectorAll('td'); rows.push([cols[0].textContent.trim(),cols[1].textContent.trim(),cols[2].textContent.trim(),cols[3].textContent.trim()]); });
-                const csv = rows.map(r=>r.map(c=>`"${c.replace(/"/g,'""') }"`).join(',')).join('\n');
-                const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='attendance-history.csv'; a.click(); URL.revokeObjectURL(url);
-            });
+                try {
+                    const { data, error } = await supabase
+                        .from('students')
+                        .select(`
+                            *,
+                            sections (
+                                section_name,
+                                section_code,
+                                grade_level
+                            )
+                        `)
+                        .eq('id', studentId)
+                        .single();
 
-            yearSelect.addEventListener('change',render); termSelect.addEventListener('change',render);
-            render();
+                    if (error) throw error;
+                    if (!data) throw new Error('Student not found');
 
-            function showPhoto(url, record){
+                    studentData = data;
+                    updateStudentUI(data);
+                    return data;
+
+                } catch (error) {
+                    console.error('Error loading student:', error);
+                    showError('Failed to load student information. Please try again later.');
+                    return null;
+                }
+            }
+
+            // Update student UI
+            function updateStudentUI(student) {
+                // Avatar
+                const avatarEl = document.getElementById('studentAvatar');
+                if (student.qr_code && student.qr_code.startsWith('data:image')) {
+                    avatarEl.innerHTML = `<img src="${student.qr_code}" alt="Profile">`;
+                } else {
+                    const initials = `${(student.first_name || '')[0] || ''}${(student.last_name || '')[0] || ''}`.toUpperCase();
+                    avatarEl.textContent = initials || '??';
+                }
+
+                // Name
+                const fullName = [student.first_name, student.middle_name, student.last_name, student.suffix]
+                    .filter(Boolean)
+                    .join(' ');
+                document.getElementById('studentName').textContent = fullName || 'Unknown Student';
+
+                // Student Number
+                document.getElementById('studentNumber').textContent = student.student_number || 'N/A';
+
+                // Enrollment Status
+                const statusEl = document.getElementById('enrollmentStatus');
+                statusEl.textContent = (student.enrollment_status || 'enrolled').toUpperCase();
+                if (student.enrollment_status === 'enrolled') {
+                    statusEl.className = 'badge';
+                } else {
+                    statusEl.className = 'badge inactive';
+                }
+
+                // Grade and Section
+                document.getElementById('gradeLevel').textContent = student.grade_level || 'N/A';
+                document.getElementById('sectionName').textContent = 
+                    student.sections?.section_name || student.section || 'N/A';
+                document.getElementById('lrn').textContent = student.lrn || 'N/A';
+
+                // Guardian Info
+                document.getElementById('guardianName').textContent = student.parent_guardian_name || 'N/A';
+                document.getElementById('guardianPhone').textContent = student.parent_guardian_contact || 'N/A';
+                document.getElementById('guardianEmail').textContent = student.parent_guardian_email || student.email || 'N/A';
+            }
+
+            // Load attendance records
+            async function loadAttendanceRecords() {
+                if (!studentId) return;
+
+                try {
+                    const { data, error } = await supabase
+                        .from('attendance')
+                        .select('*')
+                        .eq('student_id', studentId)
+                        .order('date', { ascending: false })
+                        .order('time_in', { ascending: false });
+
+                    if (error) throw error;
+
+                    allAttendanceRecords = data || [];
+                    renderAttendance(allAttendanceRecords);
+
+                } catch (error) {
+                    console.error('Error loading attendance:', error);
+                    document.getElementById('attendanceBody').innerHTML = 
+                        '<tr><td colspan="5" class="error">Failed to load attendance records</td></tr>';
+                }
+            }
+
+            // Render attendance table
+            function renderAttendance(records) {
+                const tbody = document.getElementById('attendanceBody');
+                tbody.innerHTML = '';
+
+                if (records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:40px">No attendance records found</td></tr>';
+                    updateStats(records);
+                    return;
+                }
+
+                records.forEach((rec, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'attendance-row';
+
+                    const date = new Date(rec.date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                    
+                    const timeIn = rec.time_in || 'N/A';
+                    const timeOut = rec.time_out || 'N/A';
+                    const status = rec.status || 'unknown';
+                    
+                    // Extract photo URL from remarks if exists
+                    const photo = extractPhotoUrl(rec.remarks);
+                    
+                    const statusClass = `status-${status.toLowerCase()}`;
+                    const viewBtn = photo ? 
+                        `<button class="view-btn" data-idx="${idx}" data-photo="${photo}">View</button>` : 
+                        `<button class="view-btn" disabled>View</button>`;
+
+                    tr.innerHTML = `
+                        <td>${date}</td>
+                        <td>${timeIn}</td>
+                        <td>${timeOut}</td>
+                        <td><span class="status-badge ${statusClass}">${status}</span></td>
+                        <td style="text-align:right">${viewBtn}</td>
+                    `;
+                    
+                    tbody.appendChild(tr);
+
+                    // Add click handler for view button
+                    if (photo) {
+                        tr.querySelector('.view-btn').addEventListener('click', () => {
+                            showPhoto(photo, rec);
+                        });
+                    }
+                });
+
+                updateStats(records);
+            }
+
+            // Extract photo URL from remarks
+            function extractPhotoUrl(remarks) {
+                if (!remarks) return null;
+                const match = remarks.match(/https?:\/\/[^\s]+/);
+                return match ? match[0] : null;
+            }
+
+            // Update statistics
+            function updateStats(records) {
+                const total = records.length;
+                let present = 0, late = 0, absent = 0, excused = 0;
+
+                records.forEach(rec => {
+                    const status = (rec.status || '').toLowerCase();
+                    if (status === 'present') present++;
+                    else if (status === 'late') late++;
+                    else if (status === 'absent') absent++;
+                    else if (status === 'excused') excused++;
+                });
+
+                const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+
+                document.getElementById('attendanceRate').textContent = rate + '%';
+                document.getElementById('daysPresent').textContent = present;
+                document.getElementById('daysLate').textContent = late;
+                document.getElementById('daysAbsent').textContent = absent;
+                document.getElementById('totalDays').textContent = total;
+                document.getElementById('presentDays').textContent = present;
+                document.getElementById('lateDays').textContent = late;
+                document.getElementById('absentDays').textContent = absent;
+            }
+
+            // Show photo in viewer
+            function showPhoto(url, record) {
                 const viewer = document.getElementById('photoViewer');
                 const img = document.getElementById('cameraPhoto');
                 const caption = document.getElementById('photoCaption');
-                // show the viewer panel
+
                 viewer.style.display = 'flex';
-                if(!url){
+
+                if (!url) {
                     img.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='220'><rect width='100%' height='100%' fill='%23081a2b'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23aab9cc' font-family='Arial' font-size='16'>No photo available</text></svg>";
-                    caption.textContent = record ? `${record.date} — ${record.status}` : 'No photo available';
+                    caption.textContent = 'No photo available';
                     return;
                 }
-                // set image src (could be a relative path or data URL)
+
                 img.src = url;
-                caption.textContent = record ? `${record.date} • ${record.timeIn} - ${record.timeOut}` : '';
+                const date = new Date(record.date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                caption.textContent = `${date} • ${record.time_in || 'N/A'} - ${record.time_out || 'N/A'}`;
             }
 
-            // close button for photo viewer
-            document.getElementById('closePhoto').addEventListener('click', ()=>{
+            // Show error message
+            function showError(message) {
+                document.querySelector('.wrap').innerHTML = `
+                    <div class="error-container">
+                        <div class="error-icon">⚠️</div>
+                        <h2 style="color:var(--muted);margin-bottom:10px">Error</h2>
+                        <p style="color:var(--muted)">${message}</p>
+                    </div>
+                `;
+            }
+
+            // Filter by month
+            document.getElementById('monthFilter').addEventListener('change', (e) => {
+                const month = e.target.value;
+                
+                if (!month) {
+                    renderAttendance(allAttendanceRecords);
+                    return;
+                }
+
+                const filtered = allAttendanceRecords.filter(rec => {
+                    const recMonth = new Date(rec.date).getMonth() + 1;
+                    return recMonth === parseInt(month);
+                });
+
+                renderAttendance(filtered);
+            });
+
+            // Close photo viewer
+            document.getElementById('closePhoto').addEventListener('click', () => {
                 const viewer = document.getElementById('photoViewer');
+                const img = document.getElementById('cameraPhoto');
+                const caption = document.getElementById('photoCaption');
+                
+                img.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='220'><rect width='100%' height='100%' fill='%23081a2b'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23aab9cc' font-family='Arial' font-size='16'>No photo selected</text></svg>";
+                caption.textContent = "Click 'View' on a row to show the scan";
                 viewer.style.display = 'none';
             });
+
+            // Print
+            document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+            // Export CSV
+            document.getElementById('exportCsv').addEventListener('click', () => {
+                const rows = [['Date', 'Time In', 'Time Out', 'Status']];
+                
+                document.querySelectorAll('#attendanceBody tr').forEach(r => {
+                    const cols = r.querySelectorAll('td');
+                    if (cols.length >= 4) {
+                        rows.push([
+                            cols[0].textContent.trim(),
+                            cols[1].textContent.trim(),
+                            cols[2].textContent.trim(),
+                            cols[3].textContent.trim()
+                        ]);
+                    }
+                });
+
+                const csv = rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `attendance-${studentData?.student_number || 'report'}-${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // Initialize app
+            async function init() {
+                // Verify URL
+                const verification = await verifySignedURL();
+                if (!verification.valid) {
+                    showError(verification.error || 'Invalid or expired link. Please request a new one.');
+                    return;
+                }
+
+                // Load data
+                const student = await loadStudentInfo();
+                if (student) {
+                    await loadAttendanceRecords();
+                }
+            }
+
+            // Start the app
+            init();
         </script>
     </body>
 </html>

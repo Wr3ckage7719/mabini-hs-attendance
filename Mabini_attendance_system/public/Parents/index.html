@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Portal - Documentation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 36px;
+        }
+        .subtitle {
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 30px;
+            color: white;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: block;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .card-desc {
+            font-size: 14px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            color: #2d3748;
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        .doc-list {
+            list-style: none;
+        }
+        .doc-list li {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: background 0.2s;
+        }
+        .doc-list li:hover {
+            background: #edf2f7;
+        }
+        .doc-list a {
+            color: #2d3748;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .doc-list .doc-desc {
+            color: #718096;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #48bb78;
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .badge.new { background: #f56565; }
+        .badge.docs { background: #4299e1; }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .feature {
+            padding: 15px;
+            background: #f0fff4;
+            border-radius: 8px;
+            border-left: 3px solid #48bb78;
+        }
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        .feature-text {
+            font-size: 14px;
+            color: #2d3748;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Parent Attendance Portal</h1>
+        <p class="subtitle">A complete parent viewing system for student attendance records</p>
+
+        <!-- Quick Access Cards -->
+        <div class="grid">
+            <a href="View.html?student_id=demo" class="card">
+                <div class="card-icon">👨‍👩‍👧‍👦</div>
+                <div class="card-title">Parent Portal</div>
+                <div class="card-desc">View student attendance records (Demo)</div>
+            </a>
+
+            <a href="test.html" class="card">
+                <div class="card-icon">🧪</div>
+                <div class="card-title">Test Page</div>
+                <div class="card-desc">Generate and test parent links</div>
+            </a>
+
+            <a href="../admin/students.html" class="card">
+                <div class="card-icon">⚙️</div>
+                <div class="card-title">Admin Panel</div>
+                <div class="card-desc">Manage students and generate links</div>
+            </a>
+        </div>
+
+        <!-- Features Section -->
+        <div class="section">
+            <h2>✨ Key Features</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-text">Live Data Integration</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📱</div>
+                    <div class="feature-text">Mobile Responsive</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🖨️</div>
+                    <div class="feature-text">Print & Export</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📸</div>
+                    <div class="feature-text">Camera Snapshots</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <div class="feature-text">Secure Links</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📈</div>
+                    <div class="feature-text">Statistics Dashboard</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Section -->
+        <div class="section">
+            <h2>📚 Documentation</h2>
+            <ul class="doc-list">
+                <li>
+                    <a href="QUICK_START.md" target="_blank">Quick Start Guide <span class="badge new">Start Here</span></a>
+                    <div class="doc-desc">Step-by-step guide to test and deploy the parent portal</div>
+                </li>
+                <li>
+                    <a href="README.md" target="_blank">Complete Documentation <span class="badge docs">Docs</span></a>
+                    <div class="doc-desc">Full feature list, database integration, and API reference</div>
+                </li>
+                <li>
+                    <a href="IMPLEMENTATION_SUMMARY.md" target="_blank">Implementation Summary</a>
+                    <div class="doc-desc">Overview of what was created and how it all works</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Files Section -->
+        <div class="section">
+            <h2>📁 Project Files</h2>
+            <ul class="doc-list">
+                <li>
+                    <a href="View.html" target="_blank">View.html</a>
+                    <div class="doc-desc">Main parent portal page with full Supabase integration</div>
+                </li>
+                <li>
+                    <a href="test.html" target="_blank">test.html</a>
+                    <div class="doc-desc">Testing utility to generate and test parent links</div>
+                </li>
+                <li>
+                    <a href="parent-link-generator.js" target="_blank">parent-link-generator.js</a>
+                    <div class="doc-desc">Utility functions for link generation and sharing</div>
+                </li>
+                <li>
+                    <a href="admin-integration-example.js" target="_blank">admin-integration-example.js</a>
+                    <div class="doc-desc">Example integration for admin panel with share modal</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Quick Links Section -->
+        <div class="section">
+            <h2>🔗 Quick Links</h2>
+            <ul class="doc-list">
+                <li>
+                    <a href="https://ddblgwzylvwuucnpmtzi.supabase.co" target="_blank">Supabase Dashboard</a>
+                    <div class="doc-desc">Access your database and check student/attendance data</div>
+                </li>
+                <li>
+                    <a href="../admin/students.html" target="_blank">Student Management</a>
+                    <div class="doc-desc">Admin panel to manage students and generate parent links</div>
+                </li>
+                <li>
+                    <a href="../admin/reports.html" target="_blank">Attendance Reports</a>
+                    <div class="doc-desc">View and export attendance reports</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Getting Started Section -->
+        <div class="section">
+            <h2>🚀 Getting Started</h2>
+            <ul class="doc-list">
+                <li>
+                    <strong>Step 1:</strong> Go to <a href="test.html">test.html</a>
+                    <div class="doc-desc">Load students from database and generate a test link</div>
+                </li>
+                <li>
+                    <strong>Step 2:</strong> Click "Load Students from Supabase"
+                    <div class="doc-desc">Verify database connection and see available students</div>
+                </li>
+                <li>
+                    <strong>Step 3:</strong> Select a student and click "Generate Parent Link"
+                    <div class="doc-desc">Create a shareable link for that student's parent</div>
+                </li>
+                <li>
+                    <strong>Step 4:</strong> Click "Open in New Tab" to test the portal
+                    <div class="doc-desc">See exactly what parents will see</div>
+                </li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; padding-top: 40px; border-top: 2px solid #e2e8f0; margin-top: 40px; color: #718096;">
+            <p><strong>Mabini High School Attendance System</strong></p>
+            <p style="font-size: 14px; margin-top: 10px;">Parent Portal v1.0 | December 2025</p>
+        </div>
+    </div>
+</body>
+</html>

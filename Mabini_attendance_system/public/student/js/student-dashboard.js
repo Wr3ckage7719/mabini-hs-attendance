@@ -48,6 +48,9 @@ async function initDashboard() {
         
         currentStudent = currentStudentData;
         
+        // Update sessionStorage with fresh data from database
+        sessionStorage.setItem('studentData', JSON.stringify(currentStudentData));
+        
         // Update profile
         await updateProfile(currentStudent);
 
@@ -127,11 +130,20 @@ async function updateProfile(student) {
             const photoEl = document.getElementById('profilePhoto');
             const initialsEl = document.getElementById('profileInitials');
             
+            console.log('Profile Picture Debug:', {
+                hasProfilePictureUrl: !!student.profile_picture_url,
+                hasProfilePicture: !!student.profile_picture,
+                profilePictureUrl: student.profile_picture_url,
+                studentId: student.student_id
+            });
+            
             // Check if student has a profile picture URL or base64
             const hasProfilePicture = student.profile_picture_url || student.profile_picture;
             
             if (hasProfilePicture && photoEl && initialsEl) {
                 const photoUrl = storageClient.getImageUrl(student, 'profile_picture');
+                console.log('Loading profile photo from:', photoUrl);
+                
                 photoEl.src = photoUrl;
                 photoEl.style.display = 'block';
                 initialsEl.style.display = 'none';
@@ -142,9 +154,16 @@ async function updateProfile(student) {
                     photoEl.style.display = 'none';
                     initialsEl.style.display = 'flex';
                 };
-            } else if (photoEl && initialsEl) {
-                photoEl.style.display = 'none';
-                initialsEl.style.display = 'flex';
+                
+                photoEl.onload = () => {
+                    console.log('Profile photo loaded successfully');
+                };
+            } else {
+                console.log('No profile picture found, showing initials');
+                if (photoEl && initialsEl) {
+                    photoEl.style.display = 'none';
+                    initialsEl.style.display = 'flex';
+                }
             }
             
             // Update QR code display - use Storage URL with fallback

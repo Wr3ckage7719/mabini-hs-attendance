@@ -36,7 +36,9 @@ async function initDashboard() {
             rawResult: studentResult,
             students: students,
             currentStudentData: currentStudentData,
-            fields: currentStudentData ? Object.keys(currentStudentData) : []
+            fields: currentStudentData ? Object.keys(currentStudentData) : [],
+            profilePictureUrl: currentStudentData?.profile_picture_url,
+            profilePicture: currentStudentData?.profile_picture
         });
         
         if (!currentStudentData || currentStudentData.status !== 'active') {

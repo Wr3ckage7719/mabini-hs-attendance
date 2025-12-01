@@ -568,8 +568,13 @@
 
                 showAlert('Profile updated successfully!', 'success');
                 
-                // Update session storage with new data
-                currentStudent = { ...currentStudent, ...result.data };
+                // Update session storage with new data - merge with profileData to ensure URL is included
+                currentStudent = { 
+                    ...currentStudent, 
+                    ...profileData,
+                    ...(result.data || {})
+                };
+                console.log('Updated currentStudent:', currentStudent);
                 sessionStorage.setItem('studentData', JSON.stringify(currentStudent));
                 
                 // Clear file input and reload profile to show updated data

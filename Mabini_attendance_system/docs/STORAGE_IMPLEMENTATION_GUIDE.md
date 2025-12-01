@@ -41,42 +41,87 @@ This guide walks you through setting up Supabase Storage for student images (QR 
 
 ### Step 2: Set Up Storage Policies
 
-Go to **Storage** → **Policies** tab, then add these 4 policies:
+**Important:** You'll create 4 policies using the Supabase Dashboard UI. Follow these steps for EACH policy:
 
-#### Policy 1: Public Read
-```sql
-CREATE POLICY "Public read access for student images"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'student-images');
-```
+---
+
+#### Policy 1: Public Read Access
+
+1. Go to **Storage** → Click on **student-images** bucket
+2. Click on **Policies** tab at the top
+3. Click **New Policy** button
+4. Fill in the form:
+   - **Policy name:** `Public read access for student images`
+   - **Allowed operation:** ✅ Check **SELECT** only (uncheck INSERT, UPDATE, DELETE)
+   - **Target roles:** Select **"Defaults to all (public) roles if none selected"** from dropdown
+   - **Policy definition:** Enter this in the text box:
+     ```
+     (bucket_id = 'student-images')
+     ```
+5. Click **Review** button
+6. Click **Save policy** button
+7. ✅ You should see "Policy created successfully"
+
+---
 
 #### Policy 2: Authenticated Upload
-```sql
-CREATE POLICY "Authenticated users can upload student images"
-ON storage.objects FOR INSERT
-WITH CHECK (
-  bucket_id = 'student-images' 
-  AND auth.role() = 'authenticated'
-);
-```
+
+1. Click **New Policy** button again
+2. Fill in the form:
+   - **Policy name:** `Authenticated users can upload student images`
+   - **Allowed operation:** ✅ Check **INSERT** only (uncheck SELECT, UPDATE, DELETE)
+   - **Target roles:** Click dropdown and select **"authenticated"**
+   - **Policy definition:** Enter this in the text box:
+     ```
+     (bucket_id = 'student-images')
+     ```
+3. Click **Review** button
+4. Click **Save policy** button
+5. ✅ You should see "Policy created successfully"
+
+---
 
 #### Policy 3: Authenticated Update
-```sql
-CREATE POLICY "Authenticated users can update student images"
-ON storage.objects FOR UPDATE
-USING (bucket_id = 'student-images')
-WITH CHECK (auth.role() = 'authenticated');
-```
+
+1. Click **New Policy** button again
+2. Fill in the form:
+   - **Policy name:** `Authenticated users can update student images`
+   - **Allowed operation:** ✅ Check **UPDATE** only (uncheck SELECT, INSERT, DELETE)
+   - **Target roles:** Click dropdown and select **"authenticated"**
+   - **Policy definition:** Enter this in the text box:
+     ```
+     (bucket_id = 'student-images')
+     ```
+3. Click **Review** button
+4. Click **Save policy** button
+5. ✅ You should see "Policy created successfully"
+
+---
 
 #### Policy 4: Authenticated Delete
-```sql
-CREATE POLICY "Authenticated users can delete student images"
-ON storage.objects FOR DELETE
-USING (
-  bucket_id = 'student-images' 
-  AND auth.role() = 'authenticated'
-);
-```
+
+1. Click **New Policy** button again
+2. Fill in the form:
+   - **Policy name:** `Authenticated users can delete student images`
+   - **Allowed operation:** ✅ Check **DELETE** only (uncheck SELECT, INSERT, UPDATE)
+   - **Target roles:** Click dropdown and select **"authenticated"**
+   - **Policy definition:** Enter this in the text box:
+     ```
+     (bucket_id = 'student-images')
+     ```
+3. Click **Review** button
+4. Click **Save policy** button
+5. ✅ You should see "Policy created successfully"
+
+---
+
+**Verify All Policies Created:**
+
+You should now see 4 policies listed:
+- ✅ Public read access for student images (SELECT)
+- ✅ Authenticated users can upload student images (INSERT)
+- ✅ Authenticated users can update student images (UPDATE)
+- ✅ Authenticated users can delete student images (DELETE)
 
 ### Step 3: Update Database Schema
 

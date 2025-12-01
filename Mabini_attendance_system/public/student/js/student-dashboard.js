@@ -24,7 +24,8 @@ async function initDashboard() {
         
         const student = JSON.parse(studentData);
         
-        // Verify student still exists and is active
+        // ALWAYS fetch fresh data from database to ensure we have latest profile picture
+        console.log('[Dashboard] Fetching fresh student data from database...');
         const studentResult = await dataClient.getAll('students', [
             { field: 'id', operator: '==', value: student.id }
         ]);
@@ -51,6 +52,7 @@ async function initDashboard() {
         currentStudent = currentStudentData;
         
         // Update sessionStorage with fresh data from database
+        console.log('[Dashboard] Updating sessionStorage with fresh data');
         sessionStorage.setItem('studentData', JSON.stringify(currentStudentData));
         
         // Update profile

@@ -6,6 +6,7 @@ import { authClient } from '../../js/auth-client.js';
 import { dataClient } from '../../js/data-client.js';
 import { attendanceClient } from '../../js/attendance-client.js';
 import { protectPage, setupAutoLogout } from '../../js/session-guard.js';
+import { storageClient } from '../../js/storage-client.js';
 
 let currentStudent = null;
 
@@ -122,24 +123,34 @@ async function updateProfile(student) {
             const profileInitialsEl = document.getElementById('profileInitials');
             if (profileInitialsEl) profileInitialsEl.textContent = initials || 'ST';
 
-            // Show profile photo if available - check both qr_code and profile_photo
+            // Show profile photo if available - use Storage URL with fallback
             const photoEl = document.getElementById('profilePhoto');
             const initialsEl = document.getElementById('profileInitials');
-            const photoData = student.qr_code || student.profile_photo;
+            const photoUrl = storageClient.getImageUrl(student, 'profile_picture', null);
             
-            if (photoData && photoEl && initialsEl) {
-                photoEl.src = photoData;
+            if (photoUrl && photoEl && initialsEl) {
+                photoEl.src = photoUrl;
                 photoEl.style.display = 'block';
                 initialsEl.style.display = 'none';
+                photoEl.onerror = () => {
+                    // Fallback to initials if image fails to load
+                    photoEl.style.display = 'none';
+                    initialsEl.style.display = 'flex';
+                };
             } else if (photoEl && initialsEl) {
                 photoEl.style.display = 'none';
                 initialsEl.style.display = 'flex';
             }
             
-            // Update QR code display (keeping for backwards compatibility)
+            // Update QR code display - use Storage URL with fallback
             const qrImg = document.querySelector('.qr-img');
-            if (qrImg && student.qr_code) {
-                qrImg.src = student.qr_code;
+            if (qrImg) {
+                const qrUrl = storageClient.getImageUrl(student, 'qr_code', 'img/QR.jpg');
+                qrImg.src = qrUrl;
+                qrImg.onerror = () => {
+                    // Fallback to default QR image
+                    qrImg.src = 'img/QR.jpg';
+                };
             }
         } else {
             // No student found - might be admin or teacher

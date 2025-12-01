@@ -126,14 +126,19 @@ async function updateProfile(student) {
             // Show profile photo if available - use Storage URL with fallback
             const photoEl = document.getElementById('profilePhoto');
             const initialsEl = document.getElementById('profileInitials');
-            const photoUrl = storageClient.getImageUrl(student, 'profile_picture', null);
             
-            if (photoUrl && photoEl && initialsEl) {
+            // Check if student has a profile picture URL or base64
+            const hasProfilePicture = student.profile_picture_url || student.profile_picture;
+            
+            if (hasProfilePicture && photoEl && initialsEl) {
+                const photoUrl = storageClient.getImageUrl(student, 'profile_picture');
                 photoEl.src = photoUrl;
                 photoEl.style.display = 'block';
                 initialsEl.style.display = 'none';
+                
                 photoEl.onerror = () => {
                     // Fallback to initials if image fails to load
+                    console.error('Failed to load profile photo:', photoUrl);
                     photoEl.style.display = 'none';
                     initialsEl.style.display = 'flex';
                 };

@@ -318,11 +318,19 @@
     <script src="../shared/js/empty-state.js"></script>
     <script src="../shared/js/loading.js"></script>
     <script type="module" src="js/admin-common.js"></script>
+    
+    <!-- QR Code Generation Library - Must load before usage -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
     <script type="module">
+        // Import storage client for image uploads
+        import { storageClient } from '../js/storage-client.js';
+        
         // NOTE: CRUD functions are provided by admin-common.js
         // Wait for admin-common.js to load
         
         let allStudents = [];
+        let qrCanvas = null; // Store canvas for upload later
         let editingStudentId = null;
         let studentModal = null;
         
@@ -546,14 +554,27 @@
                 status: 'active'
             };
             
-            // Add QR code if uploaded/generated
-            if (qrCodeBase64) {
-                studentData.qr_code = qrCodeBase64;
-            }
-            
             console.log('Saving student data:', studentData);
             
             try {
+                // Upload QR code to Supabase Storage if generated
+                if (qrCanvas) {
+                    try {
+                        const qrUrl = await storageClient.uploadQRCode(qrCanvas, studentNumber);
+                        studentData.qr_code_url = qrUrl;
+                        console.log('QR code uploaded to Storage:', qrUrl);
+                    } catch (uploadError) {
+                        console.warn('QR upload failed, falling back to base64:', uploadError);
+                        // Fallback to base64 if storage upload fails
+                        if (qrCodeBase64) {
+                            studentData.qr_code = qrCodeBase64;
+                        }
+                    }
+                } else if (qrCodeBase64) {
+                    // If only base64 exists (uploaded file), use it as fallback
+                    studentData.qr_code = qrCodeBase64;
+                }
+                
                 if (editingStudentId) {
                     const result = await window.updateDocument('students', editingStudentId, studentData);
                     console.log('Update result:', result);
@@ -633,6 +654,7 @@
         // Remove QR Code
         document.getElementById('removeQR')?.addEventListener('click', function() {
             qrCodeBase64 = null;
+            qrCanvas = null; // Clear canvas reference
             document.getElementById('qrCodeFile').value = '';
             document.getElementById('qrPreview').style.display = 'none';
             document.getElementById('qrPreviewImage').src = '';
@@ -651,8 +673,8 @@
             
             try {
                 // Generate QR code with student number as content
-                const qrCanvas = document.createElement('canvas');
-                await QRCode.toCanvas(qrCanvas, studentNumber, {
+                const qrCanvasElement = document.createElement('canvas');
+                await QRCode.toCanvas(qrCanvasElement, studentNumber, {
                     width: 200,
                     height: 200,
                     color: {
@@ -661,8 +683,11 @@
                     }
                 });
                 
-                // Convert to base64
-                qrCodeBase64 = qrCanvas.toDataURL('image/png');
+                // Store canvas for upload later
+                qrCanvas = qrCanvasElement;
+                
+                // Convert to base64 for preview
+                qrCodeBase64 = qrCanvasElement.toDataURL('image/png');
                 
                 // Show preview
                 document.getElementById('qrPreviewImage').src = qrCodeBase64;
@@ -698,9 +723,6 @@
             document.body.removeChild(link);
         });
     </script>
-    
-    <!-- QR Code Generation Library -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     
 </body>
 </html>

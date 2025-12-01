@@ -573,8 +573,19 @@
                     throw new Error(result.error);
                 }
 
-                // Update current student with result from database
-                if (result.data) {
+                // Verify the update by fetching fresh data
+                console.log('Verifying update by fetching fresh data...');
+                const verifyResult = await dataClient.getAll('students', [
+                    { field: 'id', operator: '==', value: currentStudent.id }
+                ]);
+                console.log('Verification fetch:', verifyResult);
+                const verifiedStudent = verifyResult.data?.[0] || verifyResult?.[0];
+                console.log('Verified student profile_picture_url:', verifiedStudent?.profile_picture_url);
+
+                // Update current student with verified data
+                if (verifiedStudent) {
+                    currentStudent = verifiedStudent;
+                } else if (result.data) {
                     currentStudent = { ...currentStudent, ...result.data };
                 } else {
                     // Fallback: merge profileData if no result.data

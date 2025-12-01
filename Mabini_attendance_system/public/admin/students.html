@@ -659,17 +659,42 @@
             document.getElementById('qrContent').textContent = '';
         });
         
-        // Load QR Code library dynamically
+        // Load QR Code library with multiple fallbacks
         async function loadQRCodeLibrary() {
             if (window.QRCode) return true;
             
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
-                script.onload = () => resolve(true);
-                script.onerror = () => reject(new Error('Failed to load QR Code library'));
-                document.head.appendChild(script);
-            });
+            const cdnUrls = [
+                '../js/qrcode.min.js', // Local copy (most reliable)
+                'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js', // Cloudflare CDN
+                'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js', // jsDelivr CDN
+                'https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js' // unpkg CDN
+            ];
+            
+            for (const url of cdnUrls) {
+                try {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = url;
+                        script.onload = () => resolve(true);
+                        script.onerror = () => reject(new Error(`Failed to load from ${url}`));
+                        document.head.appendChild(script);
+                        
+                        // Timeout after 5 seconds
+                        setTimeout(() => reject(new Error('Timeout')), 5000);
+                    });
+                    
+                    // Check if library loaded successfully
+                    if (window.QRCode) {
+                        console.log(`QR library loaded from: ${url}`);
+                        return true;
+                    }
+                } catch (error) {
+                    console.warn(`Failed to load QR library from ${url}:`, error);
+                    continue; // Try next CDN
+                }
+            }
+            
+            throw new Error('All CDN sources failed. Please check your internet connection.');
         }
         
         // QR Code Generation
@@ -686,25 +711,36 @@
                 await loadQRCodeLibrary();
                 
                 if (typeof window.QRCode === 'undefined') {
-                    throw new Error('QR Code library failed to load. Please check your internet connection.');
+                    throw new Error('QR Code library failed to load from all sources.');
                 }
                 
                 // Generate QR code with student number as content
                 const qrCanvasElement = document.createElement('canvas');
-                await window.QRCode.toCanvas(qrCanvasElement, studentNumber, {
+                
+                // Use QRCode library to generate on canvas
+                const qr = new window.QRCode(qrCanvasElement, {
+                    text: studentNumber,
                     width: 200,
                     height: 200,
-                    color: {
-                        dark: '#000000',
-                        light: '#FFFFFF'
-                    }
+                    colorDark: '#000000',
+                    colorLight: '#FFFFFF',
+                    correctLevel: window.QRCode.CorrectLevel.H
                 });
                 
+                // Wait a bit for rendering
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Get the canvas element (QRCode creates it inside the container)
+                const canvas = qrCanvasElement.querySelector('canvas');
+                if (!canvas) {
+                    throw new Error('Failed to generate QR code canvas');
+                }
+                
                 // Store canvas for upload later
-                qrCanvas = qrCanvasElement;
+                qrCanvas = canvas;
                 
                 // Convert to base64 for preview
-                qrCodeBase64 = qrCanvasElement.toDataURL('image/png');
+                qrCodeBase64 = canvas.toDataURL('image/png');
                 
                 // Show preview
                 document.getElementById('qrPreviewImage').src = qrCodeBase64;

@@ -672,9 +672,14 @@
             }
             
             try {
+                // Check if QRCode library is loaded
+                if (typeof window.QRCode === 'undefined') {
+                    throw new Error('QR Code library not loaded. Please refresh the page.');
+                }
+                
                 // Generate QR code with student number as content
                 const qrCanvasElement = document.createElement('canvas');
-                await QRCode.toCanvas(qrCanvasElement, studentNumber, {
+                await window.QRCode.toCanvas(qrCanvasElement, studentNumber, {
                     width: 200,
                     height: 200,
                     color: {

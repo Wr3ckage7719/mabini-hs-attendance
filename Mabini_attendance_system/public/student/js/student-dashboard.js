@@ -152,10 +152,17 @@ async function updateProfile(student) {
             if (qrImg) {
                 const qrUrl = storageClient.getImageUrl(student, 'qr_code', 'img/QR.jpg');
                 qrImg.src = qrUrl;
+                qrImg.style.opacity = '1'; // Show QR code after loading
                 qrImg.onerror = () => {
                     // Fallback to default QR image
                     qrImg.src = 'img/QR.jpg';
                 };
+            }
+            
+            // Show profile card after all data is loaded
+            const profileCard = document.getElementById('profileCard');
+            if (profileCard) {
+                profileCard.style.opacity = '1';
             }
         } else {
             // No student found - might be admin or teacher

@@ -672,7 +672,13 @@
             }
             
             try {
-                // Check if QRCode library is loaded
+                // Wait for QRCode library to be available
+                let attempts = 0;
+                while (typeof window.QRCode === 'undefined' && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
                 if (typeof window.QRCode === 'undefined') {
                     throw new Error('QR Code library not loaded. Please refresh the page.');
                 }

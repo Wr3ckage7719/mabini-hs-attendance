@@ -135,30 +135,33 @@ async function updateProfile(student) {
             console.log('Profile Picture Debug:', {
                 hasProfilePictureUrl: !!student.profile_picture_url,
                 hasProfilePicture: !!student.profile_picture,
+                hasQrCode: !!student.qr_code,
                 profilePictureUrl: student.profile_picture_url,
-                studentId: student.student_id
+                profilePicture: student.profile_picture,
+                qrCode: student.qr_code ? 'base64 data present' : 'no data',
+                studentId: student.student_id || student.student_number,
+                studentObject: student
             });
             
-            // Check if student has a profile picture URL or base64
-            const hasProfilePicture = student.profile_picture_url || student.profile_picture;
+            // Check multiple fields for profile picture
+            const profilePictureUrl = student.profile_picture_url || student.profile_picture || student.qr_code;
             
-            if (hasProfilePicture && photoEl && initialsEl) {
-                const photoUrl = storageClient.getImageUrl(student, 'profile_picture');
-                console.log('Loading profile photo from:', photoUrl);
+            if (profilePictureUrl && photoEl && initialsEl) {
+                console.log('Loading profile photo from:', profilePictureUrl.substring(0, 100) + '...');
                 
-                photoEl.src = photoUrl;
+                photoEl.src = profilePictureUrl;
                 photoEl.style.display = 'block';
                 initialsEl.style.display = 'none';
                 
                 photoEl.onerror = () => {
                     // Fallback to initials if image fails to load
-                    console.error('Failed to load profile photo:', photoUrl);
+                    console.error('Failed to load profile photo:', profilePictureUrl.substring(0, 100));
                     photoEl.style.display = 'none';
                     initialsEl.style.display = 'flex';
                 };
                 
                 photoEl.onload = () => {
-                    console.log('Profile photo loaded successfully');
+                    console.log('✅ Profile photo loaded successfully!');
                 };
             } else {
                 console.log('No profile picture found, showing initials');

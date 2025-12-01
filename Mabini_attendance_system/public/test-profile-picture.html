@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Profile Picture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1d2e;
+            color: white;
+        }
+        .test-section {
+            background: #252a3d;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #4facfe;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #3a8eed;
+        }
+        #output {
+            background: #1a1d2e;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        img {
+            max-width: 200px;
+            border: 2px solid #4facfe;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <h1>Profile Picture Debug Tool</h1>
+    
+    <div class="test-section">
+        <h2>1. Check Database Columns</h2>
+        <button onclick="checkDatabaseColumns()">Check Columns</button>
+        <div id="output1"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Check Current Student Data</h2>
+        <button onclick="checkStudentData()">Get Student Data</button>
+        <div id="output2"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Image Loading</h2>
+        <button onclick="testImageLoad()">Load Image</button>
+        <div id="output3"></div>
+        <img id="testImage" style="display:none;">
+    </div>
+
+    <div class="test-section">
+        <h2>4. Update Profile Picture URL Manually</h2>
+        <input type="text" id="manualUrl" placeholder="Enter image URL" style="width: 100%; padding: 8px; margin: 10px 0;">
+        <button onclick="updateProfilePictureUrl()">Update Database</button>
+        <div id="output4"></div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './js/supabase-client.js';
+        import { dataClient } from './js/data-client.js';
+
+        window.supabase = supabase;
+        window.dataClient = dataClient;
+
+        window.checkDatabaseColumns = async function() {
+            const output = document.getElementById('output1');
+            output.innerHTML = 'Checking database columns...';
+            
+            try {
+                // Get a student record to see all columns
+                const { data, error } = await supabase
+                    .from('students')
+                    .select('*')
+                    .limit(1);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    const columns = Object.keys(data[0]);
+                    output.innerHTML = `<span class="success">✅ Database accessible</span>\n\n`;
+                    output.innerHTML += `<strong>Total columns: ${columns.length}</strong>\n\n`;
+                    output.innerHTML += `Columns:\n${columns.join('\n')}\n\n`;
+                    
+                    const hasProfileUrl = columns.includes('profile_picture_url');
+                    const hasQrUrl = columns.includes('qr_code_url');
+                    
+                    output.innerHTML += hasProfileUrl 
+                        ? `<span class="success">✅ profile_picture_url exists</span>\n`
+                        : `<span class="error">❌ profile_picture_url MISSING</span>\n`;
+                    
+                    output.innerHTML += hasQrUrl 
+                        ? `<span class="success">✅ qr_code_url exists</span>\n`
+                        : `<span class="error">❌ qr_code_url MISSING</span>\n`;
+                } else {
+                    output.innerHTML = '<span class="warning">⚠️ No students found in database</span>';
+                }
+            } catch (err) {
+                output.innerHTML = `<span class="error">❌ Error: ${err.message}</span>`;
+            }
+        };
+
+        window.checkStudentData = async function() {
+            const output = document.getElementById('output2');
+            output.innerHTML = 'Getting student data...';
+            
+            try {
+                const studentData = sessionStorage.getItem('studentData');
+                if (!studentData) {
+                    output.innerHTML = '<span class="error">❌ No student logged in</span>';
+                    return;
+                }
+
+                const student = JSON.parse(studentData);
+                output.innerHTML = `<span class="success">✅ Student found in session</span>\n\n`;
+                output.innerHTML += `ID: ${student.id}\n`;
+                output.innerHTML += `Student Number: ${student.student_number || student.student_id}\n`;
+                output.innerHTML += `Name: ${student.first_name} ${student.last_name}\n\n`;
+                
+                // Check for profile picture fields
+                output.innerHTML += `<strong>Profile Picture Fields:</strong>\n`;
+                output.innerHTML += student.profile_picture_url 
+                    ? `<span class="success">✅ profile_picture_url: ${student.profile_picture_url.substring(0, 80)}...</span>\n`
+                    : `<span class="warning">⚠️ profile_picture_url: empty</span>\n`;
+                
+                output.innerHTML += student.profile_picture 
+                    ? `<span class="success">✅ profile_picture: ${student.profile_picture.substring(0, 50)}...</span>\n`
+                    : `<span class="warning">⚠️ profile_picture: empty</span>\n`;
+                
+                output.innerHTML += student.qr_code 
+                    ? `<span class="success">✅ qr_code: ${student.qr_code.substring(0, 50)}...</span>\n`
+                    : `<span class="warning">⚠️ qr_code: empty</span>\n`;
+
+                // Fetch fresh data from database
+                output.innerHTML += `\n<strong>Fresh data from database:</strong>\n`;
+                const result = await dataClient.getAll('students', [
+                    { field: 'id', operator: '==', value: student.id }
+                ]);
+                
+                const dbStudent = result.data[0];
+                output.innerHTML += dbStudent.profile_picture_url 
+                    ? `<span class="success">✅ profile_picture_url: ${dbStudent.profile_picture_url.substring(0, 80)}...</span>\n`
+                    : `<span class="warning">⚠️ profile_picture_url: empty</span>\n`;
+
+            } catch (err) {
+                output.innerHTML = `<span class="error">❌ Error: ${err.message}</span>`;
+            }
+        };
+
+        window.testImageLoad = async function() {
+            const output = document.getElementById('output3');
+            const img = document.getElementById('testImage');
+            output.innerHTML = 'Testing image load...';
+            
+            try {
+                const studentData = sessionStorage.getItem('studentData');
+                if (!studentData) {
+                    output.innerHTML = '<span class="error">❌ No student logged in</span>';
+                    return;
+                }
+
+                const student = JSON.parse(studentData);
+                
+                // Fetch fresh from database
+                const result = await dataClient.getAll('students', [
+                    { field: 'id', operator: '==', value: student.id }
+                ]);
+                
+                const dbStudent = result.data[0];
+                const url = dbStudent.profile_picture_url || 'https://ddblgwzylvwuucnpmtzi.supabase.co/storage/v1/object/public/student-images/profile-pictures/student-233294-profile.jpg';
+                
+                output.innerHTML = `Testing URL:\n${url}\n\n`;
+                
+                img.src = url;
+                img.style.display = 'block';
+                
+                img.onload = () => {
+                    output.innerHTML += '<span class="success">✅ Image loaded successfully!</span>';
+                };
+                
+                img.onerror = (e) => {
+                    output.innerHTML += `<span class="error">❌ Image failed to load</span>\nError: ${e.message || 'Unknown error'}`;
+                };
+                
+            } catch (err) {
+                output.innerHTML = `<span class="error">❌ Error: ${err.message}</span>`;
+            }
+        };
+
+        window.updateProfilePictureUrl = async function() {
+            const output = document.getElementById('output4');
+            const url = document.getElementById('manualUrl').value.trim();
+            
+            if (!url) {
+                output.innerHTML = '<span class="error">❌ Please enter a URL</span>';
+                return;
+            }
+            
+            output.innerHTML = 'Updating database...';
+            
+            try {
+                const studentData = sessionStorage.getItem('studentData');
+                if (!studentData) {
+                    output.innerHTML = '<span class="error">❌ No student logged in</span>';
+                    return;
+                }
+
+                const student = JSON.parse(studentData);
+                
+                const result = await dataClient.update('students', student.id, {
+                    profile_picture_url: url
+                });
+                
+                if (result.error) throw new Error(result.error);
+                
+                // Update session
+                student.profile_picture_url = url;
+                sessionStorage.setItem('studentData', JSON.stringify(student));
+                
+                output.innerHTML = '<span class="success">✅ Database updated successfully!</span>\n';
+                output.innerHTML += `Updated student ID: ${student.id}\n`;
+                output.innerHTML += `New URL: ${url}`;
+                
+            } catch (err) {
+                output.innerHTML = `<span class="error">❌ Error: ${err.message}</span>`;
+            }
+        };
+    </script>
+</body>
+</html>

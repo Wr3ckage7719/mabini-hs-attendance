@@ -549,12 +549,19 @@
                 // Upload profile picture to Supabase Storage if file selected
                 if (profilePhotoFile) {
                     try {
-                        const profileUrl = await storageClient.uploadProfilePicture(profilePhotoFile, currentStudent.student_number);
+                        // Use student_number or student_id for filename
+                        const studentId = currentStudent.student_number || currentStudent.student_id || currentStudent.id;
+                        console.log('Uploading profile picture for student:', studentId);
+                        
+                        const profileUrl = await storageClient.uploadProfilePicture(profilePhotoFile, studentId);
                         profileData.profile_picture_url = profileUrl;
-                        console.log('Profile picture uploaded:', profileUrl);
+                        
+                        console.log('Profile picture uploaded successfully:', profileUrl);
                     } catch (uploadError) {
-                        console.warn('Profile upload failed, skipping:', uploadError);
-                        showAlert('Warning: Profile picture upload failed, but other changes will be saved', 'warning');
+                        console.error('Profile upload failed:', uploadError);
+                        showAlert('Warning: Profile picture upload failed - ' + uploadError.message, 'warning');
+                        // Don't continue if upload failed
+                        throw uploadError;
                     }
                 }
 
@@ -566,20 +573,32 @@
                     throw new Error(result.error);
                 }
 
-                showAlert('Profile updated successfully!', 'success');
+                // Update current student with result from database
+                if (result.data) {
+                    currentStudent = { ...currentStudent, ...result.data };
+                } else {
+                    // Fallback: merge profileData if no result.data
+                    currentStudent = { ...currentStudent, ...profileData };
+                }
                 
-                // Update session storage with new data - merge with profileData to ensure URL is included
-                currentStudent = { 
-                    ...currentStudent, 
-                    ...profileData,
-                    ...(result.data || {})
-                };
                 console.log('Updated currentStudent:', currentStudent);
+                console.log('Profile picture URL in student object:', currentStudent.profile_picture_url);
+                
+                // Update session storage
                 sessionStorage.setItem('studentData', JSON.stringify(currentStudent));
+                
+                showAlert('Profile updated successfully!', 'success');
                 
                 // Clear file input and reload profile to show updated data
                 profilePhotoFile = null;
-                setTimeout(() => loadProfile(), 1000);
+                setTimeout(() => {
+                    loadProfile();
+                    // Force reload the photo preview
+                    if (currentStudent.profile_picture_url) {
+                        photoPreview.src = currentStudent.profile_picture_url;
+                        photoPreview.style.display = 'block';
+                    }
+                }, 500);
             } catch (error) {
                 console.error('Save error:', error);
                 showAlert('Failed to save changes: ' + (error.message || 'Unknown error'), 'error');

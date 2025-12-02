@@ -458,10 +458,22 @@
             document.getElementById('contactNumber').value = teacher.phone || '';
             document.getElementById('status').value = teacher.status || 'active';
             
-            // Clear QR code
-            document.getElementById('qrcodeTeacher').innerHTML = '';
-            document.getElementById('qrPreviewTeacher').style.display = 'none';
-            qrCodeInstanceTeacher = null;
+            // Load existing QR code if available
+            const qrContainer = document.getElementById('qrcodeTeacher');
+            const qrPreview = document.getElementById('qrPreviewTeacher');
+            
+            if (teacher.qr_code_url) {
+                qrContainer.innerHTML = `<img src="${teacher.qr_code_url}" style="width:200px;height:200px;border-radius:8px;" alt="Teacher QR Code" />`;
+                document.getElementById('qrContentTeacher').textContent = teacher.employee_number || teacher.email;
+                qrPreview.style.display = 'block';
+                currentQRCanvas = null; // Clear canvas since we're showing saved QR
+            } else {
+                // Clear QR code if no saved QR
+                qrContainer.innerHTML = '';
+                qrPreview.style.display = 'none';
+                qrCodeInstanceTeacher = null;
+                currentQRCanvas = null;
+            }
             
             document.getElementById('editMode').value = 'true';
             
@@ -517,7 +529,7 @@
                 if (currentQRCanvas) {
                     try {
                         console.log('Uploading teacher QR code...');
-                        const qrUrl = await storageClient.uploadQRCode(currentQRCanvas, employeeNumber);
+                        const qrUrl = await storageClient.uploadTeacherQRCode(currentQRCanvas, employeeNumber);
                         teacherData.qr_code_url = qrUrl;
                         console.log('QR code uploaded:', qrUrl);
                     } catch (qrError) {

@@ -68,6 +68,32 @@ export const storageClient = {
     },
 
     /**
+     * Upload teacher QR code canvas as PNG to storage
+     * @param {HTMLCanvasElement} canvas - Canvas with QR code
+     * @param {string} employeeNumber - Employee number for filename
+     * @returns {Promise<string>} - Public URL of uploaded QR code
+     */
+    async uploadTeacherQRCode(canvas, employeeNumber) {
+        return new Promise((resolve, reject) => {
+            canvas.toBlob(async (blob) => {
+                try {
+                    if (!blob) {
+                        throw new Error('Failed to create blob from canvas');
+                    }
+                    
+                    const fileName = `employee-${employeeNumber}-qr.png`;
+                    const file = new File([blob], fileName, { type: 'image/png' });
+                    
+                    const url = await this.uploadImage(file, 'qr-codes', fileName);
+                    resolve(url);
+                } catch (error) {
+                    reject(error);
+                }
+            }, 'image/png');
+        });
+    },
+
+    /**
      * Upload profile picture from file input
      * @param {File} file - The image file from input
      * @param {string} studentNumber - Student number for filename

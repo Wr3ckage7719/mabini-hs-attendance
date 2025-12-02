@@ -215,7 +215,7 @@
     
     <!-- Add/Edit Section Modal -->
     <div class="modal fade" id="sectionModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add New Block</h5>
@@ -246,20 +246,12 @@
                         
                         <div class="mb-3">
                             <label class="form-label">Strand <span id="strandRequired" class="text-danger">*</span></label>
-                            <select class="form-select" id="strand" required>
+                            <select class="form-select" id="strand">
                                 <option value="">Select Strand</option>
                                 <option value="STEM">STEM (Science, Technology, Engineering, Mathematics)</option>
                                 <option value="HUMSS">HUMSS (Humanities and Social Sciences)</option>
                                 <option value="ABM">ABM (Accountancy, Business and Management)</option>
                                 <option value="GAS">GAS (General Academic Strand)</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Status <span class="text-danger">*</span></label>
-                            <select class="form-select" id="isActive" required>
-                                <option value="true">Active</option>
-                                <option value="false">Inactive</option>
                             </select>
                         </div>
                     </div>
@@ -465,9 +457,7 @@
             document.getElementById('blockName').value = block.section_name || '';
             document.getElementById('gradeLevel').value = block.grade_level || '';
             updateStrandOptions(); // Update strand options based on grade
-            // Note: strand and status fields are shown in UI but not saved to DB yet
-            document.getElementById('strand').value = '';
-            document.getElementById('isActive').value = 'true';
+            document.getElementById('strand').value = ''; // Strand not stored in DB yet
             
             const modal = new bootstrap.Modal(document.getElementById('sectionModal'));
             modal.show();

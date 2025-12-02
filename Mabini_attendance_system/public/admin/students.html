@@ -237,7 +237,7 @@
                         
                         <div class="mb-3">
                             <label class="form-label">Grade Level <span class="text-danger">*</span></label>
-                            <select class="form-select" id="gradeLevel" required>
+                            <select class="form-select" id="gradeLevel" required onchange="filterSectionsByGrade()">
                                 <option value="">Select Grade Level</option>
                                 <option value="7">Grade 7</option>
                                 <option value="8">Grade 8</option>
@@ -253,7 +253,7 @@
                             <select class="form-select" id="sectionId">
                                 <option value="">-- No Section Assigned --</option>
                             </select>
-                            <small class="text-muted">Assign the student to a specific class section</small>
+                            <small class="text-muted">Select a grade level first to see available sections</small>
                         </div>
                         
                         <div class="mb-3">
@@ -403,48 +403,64 @@
         // Load data on page load
         loadInitialData();
         
-        // Populate section dropdown
-        function populateSectionDropdown() {
+        // Populate section dropdown - now filtered by grade level
+        function populateSectionDropdown(selectedGrade = null) {
             const sectionSelect = document.getElementById('sectionId');
             if (!sectionSelect) return;
             
-            // Keep the first option (No Section Assigned)
+            // Keep current selection if any
+            const currentSelection = sectionSelect.value;
+            
+            // Reset dropdown
             sectionSelect.innerHTML = '<option value="">-- No Section Assigned --</option>';
             
-            // Group sections by grade level for better organization
-            const sectionsByGrade = {};
-            allSections.forEach(section => {
-                const grade = section.grade_level || 'Unknown';
-                if (!sectionsByGrade[grade]) {
-                    sectionsByGrade[grade] = [];
-                }
-                sectionsByGrade[grade].push(section);
+            // If no grade selected, show message
+            if (!selectedGrade) {
+                const option = document.createElement('option');
+                option.disabled = true;
+                option.textContent = 'Select a grade level first';
+                sectionSelect.appendChild(option);
+                return;
+            }
+            
+            // Filter sections by selected grade level
+            const filteredSections = allSections.filter(section => 
+                String(section.grade_level) === String(selectedGrade) && 
+                section.status === 'active'
+            );
+            
+            // Sort sections by name
+            filteredSections.sort((a, b) => 
+                (a.section_name || '').localeCompare(b.section_name || '')
+            );
+            
+            // Add filtered sections
+            filteredSections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section.id;
+                option.textContent = `${section.section_name}${section.block ? ' - Block ' + section.block : ''}`;
+                sectionSelect.appendChild(option);
             });
             
-            // Sort grade levels
-            const grades = Object.keys(sectionsByGrade).sort((a, b) => {
-                if (a === 'Unknown') return 1;
-                if (b === 'Unknown') return -1;
-                return parseInt(a) - parseInt(b);
-            });
+            // If no sections found for this grade
+            if (filteredSections.length === 0) {
+                const option = document.createElement('option');
+                option.disabled = true;
+                option.textContent = `No sections available for Grade ${selectedGrade}`;
+                sectionSelect.appendChild(option);
+            }
             
-            // Add sections grouped by grade
-            grades.forEach(grade => {
-                const optgroup = document.createElement('optgroup');
-                optgroup.label = `Grade ${grade}`;
-                
-                sectionsByGrade[grade]
-                    .sort((a, b) => (a.section_name || '').localeCompare(b.section_name || ''))
-                    .forEach(section => {
-                        const option = document.createElement('option');
-                        option.value = section.id;
-                        option.textContent = `${section.section_name}${section.block ? ' - Block ' + section.block : ''}`;
-                        optgroup.appendChild(option);
-                    });
-                
-                sectionSelect.appendChild(optgroup);
-            });
+            // Restore previous selection if it's still valid
+            if (currentSelection && filteredSections.some(s => s.id === currentSelection)) {
+                sectionSelect.value = currentSelection;
+            }
         }
+        
+        // Filter sections when grade level changes
+        window.filterSectionsByGrade = function() {
+            const gradeLevel = document.getElementById('gradeLevel').value;
+            populateSectionDropdown(gradeLevel);
+        };
         
         // Note: Auto-polling disabled to prevent login/logout loops
         // Data will refresh after CRUD operations instead
@@ -525,6 +541,9 @@
                 document.getElementById('studentForm').reset();
                 document.getElementById('editMode').value = 'false';
                 
+                // Reset section dropdown to initial state
+                populateSectionDropdown(null);
+                
                 // Clear QR code
                 qrCodeBase64 = null;
                 document.getElementById('qrCodeFile').value = '';
@@ -563,6 +582,11 @@
             document.getElementById('firstName').value = student.first_name || '';
             document.getElementById('lastName').value = student.last_name || '';
             document.getElementById('gradeLevel').value = student.grade_level || '';
+            
+            // Populate sections for the student's grade level
+            if (student.grade_level) {
+                populateSectionDropdown(student.grade_level);
+            }
             
             // Set section assignment dropdown
             document.getElementById('sectionId').value = student.section_id || '';

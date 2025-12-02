@@ -490,26 +490,33 @@
                 return;
             }
             
-            // Set student info
-            document.getElementById('viewStudentId').textContent = student.student_number || student.student_id || 'N/A';
-            document.getElementById('viewName').textContent = `${student.first_name || ''} ${student.last_name || ''}`.trim() || student.full_name || 'N/A';
-            document.getElementById('viewSection').textContent = student.sectionName || 'N/A';
-            document.getElementById('viewGrade').textContent = `Grade ${student.gradeLevel || 'N/A'}`;
+            // Set student info - only update elements that exist
+            const viewStudentId = document.getElementById('viewStudentId');
+            const viewName = document.getElementById('viewName');
+            const viewSection = document.getElementById('viewSection');
+            const viewGrade = document.getElementById('viewGrade');
+            const viewModalTitle = document.getElementById('viewModalTitle');
+            const viewModalSubject = document.getElementById('viewModalSubject');
             
-            const statusBadge = student.status === 'active' 
-                ? '<span class="badge bg-success">Active</span>' 
-                : '<span class="badge bg-secondary">Inactive</span>';
-            document.getElementById('viewStatus').innerHTML = statusBadge;
+            if (viewStudentId) viewStudentId.textContent = student.student_number || student.student_id || 'N/A';
+            if (viewName) viewName.textContent = `${student.first_name || ''} ${student.last_name || ''}`.trim() || student.full_name || 'N/A';
+            if (viewSection) viewSection.textContent = student.sectionName || 'N/A';
+            if (viewGrade) viewGrade.textContent = `Grade ${student.gradeLevel || 'N/A'}`;
             
             // Set modal title
-            document.getElementById('viewModalTitle').textContent = `${student.first_name || ''} ${student.last_name || ''}`.trim();
-            document.getElementById('viewModalSubject').textContent = `${student.student_number || student.student_id || 'N/A'} • ${student.sectionName || 'No Section'}`;
+            if (viewModalTitle) viewModalTitle.textContent = `${student.first_name || ''} ${student.last_name || ''}`.trim();
+            if (viewModalSubject) viewModalSubject.textContent = `${student.student_number || student.student_id || 'N/A'} • ${student.sectionName || 'No Section'}`;
             
             // Load attendance records
             await loadAttendanceRecords(studentId);
             
-            const modal = new bootstrap.Modal(document.getElementById('viewModal'));
-            modal.show();
+            const modalElement = document.getElementById('viewModal');
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            } else {
+                console.error('Modal element not found');
+            }
         };
 
         // Load attendance records for a student

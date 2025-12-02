@@ -243,9 +243,9 @@
     <script src="../shared/js/confirm-modal.js"></script>
     <script src="../shared/js/empty-state.js"></script>
     <script src="../shared/js/loading.js"></script>
-    <script type="module" src="js/teacher-common.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    <script type="module">
+        import { supabase } from '../js/supabase-client.js';
+        
         let allSchedules = [];
         let currentTeacherId = null;
 
@@ -256,7 +256,7 @@
                 const teacherData = JSON.parse(sessionStorage.getItem('teacherData'));
                 if (!teacherData || !teacherData.id) {
                     console.error('No valid teacher data found');
-                    showAlert('Session expired. Please login again.', 'error');
+                    showToast('Session expired. Please login again.', 'error');
                     setTimeout(() => window.location.href = 'login.html', 2000);
                     return;
                 }
@@ -264,20 +264,31 @@
                 console.log('Loading schedule for teacher:', currentTeacherId);
                 console.log('Full teacher data:', teacherData);
                 
-                // Get teaching loads for this teacher
-                const teachingLoads = await getDocuments('teaching_loads');
+                // Get teaching loads for this teacher using Supabase directly
+                const { data: teachingLoads, error: loadsError } = await supabase
+                    .from('teaching_loads')
+                    .select('*');
+                
+                if (loadsError) {
+                    console.error('Error loading teaching loads:', loadsError);
+                    showToast('Failed to load teaching schedule', 'error');
+                    return;
+                }
+                
                 console.log('All teaching loads:', teachingLoads);
                 console.log('Filtering for teacher_id:', currentTeacherId);
+                
                 const myLoads = teachingLoads.filter(load => {
                     console.log('Checking load:', load.teacher_id, '===', currentTeacherId, '?', load.teacher_id === currentTeacherId);
                     return load.teacher_id === currentTeacherId;
-                })
+                });
+                
                 console.log('My loads after filter:', myLoads);
                 
                 // Get related data
-                const subjects = await getDocuments('subjects');
-                const sections = await getDocuments('sections');
-                const students = await getDocuments('students');
+                const { data: subjects } = await supabase.from('subjects').select('*');
+                const { data: sections } = await supabase.from('sections').select('*');
+                const { data: students } = await supabase.from('students').select('*');
                 
                 // Combine data
                 allSchedules = myLoads.map(load => {
@@ -303,7 +314,7 @@
                 renderSchedule(allSchedules);
             } catch (error) {
                 console.error('Error loading schedule:', error);
-                showAlert('Failed to load schedule', 'error');
+                showToast('Failed to load schedule', 'error');
             }
         }
 
@@ -347,7 +358,7 @@
                     <td>${schedule.room || 'N/A'}</td>
                     <td>${schedule.gradeLevel || 'N/A'}</td>
                     <td>
-                        <button class="btn btn-sm btn-info" onclick="viewSchedule(${index})">
+                        <button class="btn btn-sm btn-info" onclick="window.viewSchedule(${index})">
                             <i class="bi bi-eye"></i> View
                         </button>
                     </td>
@@ -356,7 +367,7 @@
         }
 
         // View schedule details
-        function viewSchedule(index) {
+        window.viewSchedule = function(index) {
             const schedule = allSchedules[index];
             if (!schedule) return;
             
@@ -370,12 +381,14 @@
             
             const modal = new bootstrap.Modal(document.getElementById('viewModal'));
             modal.show();
-        }
+        };
 
         // Initialize
         window.addEventListener('load', async () => {
             await loadSchedule();
         });
     </script>
+    <script type="module" src="js/teacher-common.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -60,6 +60,39 @@
         body.modal-open .sidebar-backdrop {
             display: none !important;
         }
+        
+        /* Student Details Modal Styling */
+        .detail-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        .detail-value {
+            display: block;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+        }
+        [data-theme="dark"] .detail-value {
+            color: #e2e8f0;
+        }
+        [data-theme="dark"] .detail-label {
+            color: #94a3b8;
+        }
+        [data-theme="dark"] .detail-item {
+            border-bottom-color: rgba(255,255,255,0.08);
+        }
     </style>
 </head>
 <body>
@@ -258,24 +291,68 @@
 
     <!-- View Details Modal -->
     <div class="modal fade" id="viewModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Student Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 1.5rem;">
+                    <h5 class="modal-title" style="font-weight: 600; font-size: 1.25rem;">Student Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" id="viewModalBody">
-                    <p><strong>Student ID:</strong> <span id="viewStudentId"></span></p>
-                    <p><strong>Full Name:</strong> <span id="viewName"></span></p>
-                    <p><strong>Email:</strong> <span id="viewEmail"></span></p>
-                    <p><strong>Section:</strong> <span id="viewSection"></span></p>
-                    <p><strong>Grade Level:</strong> <span id="viewGrade"></span></p>
-                    <p><strong>Status:</strong> <span id="viewStatus"></span></p>
-                    <p><strong>Parent/Guardian:</strong> <span id="viewParent"></span></p>
-                    <p><strong>Contact Number:</strong> <span id="viewContact"></span></p>
+                <div class="modal-body" style="padding: 2rem;">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="detail-item">
+                                <label class="detail-label">Student ID:</label>
+                                <span class="detail-value" id="viewStudentId">N/A</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="detail-item">
+                                <label class="detail-label">Full Name:</label>
+                                <span class="detail-value" id="viewName">N/A</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="detail-item">
+                                <label class="detail-label">Email:</label>
+                                <span class="detail-value" id="viewEmail">N/A</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="detail-item">
+                                <label class="detail-label">Section:</label>
+                                <span class="detail-value" id="viewSection">N/A</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="detail-item">
+                                <label class="detail-label">Grade Level:</label>
+                                <span class="detail-value" id="viewGrade">N/A</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="detail-item">
+                                <label class="detail-label">Status:</label>
+                                <span class="detail-value" id="viewStatus">
+                                    <span class="badge bg-success">active</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="detail-item">
+                                <label class="detail-label">Parent/Guardian:</label>
+                                <span class="detail-value" id="viewParent">N/A</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="detail-item">
+                                <label class="detail-label">Contact Number:</label>
+                                <span class="detail-value" id="viewContact">N/A</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 1rem 2rem;">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" style="border-radius: 8px; padding: 0.5rem 2rem; font-weight: 500;">Close</button>
                 </div>
             </div>
         </div>
@@ -418,12 +495,18 @@
             const student = allStudents.find(s => s.id === studentId);
             if (!student) return;
             
-            document.getElementById('viewStudentId').textContent = student.student_id || student.id_number || 'N/A';
-            document.getElementById('viewName').textContent = student.full_name || student.name || `${student.first_name || ''} ${student.last_name || ''}`;
+            document.getElementById('viewStudentId').textContent = student.student_number || student.student_id || student.id_number || 'N/A';
+            document.getElementById('viewName').textContent = student.full_name || student.name || `${student.first_name || ''} ${student.last_name || ''}`.trim();
             document.getElementById('viewEmail').textContent = student.email || 'N/A';
-            document.getElementById('viewSection').textContent = student.sectionName;
-            document.getElementById('viewGrade').textContent = student.gradeLevel;
-            document.getElementById('viewStatus').textContent = student.status || 'inactive';
+            document.getElementById('viewSection').textContent = student.sectionName || 'N/A';
+            document.getElementById('viewGrade').textContent = student.gradeLevel || student.grade_level || 'N/A';
+            
+            // Update status with badge
+            const statusSpan = document.getElementById('viewStatus');
+            const status = student.status || 'inactive';
+            const badgeClass = status === 'active' ? 'bg-success' : 'bg-secondary';
+            statusSpan.innerHTML = `<span class="badge ${badgeClass}">${status}</span>`;
+            
             document.getElementById('viewParent').textContent = student.parent_name || student.guardian_name || 'N/A';
             document.getElementById('viewContact').textContent = student.parent_contact || student.contact || 'N/A';
             

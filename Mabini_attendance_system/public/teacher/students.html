@@ -60,39 +60,6 @@
         body.modal-open .sidebar-backdrop {
             display: none !important;
         }
-        
-        /* Student Details Modal Styling */
-        .detail-item {
-            padding: 0.75rem 0;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-        .detail-item:last-child {
-            border-bottom: none;
-        }
-        .detail-label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #64748b;
-            margin-bottom: 0.25rem;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-        }
-        .detail-value {
-            display: block;
-            font-size: 1rem;
-            font-weight: 500;
-            color: #1e293b;
-        }
-        [data-theme="dark"] .detail-value {
-            color: #e2e8f0;
-        }
-        [data-theme="dark"] .detail-label {
-            color: #94a3b8;
-        }
-        [data-theme="dark"] .detail-item {
-            border-bottom-color: rgba(255,255,255,0.08);
-        }
     </style>
 </head>
 <body>
@@ -290,69 +257,99 @@
     </div>
 
     <!-- View Details Modal -->
+    <!-- Student Details Modal with Attendance -->
     <div class="modal fade" id="viewModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 1.5rem;">
-                    <h5 class="modal-title" style="font-weight: 600; font-size: 1.25rem;">Student Details</h5>
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <div>
+                        <h5 class="modal-title mb-1" id="viewModalTitle">Student Attendance Details</h5>
+                        <small class="d-block opacity-75" id="viewModalSubject"></small>
+                    </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" style="padding: 2rem;">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <div class="detail-item">
-                                <label class="detail-label">Student ID:</label>
-                                <span class="detail-value" id="viewStudentId">N/A</span>
+                <div class="modal-body">
+                    <!-- Student Info Header -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <h6 class="text-muted mb-3">Student Information</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>Student ID:</strong> <span id="viewStudentId"></span></p>
+                                    <p class="mb-2"><strong>Full Name:</strong> <span id="viewName"></span></p>
+                                    <p class="mb-2"><strong>Email:</strong> <span id="viewEmail"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>Section:</strong> <span id="viewSection"></span></p>
+                                    <p class="mb-2"><strong>Grade Level:</strong> <span id="viewGrade"></span></p>
+                                    <p class="mb-2"><strong>Status:</strong> <span id="viewStatus"></span></p>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-12">
-                            <div class="detail-item">
-                                <label class="detail-label">Full Name:</label>
-                                <span class="detail-value" id="viewName">N/A</span>
+                        <div class="col-md-4">
+                            <h6 class="text-muted mb-3">Attendance Summary</h6>
+                            <div class="d-flex gap-2 mb-2">
+                                <span class="badge bg-success px-3 py-2">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Present: <span id="presentCount">0</span>
+                                </span>
+                                <span class="badge bg-danger px-3 py-2">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    Absent: <span id="absentCount">0</span>
+                                </span>
                             </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="detail-item">
-                                <label class="detail-label">Email:</label>
-                                <span class="detail-value" id="viewEmail">N/A</span>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="detail-item">
-                                <label class="detail-label">Section:</label>
-                                <span class="detail-value" id="viewSection">N/A</span>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="detail-item">
-                                <label class="detail-label">Grade Level:</label>
-                                <span class="detail-value" id="viewGrade">N/A</span>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="detail-item">
-                                <label class="detail-label">Status:</label>
-                                <span class="detail-value" id="viewStatus">
-                                    <span class="badge bg-success">active</span>
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-secondary px-3 py-2">
+                                    <i class="bi bi-calendar-check me-1"></i>
+                                    Total: <span id="totalCount">0</span>
+                                </span>
+                                <span class="badge bg-info px-3 py-2">
+                                    <i class="bi bi-percent me-1"></i>
+                                    Rate: <span id="attendanceRate">0%</span>
                                 </span>
                             </div>
                         </div>
-                        <div class="col-12">
-                            <div class="detail-item">
-                                <label class="detail-label">Parent/Guardian:</label>
-                                <span class="detail-value" id="viewParent">N/A</span>
-                            </div>
+                    </div>
+
+                    <!-- Download Report Button -->
+                    <div class="mb-3">
+                        <button class="btn btn-primary" id="downloadReportBtn" onclick="downloadAttendanceReport()">
+                            <i class="bi bi-download me-2"></i>Download Report
+                        </button>
+                    </div>
+
+                    <!-- Attendance Records -->
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Attendance Records</h6>
                         </div>
-                        <div class="col-12">
-                            <div class="detail-item">
-                                <label class="detail-label">Contact Number:</label>
-                                <span class="detail-value" id="viewContact">N/A</span>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Time In</th>
+                                            <th>Time Out</th>
+                                            <th>Status</th>
+                                            <th>Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="attendanceRecordsBody">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">
+                                                <i class="bi bi-info-circle me-2"></i>
+                                                No attendance records found for the selected period
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 1rem 2rem;">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" style="border-radius: 8px; padding: 0.5rem 2rem; font-weight: 500;">Close</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -490,29 +487,175 @@
             `).join('');
         }
 
-        // View student details
-        function viewStudent(studentId) {
+        // View student details with attendance
+        async function viewStudent(studentId) {
             const student = allStudents.find(s => s.id === studentId);
             if (!student) return;
             
-            document.getElementById('viewStudentId').textContent = student.student_number || student.student_id || student.id_number || 'N/A';
-            document.getElementById('viewName').textContent = student.full_name || student.name || `${student.first_name || ''} ${student.last_name || ''}`.trim();
+            // Set student info
+            document.getElementById('viewStudentId').textContent = student.student_number || student.student_id || 'N/A';
+            document.getElementById('viewName').textContent = `${student.first_name || ''} ${student.last_name || ''}`.trim() || student.full_name || 'N/A';
             document.getElementById('viewEmail').textContent = student.email || 'N/A';
             document.getElementById('viewSection').textContent = student.sectionName || 'N/A';
-            document.getElementById('viewGrade').textContent = student.gradeLevel || student.grade_level || 'N/A';
+            document.getElementById('viewGrade').textContent = `Grade ${student.gradeLevel || 'N/A'}`;
             
-            // Update status with badge
-            const statusSpan = document.getElementById('viewStatus');
-            const status = student.status || 'inactive';
-            const badgeClass = status === 'active' ? 'bg-success' : 'bg-secondary';
-            statusSpan.innerHTML = `<span class="badge ${badgeClass}">${status}</span>`;
+            const statusBadge = student.status === 'active' 
+                ? '<span class="badge bg-success">Active</span>' 
+                : '<span class="badge bg-secondary">Inactive</span>';
+            document.getElementById('viewStatus').innerHTML = statusBadge;
             
-            document.getElementById('viewParent').textContent = student.parent_name || student.guardian_name || 'N/A';
-            document.getElementById('viewContact').textContent = student.parent_contact || student.contact || 'N/A';
+            // Set modal title
+            document.getElementById('viewModalTitle').textContent = `${student.first_name || ''} ${student.last_name || ''}`.trim();
+            document.getElementById('viewModalSubject').textContent = `${student.student_number || student.student_id || 'N/A'} • ${student.sectionName || 'No Section'}`;
+            
+            // Load attendance records
+            await loadAttendanceRecords(studentId);
             
             const modal = new bootstrap.Modal(document.getElementById('viewModal'));
             modal.show();
         }
+
+        // Load attendance records for a student
+        async function loadAttendanceRecords(studentId) {
+            try {
+                // Fetch attendance records from database
+                const attendanceRecords = await getDocuments('attendance');
+                
+                // Filter records for this student
+                const studentRecords = attendanceRecords.filter(record => 
+                    String(record.student_id) === String(studentId)
+                ).sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at));
+                
+                // Calculate statistics
+                const totalRecords = studentRecords.length;
+                const presentRecords = studentRecords.filter(r => r.status === 'present').length;
+                const absentRecords = studentRecords.filter(r => r.status === 'absent').length;
+                const attendanceRate = totalRecords > 0 ? Math.round((presentRecords / totalRecords) * 100) : 0;
+                
+                // Update summary badges
+                document.getElementById('presentCount').textContent = presentRecords;
+                document.getElementById('absentCount').textContent = absentRecords;
+                document.getElementById('totalCount').textContent = totalRecords;
+                document.getElementById('attendanceRate').textContent = `${attendanceRate}%`;
+                
+                // Render attendance records table
+                const tbody = document.getElementById('attendanceRecordsBody');
+                
+                if (studentRecords.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="bi bi-info-circle me-2"></i>
+                                No attendance records found for the selected period
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tbody.innerHTML = studentRecords.map(record => {
+                    const date = new Date(record.date || record.created_at);
+                    const dateStr = date.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    });
+                    
+                    const timeIn = record.time_in || record.check_in || 'N/A';
+                    const timeOut = record.time_out || record.check_out || 'N/A';
+                    const status = record.status || 'unknown';
+                    const remarks = record.remarks || '-';
+                    
+                    const statusBadge = status === 'present' 
+                        ? '<span class="badge bg-success">Present</span>'
+                        : status === 'absent'
+                        ? '<span class="badge bg-danger">Absent</span>'
+                        : '<span class="badge bg-secondary">Unknown</span>';
+                    
+                    return `
+                        <tr>
+                            <td>${dateStr}</td>
+                            <td>${timeIn}</td>
+                            <td>${timeOut}</td>
+                            <td>${statusBadge}</td>
+                            <td>${remarks}</td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                // Store records for report generation
+                window.currentStudentRecords = {
+                    student: allStudents.find(s => s.id === studentId),
+                    records: studentRecords,
+                    stats: {
+                        total: totalRecords,
+                        present: presentRecords,
+                        absent: absentRecords,
+                        rate: attendanceRate
+                    }
+                };
+                
+            } catch (error) {
+                console.error('Error loading attendance records:', error);
+                document.getElementById('attendanceRecordsBody').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-danger py-4">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Error loading attendance records
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Download attendance report
+        window.downloadAttendanceReport = function() {
+            if (!window.currentStudentRecords) {
+                alert('No attendance data available');
+                return;
+            }
+            
+            const { student, records, stats } = window.currentStudentRecords;
+            
+            // Create CSV content
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Header
+            csvContent += `Attendance Report\n`;
+            csvContent += `Student: ${student.first_name} ${student.last_name}\n`;
+            csvContent += `Student ID: ${student.student_number || student.student_id}\n`;
+            csvContent += `Section: ${student.sectionName}\n`;
+            csvContent += `Grade Level: ${student.gradeLevel}\n`;
+            csvContent += `\n`;
+            csvContent += `Summary\n`;
+            csvContent += `Total Records: ${stats.total}\n`;
+            csvContent += `Present: ${stats.present}\n`;
+            csvContent += `Absent: ${stats.absent}\n`;
+            csvContent += `Attendance Rate: ${stats.rate}%\n`;
+            csvContent += `\n`;
+            csvContent += `Date,Time In,Time Out,Status,Remarks\n`;
+            
+            // Records
+            records.forEach(record => {
+                const date = new Date(record.date || record.created_at);
+                const dateStr = date.toLocaleDateString('en-US');
+                const timeIn = record.time_in || record.check_in || 'N/A';
+                const timeOut = record.time_out || record.check_out || 'N/A';
+                const status = record.status || 'unknown';
+                const remarks = (record.remarks || '-').replace(/,/g, ';'); // Escape commas
+                
+                csvContent += `${dateStr},${timeIn},${timeOut},${status},${remarks}\n`;
+            });
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `attendance_report_${student.student_number || student.id}_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
 
         // Filter students
         function filterStudents() {

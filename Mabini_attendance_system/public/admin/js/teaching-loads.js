@@ -349,7 +349,7 @@ window.editLoad = function(id) {
     if (subjectIdEl) subjectIdEl.value = load.subject_id || '';
     if (sectionIdEl) sectionIdEl.value = load.section_id || '';
     if (roomEl) roomEl.value = load.room || '';
-    if (academicYearEl) academicYearEl.value = load.academical_year || '';
+    if (academicYearEl) academicYearEl.value = load.school_year || '';
     
     // Parse schedule string to populate days and times
     // Schedule format: "Monday, Tuesday, Wednesday 08:00-09:00"
@@ -452,7 +452,7 @@ async function handleSubmit(e) {
             section_id: sectionIdEl?.value || null,
             schedule: schedule || null,
             room: roomEl?.value?.trim() || null,
-            academical_year: academicYearEl?.value?.trim() || null
+            school_year: academicYearEl?.value?.trim() || null
         };
         
         console.log('Form data to save:', formData);

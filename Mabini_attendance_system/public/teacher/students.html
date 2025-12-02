@@ -41,6 +41,26 @@
         })();
     </script>
     <script src="../assets/js/theme.js" defer></script>
+    <style>
+        /* Ensure modal appears above all other elements */
+        .modal-backdrop {
+            z-index: 1040 !important;
+        }
+        .modal {
+            z-index: 1050 !important;
+        }
+        .modal-dialog {
+            z-index: 1060 !important;
+        }
+        /* Ensure sidebar backdrop doesn't interfere with modals */
+        .sidebar-backdrop {
+            z-index: 1030 !important;
+        }
+        /* Hide sidebar backdrop when modal is open */
+        body.modal-open .sidebar-backdrop {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
     <button class="sidebar-toggle" onclick="toggleSidebar()" style="display: none;">

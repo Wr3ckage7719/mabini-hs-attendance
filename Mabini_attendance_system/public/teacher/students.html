@@ -285,18 +285,33 @@
                 }
                 currentTeacherId = userData.id;
                 console.log('Loading students for teacher:', currentTeacherId);
+                console.log('Teacher userData:', userData);
                 
                 // Get teaching loads to find teacher's sections
                 const teachingLoads = await getDocuments('teaching_loads');
+                console.log('All teaching loads:', teachingLoads);
+                console.log('Current teacher ID (type):', typeof currentTeacherId, currentTeacherId);
+                
+                // Filter with detailed logging
                 const mySectionIds = [...new Set(
                     teachingLoads
-                        .filter(load => load.teacher_id === currentTeacherId)
+                        .filter(load => {
+                            const matches = String(load.teacher_id) === String(currentTeacherId);
+                            if (matches) {
+                                console.log('✓ Match found:', load);
+                            } else {
+                                console.log('✗ No match - load.teacher_id:', typeof load.teacher_id, load.teacher_id);
+                            }
+                            return matches;
+                        })
                         .map(load => load.section_id)
                 )];
                 
+                console.log('My section IDs:', mySectionIds);
+                
                 // Get sections
                 const sections = await getDocuments('sections');
-                mySections = sections.filter(s => mySectionIds.includes(s.id));
+                mySections = sections.filter(s => mySectionIds.some(sId => String(sId) === String(s.id)));
                 
                 // Populate section filter
                 const sectionFilter = document.getElementById('sectionFilter');
@@ -305,8 +320,8 @@
                 
                 // Get students in these sections
                 const students = await getDocuments('students');
-                allStudents = students.filter(st => mySectionIds.includes(st.section_id)).map(student => {
-                    const section = mySections.find(s => s.id === student.section_id);
+                allStudents = students.filter(st => mySectionIds.some(sId => String(sId) === String(st.section_id))).map(student => {
+                    const section = mySections.find(s => String(s.id) === String(student.section_id));
                     return {
                         ...student,
                         sectionName: section ? (section.name || section.section_name) : 'Unknown',

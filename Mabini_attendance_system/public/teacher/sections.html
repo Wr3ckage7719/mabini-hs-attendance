@@ -240,23 +240,39 @@
                 }
                 currentTeacherId = userData.id;
                 console.log('Loading sections for teacher:', currentTeacherId);
+                console.log('Teacher userData:', userData);
                 
                 // Get all sections
                 const sections = await getDocuments('sections');
+                console.log('All sections:', sections);
                 
                 // Get teaching loads to find sections assigned to this teacher
                 const teachingLoads = await getDocuments('teaching_loads');
+                console.log('All teaching loads:', teachingLoads);
+                console.log('Current teacher ID (type):', typeof currentTeacherId, currentTeacherId);
+                
+                // Filter with detailed logging
                 const mySections = teachingLoads
-                    .filter(load => load.teacher_id === currentTeacherId)
+                    .filter(load => {
+                        const matches = String(load.teacher_id) === String(currentTeacherId);
+                        if (matches) {
+                            console.log('✓ Match found:', load);
+                        } else {
+                            console.log('✗ No match - load.teacher_id:', typeof load.teacher_id, load.teacher_id);
+                        }
+                        return matches;
+                    })
                     .map(load => load.section_id);
+                    
+                console.log('My section IDs:', mySections);
                 
                 // Filter sections
-                allSections = sections.filter(s => mySections.includes(s.id));
+                allSections = sections.filter(s => mySections.some(sId => String(sId) === String(s.id)));
                 
                 // Get student counts
                 const students = await getDocuments('students');
                 allSections = allSections.map(section => {
-                    const studentCount = students.filter(s => s.section_id === section.id).length;
+                    const studentCount = students.filter(s => String(s.section_id) === String(section.id)).length;
                     return { ...section, studentCount };
                 });
                 

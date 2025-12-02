@@ -277,10 +277,15 @@
                 
                 console.log('All teaching loads:', teachingLoads);
                 console.log('Filtering for teacher_id:', currentTeacherId);
+                console.log('Current teacher ID (type):', typeof currentTeacherId, currentTeacherId);
                 
                 const myLoads = teachingLoads.filter(load => {
-                    console.log('Checking load:', load.teacher_id, '===', currentTeacherId, '?', load.teacher_id === currentTeacherId);
-                    return load.teacher_id === currentTeacherId;
+                    const matches = String(load.teacher_id) === String(currentTeacherId);
+                    console.log('Checking load:', load.teacher_id, '(type:', typeof load.teacher_id, ') ===', currentTeacherId, '?', matches);
+                    if (!matches) {
+                        console.log('✗ No match - load.teacher_id:', typeof load.teacher_id, load.teacher_id);
+                    }
+                    return matches;
                 });
                 
                 console.log('My loads after filter:', myLoads);
@@ -292,9 +297,9 @@
                 
                 // Combine data
                 allSchedules = myLoads.map(load => {
-                    const subject = subjects.find(s => s.id === load.subject_id);
-                    const section = sections.find(s => s.id === load.section_id);
-                    const sectionStudents = students.filter(st => st.section_id === load.section_id);
+                    const subject = subjects.find(s => String(s.id) === String(load.subject_id));
+                    const section = sections.find(s => String(s.id) === String(load.section_id));
+                    const sectionStudents = students.filter(st => String(st.section_id) === String(load.section_id));
                     
                     return {
                         ...load,

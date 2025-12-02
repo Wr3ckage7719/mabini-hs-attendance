@@ -117,16 +117,22 @@ function updateUserProfile(user) {
 // Get documents from API
 async function getDocuments(collection) {
     try {
+        console.log(`[getDocuments] Fetching from collection: ${collection}`);
         const { data, error } = await dataClient.getAll(collection);
         
         if (error) {
-            console.error('Error fetching documents:', error);
+            console.error(`[getDocuments] Error fetching ${collection}:`, error);
+            console.error('[getDocuments] Error details:', JSON.stringify(error));
             return [];
         }
         
+        console.log(`[getDocuments] ${collection} returned:`, data ? data.length : 0, 'records');
+        console.log(`[getDocuments] ${collection} data:`, data);
+        
         return data || [];
     } catch (error) {
-        console.error('Error fetching documents:', error);
+        console.error(`[getDocuments] Exception fetching ${collection}:`, error);
+        console.error('[getDocuments] Exception stack:', error.stack);
         return [];
     }
 }

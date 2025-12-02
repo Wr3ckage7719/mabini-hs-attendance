@@ -288,7 +288,27 @@
                 console.log('Teacher userData:', userData);
                 
                 // Get teaching loads to find teacher's sections
-                const teachingLoads = await getDocuments('teaching_loads');
+                // Try direct Supabase query first to bypass potential RLS issues
+                let teachingLoads = [];
+                try {
+                    const { data, error } = await window.dataClient.getAll('teaching_loads');
+                    if (error) {
+                        console.error('❌ Error from dataClient:', error);
+                        // Fallback: try direct supabase import
+                        const { supabase } = await import('../js/supabase-client.js');
+                        const fallbackResult = await supabase.from('teaching_loads').select('*');
+                        if (fallbackResult.error) {
+                            console.error('❌ Fallback also failed:', fallbackResult.error);
+                        } else {
+                            teachingLoads = fallbackResult.data || [];
+                            console.log('✅ Using fallback data:', teachingLoads.length, 'records');
+                        }
+                    } else {
+                        teachingLoads = data || [];
+                    }
+                } catch (err) {
+                    console.error('❌ Exception getting teaching loads:', err);
+                }
                 console.log('All teaching loads:', teachingLoads);
                 console.log('Current teacher ID (type):', typeof currentTeacherId, currentTeacherId);
                 

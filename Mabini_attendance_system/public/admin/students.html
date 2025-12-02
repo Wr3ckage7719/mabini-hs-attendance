@@ -249,8 +249,11 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Section</label>
-                            <input type="text" class="form-control" id="section" placeholder="e.g., Einstein">
+                            <label class="form-label">Section Assignment</label>
+                            <select class="form-select" id="sectionId">
+                                <option value="">-- No Section Assigned --</option>
+                            </select>
+                            <small class="text-muted">Assign the student to a specific class section</small>
                         </div>
                         
                         <div class="mb-3">
@@ -335,6 +338,7 @@
         // Wait for admin-common.js to load
         
         let allStudents = [];
+        let allSections = [];
         let qrCanvas = null; // Store canvas for upload later
         let editingStudentId = null;
         let studentModal = null;
@@ -376,17 +380,71 @@
         // Load initial data immediately
         async function loadInitialData() {
             try {
-                const students = await window.getDocuments('students');
+                // Load students and sections
+                const [students, sections] = await Promise.all([
+                    window.getDocuments('students'),
+                    window.getDocuments('sections')
+                ]);
+                
                 allStudents = students;
+                allSections = sections;
+                
+                console.log('Loaded students:', students.length);
+                console.log('Loaded sections:', sections.length);
+                
                 renderStudents(students);
+                populateSectionDropdown();
             } catch (error) {
-                console.error('Error loading students:', error);
+                console.error('Error loading initial data:', error);
                 renderStudents([]);
             }
         }
         
         // Load data on page load
         loadInitialData();
+        
+        // Populate section dropdown
+        function populateSectionDropdown() {
+            const sectionSelect = document.getElementById('sectionId');
+            if (!sectionSelect) return;
+            
+            // Keep the first option (No Section Assigned)
+            sectionSelect.innerHTML = '<option value="">-- No Section Assigned --</option>';
+            
+            // Group sections by grade level for better organization
+            const sectionsByGrade = {};
+            allSections.forEach(section => {
+                const grade = section.grade_level || 'Unknown';
+                if (!sectionsByGrade[grade]) {
+                    sectionsByGrade[grade] = [];
+                }
+                sectionsByGrade[grade].push(section);
+            });
+            
+            // Sort grade levels
+            const grades = Object.keys(sectionsByGrade).sort((a, b) => {
+                if (a === 'Unknown') return 1;
+                if (b === 'Unknown') return -1;
+                return parseInt(a) - parseInt(b);
+            });
+            
+            // Add sections grouped by grade
+            grades.forEach(grade => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = `Grade ${grade}`;
+                
+                sectionsByGrade[grade]
+                    .sort((a, b) => (a.section_name || '').localeCompare(b.section_name || ''))
+                    .forEach(section => {
+                        const option = document.createElement('option');
+                        option.value = section.id;
+                        option.textContent = `${section.section_name}${section.block ? ' - Block ' + section.block : ''}`;
+                        optgroup.appendChild(option);
+                    });
+                
+                sectionSelect.appendChild(optgroup);
+            });
+        }
         
         // Note: Auto-polling disabled to prevent login/logout loops
         // Data will refresh after CRUD operations instead
@@ -406,27 +464,42 @@
                 return;
             }
             
-            tbody.innerHTML = students.map(student => `
-                <tr>
-                    <td>${student.student_number || '-'}</td>
-                    <td>${student.first_name} ${student.last_name}</td>
-                    <td>Grade ${student.grade_level || '-'}</td>
-                    <td>${student.section || '-'}</td>
-                    <td>
-                        <span class="badge ${student.status === 'active' ? 'bg-success' : 'bg-secondary'}">
-                            ${student.status === 'active' ? 'Active' : 'Inactive'}
-                        </span>
-                    </td>
-                    <td>
-                        <button onclick="window.editStudent('${student.id}')" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-pencil"></i> <span class="btn-label">Edit</span>
-                        </button>
-                        <button onclick="window.deleteStudent('${student.id}', '${student.first_name} ${student.last_name}')" class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i> <span class="btn-label">Delete</span>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = students.map(student => {
+                // Find the section name if student has a section_id
+                let sectionName = student.section || '-'; // Keep old section text field as fallback
+                
+                if (student.section_id) {
+                    const section = allSections.find(s => String(s.id) === String(student.section_id));
+                    if (section) {
+                        sectionName = section.section_name;
+                        if (section.block) {
+                            sectionName += ` - Block ${section.block}`;
+                        }
+                    }
+                }
+                
+                return `
+                    <tr>
+                        <td>${student.student_number || '-'}</td>
+                        <td>${student.first_name} ${student.last_name}</td>
+                        <td>Grade ${student.grade_level || '-'}</td>
+                        <td>${sectionName}</td>
+                        <td>
+                            <span class="badge ${student.status === 'active' ? 'bg-success' : 'bg-secondary'}">
+                                ${student.status === 'active' ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td>
+                            <button onclick="window.editStudent('${student.id}')" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> <span class="btn-label">Edit</span>
+                            </button>
+                            <button onclick="window.deleteStudent('${student.id}', '${student.first_name} ${student.last_name}')" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i> <span class="btn-label">Delete</span>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
         
         window.filterStudents = function() {
@@ -490,7 +563,10 @@
             document.getElementById('firstName').value = student.first_name || '';
             document.getElementById('lastName').value = student.last_name || '';
             document.getElementById('gradeLevel').value = student.grade_level || '';
-            document.getElementById('section').value = student.section || '';
+            
+            // Set section assignment dropdown
+            document.getElementById('sectionId').value = student.section_id || '';
+            
             document.getElementById('status').value = student.status || 'active';
             
             // Load email
@@ -535,7 +611,7 @@
             const firstName = document.getElementById('firstName').value.trim();
             const lastName = document.getElementById('lastName').value.trim();
             const gradeLevel = document.getElementById('gradeLevel').value;
-            const section = document.getElementById('section').value.trim();
+            const sectionId = document.getElementById('sectionId').value || null;
             const email = document.getElementById('email').value.trim();
             const status = document.getElementById('status').value;
             
@@ -557,7 +633,7 @@
                 first_name: firstName,
                 last_name: lastName,
                 grade_level: gradeLevel,
-                section: section || null,
+                section_id: sectionId,
                 email: email,
                 status: status
             };
@@ -599,9 +675,13 @@
                     alert('Student added successfully!');
                 }
                 
-                // Immediately refresh the student list
-                const students = await window.getDocuments('students');
+                // Immediately refresh the student list and sections
+                const [students, sections] = await Promise.all([
+                    window.getDocuments('students'),
+                    window.getDocuments('sections')
+                ]);
                 allStudents = students;
+                allSections = sections;
                 renderStudents(students);
                 
                 if (studentModal) studentModal.hide();

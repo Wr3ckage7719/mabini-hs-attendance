@@ -261,33 +261,40 @@
                                 <i class="bi bi-info-circle"></i> Teachers must retrieve their account credentials via the "Don't have your account yet?" link on the teacher login page.
                             </div>
                         </div>
+                        
+                        <!-- QR Code Section -->
+                        <div class="mb-3" style="border-top: 1px solid #dee2e6; padding-top: 1rem;">
+                            <h6 class="mb-3"><i class="bi bi-qr-code"></i> QR Code</h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">QR Code Options</label>
+                                <div class="d-flex gap-2 mb-3">
+                                    <button type="button" class="btn btn-primary btn-sm" id="generateQRTeacher">
+                                        <i class="bi bi-qr-code"></i> Generate QR Code
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- QR Code Preview -->
+                            <div id="qrPreviewTeacher" style="display: none; text-align: center;">
+                                <div id="qrcodeTeacher" style="display: inline-block; margin-bottom: 12px;"></div>
+                                <div class="d-flex gap-2 justify-content-center mb-2">
+                                    <button type="button" class="btn btn-sm btn-danger" id="removeQRTeacher">
+                                        <i class="bi bi-trash"></i> Remove QR
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-primary" id="downloadQRTeacher">
+                                        <i class="bi bi-download"></i> Download QR
+                                    </button>
+                                </div>
+                                <small class="text-muted d-block">QR Code contains: <span id="qrContentTeacher" style="font-weight: 600;"></span></small>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">Save Teacher</button>
                     </div>
                 </form>
-            </div>
-        </div>
-    </div>
-    
-    <!-- QR Code Modal -->
-    <div class="modal fade" id="qrModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Teacher QR Code</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <div id="qrcode" class="mb-3" style="display: inline-block;"></div>
-                    <p class="mt-2"><strong id="qrContent">Loading...</strong></p>
-                    <small class="text-muted">Use this QR code for teacher attendance tracking</small>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="downloadQR()"><i class="bi bi-download"></i> Download</button>
-                </div>
             </div>
         </div>
     </div>
@@ -361,9 +368,6 @@
                         <button class="btn btn-sm btn-outline-primary" onclick="editTeacher('${teacher.id}')" title="Edit">
                             <i class="bi bi-pencil"></i> <span class="btn-label">Edit</span>
                         </button>
-                        <button class="btn btn-sm btn-outline-success" onclick="showQRCode('${teacher.employee_number || teacher.email}', '${teacher.first_name} ${teacher.last_name}')" title="QR Code">
-                            <i class="bi bi-qr-code"></i> <span class="btn-label">QR</span>
-                        </button>
                         <button class="btn btn-sm btn-outline-danger" onclick="deleteTeacher('${teacher.id}')" title="Delete">
                             <i class="bi bi-trash"></i> <span class="btn-label">Delete</span>
                         </button>
@@ -396,6 +400,11 @@
                 document.getElementById('modalTitle').textContent = 'Add New Teacher';
                 document.getElementById('teacherForm').reset();
                 document.getElementById('editMode').value = 'false';
+                
+                // Clear QR code
+                document.getElementById('qrcodeTeacher').innerHTML = '';
+                document.getElementById('qrPreviewTeacher').style.display = 'none';
+                qrCodeInstanceTeacher = null;
                 
                 if (teacherModal) {
                     teacherModal.show();
@@ -433,6 +442,11 @@
             document.getElementById('position').value = teacher.position || '';
             document.getElementById('contactNumber').value = teacher.phone || '';
             document.getElementById('status').value = teacher.status || 'active';
+            
+            // Clear QR code
+            document.getElementById('qrcodeTeacher').innerHTML = '';
+            document.getElementById('qrPreviewTeacher').style.display = 'none';
+            qrCodeInstanceTeacher = null;
             
             document.getElementById('editMode').value = 'true';
             
@@ -552,8 +566,8 @@
             }
         };
 
-        // QR Code functionality
-        let qrCodeInstance = null;
+        // QR Code functionality for teachers
+        let qrCodeInstanceTeacher = null;
 
         // Load QR Code library
         async function loadQRCodeLibrary() {
@@ -582,8 +596,8 @@
             return false;
         }
 
-        // Show QR Code
-        window.showQRCode = async function(identifier, name) {
+        // Generate QR Code for teacher
+        document.getElementById('generateQRTeacher')?.addEventListener('click', async function() {
             try {
                 const loaded = await loadQRCodeLibrary();
                 if (!loaded) {
@@ -591,44 +605,60 @@
                     return;
                 }
 
-                const qrContainer = document.getElementById('qrcode');
+                // Get identifier (employee number or email)
+                const employeeNumber = document.getElementById('employeeNumber')?.value;
+                const email = document.getElementById('email')?.value;
+                const identifier = employeeNumber || email;
+
+                if (!identifier) {
+                    alert('Please enter employee number or email first');
+                    return;
+                }
+
+                const qrContainer = document.getElementById('qrcodeTeacher');
                 qrContainer.innerHTML = '';
                 
-                document.getElementById('qrContent').textContent = identifier || 'Unknown';
+                document.getElementById('qrContentTeacher').textContent = identifier;
                 
                 if (window.QRCode) {
-                    qrCodeInstance = new QRCode(qrContainer, {
+                    qrCodeInstanceTeacher = new QRCode(qrContainer, {
                         text: identifier,
-                        width: 256,
-                        height: 256,
+                        width: 200,
+                        height: 200,
                         colorDark: '#000000',
                         colorLight: '#ffffff',
                         correctLevel: QRCode.CorrectLevel.H
                     });
                 }
                 
-                const modal = new bootstrap.Modal(document.getElementById('qrModal'));
-                modal.show();
+                document.getElementById('qrPreviewTeacher').style.display = 'block';
             } catch (error) {
-                console.error('Error showing QR code:', error);
+                console.error('Error generating QR code:', error);
                 alert('Error generating QR code: ' + error.message);
             }
-        };
+        });
+
+        // Remove QR Code
+        document.getElementById('removeQRTeacher')?.addEventListener('click', function() {
+            document.getElementById('qrcodeTeacher').innerHTML = '';
+            document.getElementById('qrPreviewTeacher').style.display = 'none';
+            qrCodeInstanceTeacher = null;
+        });
 
         // Download QR Code
-        window.downloadQR = function() {
-            const canvas = document.querySelector('#qrcode canvas');
+        document.getElementById('downloadQRTeacher')?.addEventListener('click', function() {
+            const canvas = document.querySelector('#qrcodeTeacher canvas');
             if (!canvas) {
                 alert('QR code not generated yet');
                 return;
             }
             
-            const identifier = document.getElementById('qrContent').textContent;
+            const identifier = document.getElementById('qrContentTeacher').textContent;
             const link = document.createElement('a');
             link.download = `teacher-qr-${identifier}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
-        };
+        });
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {

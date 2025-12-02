@@ -1,3 +1,11 @@
+/**
+ * Generates HTML for an empty state display
+ * @param {string} type - Type of empty state: 'teachers', 'students', 'subjects', 'sections', 'blocks', 'users', 'reports', or 'default'
+ * @param {string} message - Main message to display in the empty state
+ * @returns {string} HTML string for the empty state component
+ * @example
+ * tableBody.innerHTML = getEmptyStateHTML('students', 'No students found');
+ */
 function getEmptyStateHTML(type, message) {
     const icons = {
         teachers: 'bi-person-badge',
@@ -38,6 +46,12 @@ function getEmptyStateHTML(type, message) {
     `;
 }
 
+/**
+ * Gets the appropriate subtext message for an empty state
+ * @param {string} type - Type of empty state
+ * @returns {string} Subtext message providing guidance to the user
+ * @private
+ */
 function getEmptyStateSubtext(type) {
     const subtexts = {
         teachers: 'Add your first teacher to get started with managing faculty.',

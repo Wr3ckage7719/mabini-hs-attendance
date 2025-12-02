@@ -1,3 +1,11 @@
+/**
+ * Generates HTML for a loading spinner with custom message
+ * @param {string} message - Loading message to display (default: 'Loading...')
+ * @param {string} size - Spinner size: 'small', 'normal', or 'large' (default: 'normal')
+ * @returns {string} HTML string for the loading spinner component
+ * @example
+ * container.innerHTML = getLoadingSpinnerHTML('Fetching students...', 'large');
+ */
 function getLoadingSpinnerHTML(message = 'Loading...', size = 'normal') {
     const sizes = {
         small: { spinner: '24px', text: '13px' },
@@ -30,6 +38,14 @@ function getLoadingSpinnerHTML(message = 'Loading...', size = 'normal') {
     `;
 }
 
+/**
+ * Displays a loading spinner inside a table body
+ * @param {string} tableBodyId - ID of the table body element
+ * @param {number} colspan - Number of columns to span (default: 7)
+ * @param {string} message - Loading message to display (default: 'Loading data...')
+ * @example
+ * showTableLoading('studentsTableBody', 6, 'Loading students...');
+ */
 function showTableLoading(tableBodyId, colspan = 7, message = 'Loading data...') {
     const tbody = document.getElementById(tableBodyId);
     if (tbody) {
@@ -43,6 +59,14 @@ function showTableLoading(tableBodyId, colspan = 7, message = 'Loading data...')
     }
 }
 
+/**
+ * Sets a button to loading state (disabled with spinner) or restores it
+ * @param {string} buttonId - ID of the button element
+ * @param {boolean} loading - Whether to show loading state (default: true)
+ * @example
+ * setButtonLoading('saveBtn', true);  // Show loading
+ * setButtonLoading('saveBtn', false); // Restore button
+ */
 function setButtonLoading(buttonId, loading = true) {
     const btn = document.getElementById(buttonId);
     if (!btn) return;

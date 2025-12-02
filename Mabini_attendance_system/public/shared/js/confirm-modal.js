@@ -1,7 +1,16 @@
+/**
+ * Displays a confirmation modal before deleting an item
+ * @param {string} itemName - The name of the item to be deleted (shown in modal)
+ * @param {Function} onConfirm - Callback function executed when user confirms deletion
+ * @example
+ * confirmDelete('Student John Doe', () => {
+ *     deleteStudent(studentId);
+ * });
+ */
 function confirmDelete(itemName, onConfirm) {
     const modalId = 'confirm-modal-' + Date.now();
     const modalHTML = `
-        <div class="modal fade" id="${modalId}" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal fade" id="${modalId}" tabindex="-1" data-bs-backdrop="static">`
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content" style="border-radius: 16px;">
                     <div class="modal-header" style="background: #fef2f2; border: none;">

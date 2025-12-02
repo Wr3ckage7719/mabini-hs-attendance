@@ -1,3 +1,12 @@
+/**
+ * Displays a toast notification to the user
+ * @param {string} message - The message to display in the toast
+ * @param {string} type - Toast type: 'success', 'error', 'warning', or 'info' (default: 'info')
+ * @param {number} duration - Display duration in milliseconds (default: 4000ms)
+ * @example
+ * showToast('Operation completed!', 'success');
+ * showToast('An error occurred', 'error', 5000);
+ */
 function showToast(message, type = 'info', duration = 4000) {
     let container = document.getElementById('toast-container');
     if (!container) {

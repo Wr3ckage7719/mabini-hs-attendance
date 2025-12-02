@@ -273,11 +273,11 @@
                 // Load students
                 allStudents = await window.getDocuments('students');
                 
-                // Load blocks
+                // Load sections
                 allSections = await window.getDocuments('sections');
                 const blockFilter = document.getElementById('blockFilter');
                 blockFilter.innerHTML = '<option value="">All Sections</option>' +
-                    allSections.map(block => `<option value="${block.sectionId}">${block.blockName}</option>`).join('');
+                    allSections.map(block => `<option value="${block.id}">${block.section_name}</option>`).join('');
                 
                 // Load entrance logs once (auto-polling disabled)
                 allLogs = await window.getDocuments('entrance_logs');
@@ -300,12 +300,12 @@
                 return logDate >= dateFrom && logDate <= dateTo;
             });
             
-            // Filter by block if selected
+            // Filter by section if selected
             if (blockFilter) {
                 const studentsInBlock = allStudents
-                    .filter(s => s.sectionId === blockFilter)
-                    .map(s => s.studentId);
-                filteredLogs = filteredLogs.filter(log => studentsInBlock.includes(log.studentId));
+                    .filter(s => s.section_id === blockFilter)
+                    .map(s => s.student_number);
+                filteredLogs = filteredLogs.filter(log => studentsInBlock.includes(log.student_id));
             }
             
             // Calculate stats
@@ -323,7 +323,7 @@
                 return logDate === todayStr;
             });
             
-            const uniqueStudentsToday = new Set(todayLogs.map(log => log.studentId));
+            const uniqueStudentsToday = new Set(todayLogs.map(log => log.student_id));
             const presentToday = uniqueStudentsToday.size;
             const absentToday = totalStudents - presentToday;
             
@@ -361,8 +361,8 @@
             logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             
             tbody.innerHTML = logs.map(log => {
-                const student = allStudents.find(s => s.studentId === log.studentId);
-                const block = allSections.find(b => b.sectionId === student?.sectionId);
+                const student = allStudents.find(s => s.student_number === log.student_id);
+                const section = allSections.find(b => b.id === student?.section_id);
                 const timestamp = new Date(log.timestamp);
                 const hour = timestamp.getHours();
                 const status = hour >= 8 ? 'Late' : 'Present';
@@ -370,9 +370,9 @@
                 
                 return `
                     <tr>
-                        <td>${log.studentId}</td>
-                        <td>${student ? `${student.firstName} ${student.lastName}` : 'Unknown'}</td>
-                        <td>${block ? block.blockName : '-'}</td>
+                        <td>${log.student_id || '-'}</td>
+                        <td>${student ? `${student.first_name} ${student.last_name}` : 'Unknown'}</td>
+                        <td>${section ? section.section_name : '-'}</td>
                         <td>${timestamp.toLocaleDateString()}</td>
                         <td>${timestamp.toLocaleTimeString()}</td>
                         <td><span class="badge ${statusClass}">${status}</span></td>

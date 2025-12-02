@@ -169,14 +169,13 @@ async function getSMSLogs(limit = 100) {
 // Load sections for emergency alert
 async function loadSections() {
     try {
-        const sections = await getDocuments('sections', [
-            { field: 'status', operator: '==', value: 'active' }
-        ]);
+        // Load all sections (no status filter since sections table doesn't have status column)
+        const sections = await getDocuments('sections');
         
         const select = document.getElementById('emergencySection');
         select.innerHTML = '<option value="">Select a section...</option>' +
             sections.map(s => `
-                <option value="${s.id}">${s.name} - Grade ${s.grade_level}</option>
+                <option value="${s.id}">${s.section_name} - Grade ${s.grade_level}</option>
             `).join('');
     } catch (error) {
         console.error('Error loading sections:', error);
@@ -224,7 +223,7 @@ window.sendEmergencyAlert = async function() {
         // Get students
         const filters = [];
         if (sectionId) {
-            filters.push({ field: 'section', operator: '==', value: sectionId });
+            filters.push({ field: 'section_id', operator: '==', value: sectionId });
         }
         filters.push({ field: 'status', operator: '==', value: 'active' });
         
@@ -326,13 +325,13 @@ window.loadAbsentStudents = async function() {
         const attendedIds = new Set();
         
         logs.forEach(log => {
-            if (log.check_in_time && log.check_in_time.startsWith(date)) {
+            if (log.timestamp && log.timestamp.startsWith(date)) {
                 attendedIds.add(log.student_id);
             }
         });
         
-        // Filter absent students
-        const absentStudents = students.filter(s => !attendedIds.has(s.id));
+        // Filter absent students (match by student_number)
+        const absentStudents = students.filter(s => !attendedIds.has(s.student_number));
         
         if (absentStudents.length === 0) {
             container.innerHTML = `
@@ -357,7 +356,7 @@ window.loadAbsentStudents = async function() {
                             <div>
                                 <h6 class="mb-0">${s.first_name} ${s.last_name}</h6>
                                 <small class="text-muted">
-                                    Grade ${s.grade_level} - ${s.section || 'No section'}
+                                    Grade ${s.grade_level} - Section: ${s.section_id || 'No section'}
                                     ${s.guardian_contact ? `| Guardian: ${s.guardian_contact}` : ' | <span class="text-danger">No guardian contact</span>'}
                                 </small>
                             </div>

@@ -304,5 +304,6 @@ function initResponsiveTables() {
 // Make functions global
 window.toggleSidebar = toggleSidebar;
 window.closeSidebar = closeSidebar;
+window.getDocuments = getDocuments;
 
 console.log('Teacher common script ready');

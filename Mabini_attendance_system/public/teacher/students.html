@@ -340,9 +340,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
                 </div>
+            </div>
+        </div>
+    </div>
             </div>
         </div>
     </div>
@@ -480,14 +483,16 @@
         }
 
         // View student details with attendance
-        async function viewStudent(studentId) {
+        window.viewStudent = async function(studentId) {
             const student = allStudents.find(s => s.id === studentId);
-            if (!student) return;
+            if (!student) {
+                console.error('Student not found:', studentId);
+                return;
+            }
             
             // Set student info
             document.getElementById('viewStudentId').textContent = student.student_number || student.student_id || 'N/A';
             document.getElementById('viewName').textContent = `${student.first_name || ''} ${student.last_name || ''}`.trim() || student.full_name || 'N/A';
-            document.getElementById('viewEmail').textContent = student.email || 'N/A';
             document.getElementById('viewSection').textContent = student.sectionName || 'N/A';
             document.getElementById('viewGrade').textContent = `Grade ${student.gradeLevel || 'N/A'}`;
             
@@ -505,13 +510,27 @@
             
             const modal = new bootstrap.Modal(document.getElementById('viewModal'));
             modal.show();
-        }
+        };
 
         // Load attendance records for a student
         async function loadAttendanceRecords(studentId) {
             try {
+                // Check if getDocuments function exists
+                if (typeof window.getDocuments !== 'function') {
+                    console.error('getDocuments function not available');
+                    document.getElementById('attendanceRecordsBody').innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3" style="font-size: 0.85rem;">
+                                <i class="bi bi-info-circle me-2"></i>
+                                No attendance records found
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
                 // Fetch attendance records from database
-                const attendanceRecords = await getDocuments('attendance');
+                const attendanceRecords = await window.getDocuments('attendance');
                 
                 // Filter records for this student
                 const studentRecords = attendanceRecords.filter(record => 
@@ -536,7 +555,7 @@
                 if (studentRecords.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
+                            <td colspan="5" class="text-center text-muted py-3" style="font-size: 0.85rem;">
                                 <i class="bi bi-info-circle me-2"></i>
                                 No attendance records found for the selected period
                             </td>
@@ -591,7 +610,7 @@
                 console.error('Error loading attendance records:', error);
                 document.getElementById('attendanceRecordsBody').innerHTML = `
                     <tr>
-                        <td colspan="5" class="text-center text-danger py-4">
+                        <td colspan="5" class="text-center text-danger py-3" style="font-size: 0.85rem;">
                             <i class="bi bi-exclamation-triangle me-2"></i>
                             Error loading attendance records
                         </td>

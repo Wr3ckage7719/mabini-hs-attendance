@@ -12,22 +12,56 @@ const SMS_API = '../api/services/sms_service.php';
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check authentication
-    await checkAuth('admin');
-    
-    // Set active navigation
-    setActiveNavFromLocation();
-    
-    // Initialize
-    await loadSMSStats();
-    await loadSMSLogs();
-    await loadSections();
-    
-    // Set today's date for absence picker
-    document.getElementById('absenceDate').valueAsDate = new Date();
-    
-    // Setup sidebar toggle
-    setupSidebarToggle();
+    try {
+        // Check authentication
+        await checkAuth('admin');
+        
+        // Set active navigation
+        setActiveNavFromLocation();
+        
+        // Initialize with error handling
+        try {
+            await loadSMSStats();
+        } catch (error) {
+            console.error('Error loading SMS stats:', error);
+            document.getElementById('totalSMSToday').textContent = '0';
+            document.getElementById('checkInSMS').textContent = '0';
+            document.getElementById('checkOutSMS').textContent = '0';
+            document.getElementById('absenceSMS').textContent = '0';
+        }
+        
+        try {
+            await loadSMSLogs();
+        } catch (error) {
+            console.error('Error loading SMS logs:', error);
+            const container = document.getElementById('smsLogsContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        No SMS logs available yet. Logs will appear here after messages are sent.
+                    </div>
+                `;
+            }
+        }
+        
+        try {
+            await loadSections();
+        } catch (error) {
+            console.error('Error loading sections:', error);
+        }
+        
+        // Set today's date for absence picker
+        const absenceDateInput = document.getElementById('absenceDate');
+        if (absenceDateInput) {
+            absenceDateInput.valueAsDate = new Date();
+        }
+        
+        // Setup sidebar toggle
+        setupSidebarToggle();
+    } catch (error) {
+        console.error('Error initializing SMS notifications page:', error);
+    }
 });
 
 // Setup sidebar toggle

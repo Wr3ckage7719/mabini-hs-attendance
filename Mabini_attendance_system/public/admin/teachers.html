@@ -271,6 +271,27 @@
         </div>
     </div>
     
+    <!-- QR Code Modal -->
+    <div class="modal fade" id="qrModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Teacher QR Code</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="qrcode" class="mb-3" style="display: inline-block;"></div>
+                    <p class="mt-2"><strong id="qrContent">Loading...</strong></p>
+                    <small class="text-muted">Use this QR code for teacher attendance tracking</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="downloadQR()"><i class="bi bi-download"></i> Download</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script src="../shared/js/toast.js"></script>
     <script src="../shared/js/confirm-modal.js"></script>
     <script src="../shared/js/empty-state.js"></script>
@@ -339,6 +360,9 @@
                     <td>
                         <button class="btn btn-sm btn-outline-primary" onclick="editTeacher('${teacher.id}')" title="Edit">
                             <i class="bi bi-pencil"></i> <span class="btn-label">Edit</span>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="showQRCode('${teacher.employee_number || teacher.email}', '${teacher.first_name} ${teacher.last_name}')" title="QR Code">
+                            <i class="bi bi-qr-code"></i> <span class="btn-label">QR</span>
                         </button>
                         <button class="btn btn-sm btn-outline-danger" onclick="deleteTeacher('${teacher.id}')" title="Delete">
                             <i class="bi bi-trash"></i> <span class="btn-label">Delete</span>
@@ -518,26 +542,92 @@
                     .delete()
                     .eq('id', teacherId);
                 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Ensure user is authenticated (but don't redirect to avoid loops)
-            try {
-                const session = await supabase.auth.getSession();
-                if (!session.data.session) {
-                    console.warn('No active session - user should login');
-                } else {
-                    console.log('✅ User authenticated');
-                }
+                if (error) throw error;
+                
+                alert('Teacher deleted successfully!');
+                await loadTeachers();
             } catch (error) {
-                console.error('❌ Authentication check failed:', error);
-            }
-            
-            initializeModal();
-            await loadTeachers();
-        }); } catch (error) {
                 console.error('Error deleting teacher:', error);
                 alert('Error deleting teacher: ' + error.message);
             }
+        };
+
+        // QR Code functionality
+        let qrCodeInstance = null;
+
+        // Load QR Code library
+        async function loadQRCodeLibrary() {
+            if (window.QRCode) return true;
+            
+            const cdnUrls = [
+                '../js/qrcode.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+                'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'
+            ];
+            
+            for (const url of cdnUrls) {
+                try {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = url;
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                    if (window.QRCode) return true;
+                } catch (error) {
+                    console.warn(`Failed to load QR library from ${url}`);
+                }
+            }
+            return false;
+        }
+
+        // Show QR Code
+        window.showQRCode = async function(identifier, name) {
+            try {
+                const loaded = await loadQRCodeLibrary();
+                if (!loaded) {
+                    alert('Failed to load QR code library. Please refresh the page.');
+                    return;
+                }
+
+                const qrContainer = document.getElementById('qrcode');
+                qrContainer.innerHTML = '';
+                
+                document.getElementById('qrContent').textContent = identifier || 'Unknown';
+                
+                if (window.QRCode) {
+                    qrCodeInstance = new QRCode(qrContainer, {
+                        text: identifier,
+                        width: 256,
+                        height: 256,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+                modal.show();
+            } catch (error) {
+                console.error('Error showing QR code:', error);
+                alert('Error generating QR code: ' + error.message);
+            }
+        };
+
+        // Download QR Code
+        window.downloadQR = function() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) {
+                alert('QR code not generated yet');
+                return;
+            }
+            
+            const identifier = document.getElementById('qrContent').textContent;
+            const link = document.createElement('a');
+            link.download = `teacher-qr-${identifier}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         };
 
         // Initialize

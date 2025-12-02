@@ -514,7 +514,7 @@
                 }
                 
                 tableData.push([
-                    imageData || 'No Photo',
+                    imageData || '', // Empty string instead of 'No Photo' or base64
                     student.student_number || 'N/A',
                     `${student.first_name} ${student.last_name}`,
                     student.email || 'N/A',
@@ -546,12 +546,17 @@
                     // Draw images in the first column
                     if (data.column.index === 0 && data.cell.section === 'body') {
                         const imageData = data.cell.raw;
-                        if (imageData && imageData !== 'No Photo') {
+                        if (imageData && typeof imageData === 'string' && imageData.startsWith('data:image')) {
                             try {
-                                doc.addImage(imageData, 'JPEG', data.cell.x + 2, data.cell.y + 2, 16, 16);
+                                // Clear the cell text first
+                                data.cell.text = [];
+                                doc.addImage(imageData, 'PNG', data.cell.x + 2, data.cell.y + 2, 16, 16);
                             } catch (err) {
                                 console.log('Error adding image to PDF:', err);
                             }
+                        } else if (!imageData) {
+                            // Show "No Photo" text only if no image
+                            data.cell.text = ['No Photo'];
                         }
                     }
                 },

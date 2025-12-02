@@ -312,10 +312,13 @@
     <script type="module" src="js/admin-common.js"></script>
     <script type="module">
         import { supabase, ensureAuthenticated } from './js/ensure-auth.js';
+        import { storageClient } from '../js/storage-client.js';
         
         let allTeachers = [];
         let editingTeacherId = null;
         let teacherModal = null;
+        let qrCodeInstanceTeacher = null;
+        let currentQRCanvas = null; // Track the current QR canvas for upload
 
         // Initialize modal
         function initializeModal() {
@@ -497,7 +500,6 @@
                 first_name: firstName,
                 last_name: lastName,
                 employee_number: employeeNumber,
-                email: email,er: employeeNumber,
                 email: email,
                 department: department || null,
                 position: position || null,
@@ -510,6 +512,19 @@
             try {
                 // Ensure we're authenticated
                 await ensureAuthenticated();
+                
+                // Upload QR code if generated
+                if (currentQRCanvas) {
+                    try {
+                        console.log('Uploading teacher QR code...');
+                        const qrUrl = await storageClient.uploadQRCode(currentQRCanvas, employeeNumber);
+                        teacherData.qr_code_url = qrUrl;
+                        console.log('QR code uploaded:', qrUrl);
+                    } catch (qrError) {
+                        console.error('Failed to upload QR code:', qrError);
+                        // Continue saving even if QR upload fails
+                    }
+                }
                 
                 if (editingTeacherId) {
                     // Update using direct Supabase call
@@ -537,6 +552,9 @@
                     console.log('Create result:', data);
                     alert('Teacher added successfully!');
                 }
+                
+                // Reset QR canvas after save
+                currentQRCanvas = null;
                 
                 await loadTeachers();
                 
@@ -582,7 +600,7 @@
         }
 
         // QR Code functionality for teachers
-        let qrCodeInstanceTeacher = null;
+        // QR instance already declared at top
 
         // Load QR Code library
         async function loadQRCodeLibrary() {
@@ -644,6 +662,15 @@
                         colorLight: '#ffffff',
                         correctLevel: QRCode.CorrectLevel.H
                     });
+                    
+                    // Save canvas reference for upload when saving teacher
+                    setTimeout(() => {
+                        const canvas = qrContainer.querySelector('canvas');
+                        if (canvas) {
+                            currentQRCanvas = canvas;
+                            console.log('QR Canvas saved for upload');
+                        }
+                    }, 100);
                 }
                 
                 document.getElementById('qrPreviewTeacher').style.display = 'block';

@@ -345,6 +345,24 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- QR Code Section -->
+            <div class="settings-section">
+                <h2 class="section-title">Your QR Code</h2>
+                <div class="form-description" style="margin-bottom: 1rem;">Scan this QR code to login quickly</div>
+                
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                    <img id="qrPreview" src="../assets/img/default-qr.png" alt="QR Code" 
+                         style="width:200px;height:200px;border-radius:12px;object-fit:contain;border:2px solid rgba(148,163,184,0.15);background:white;padding:12px;" />
+                    
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                        <button type="button" id="downloadQRBtn" class="btn-secondary" style="display: none; margin: 0;">
+                            <i class="bi bi-download"></i> Download QR Code
+                        </button>
+                        <small style="color:#94a3b8;">Use this QR code for quick login</small>
+                    </div>
+                </div>
+            </div>
 
             <!-- Save Buttons -->
 
@@ -441,6 +459,17 @@
                     document.getElementById('department').value = profile.department || '';
                     document.getElementById('position').value = profile.position || '';
                     document.getElementById('phone').value = profile.phone || '';
+                    
+                    // Load QR code if available
+                    const downloadBtn = document.getElementById('downloadQRBtn');
+                    if (profile.qr_code_url) {
+                        document.getElementById('qrPreview').src = profile.qr_code_url;
+                        downloadBtn.style.display = 'inline-flex';
+                        downloadBtn.onclick = () => downloadQRCode(profile.qr_code_url, profile.employee_number || profile.email);
+                    } else {
+                        document.getElementById('qrPreview').src = '../assets/img/default-qr.png';
+                        downloadBtn.style.display = 'none';
+                    }
                     // Note: employee_number is read-only, managed by admin
                 } else {
                     console.error('Failed to load profile:', result.error);
@@ -450,6 +479,16 @@
                 console.error('Load profile error:', error);
                 showAlert('Failed to load profile data', 'error');
             }
+        }
+        
+        // Download QR code function
+        function downloadQRCode(imageUrl, identifier) {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = `${identifier}-qr-code.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // Save profile

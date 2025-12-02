@@ -119,6 +119,11 @@ async function loadSMSStats() {
 async function loadSMSLogs() {
     const container = document.getElementById('smsLogsContainer');
     
+    if (!container) {
+        console.warn('SMS logs container not found');
+        return;
+    }
+    
     try {
         const logs = await getSMSLogs(50);
         

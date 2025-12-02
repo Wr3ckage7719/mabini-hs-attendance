@@ -483,12 +483,28 @@
         
         // Download QR code function
         function downloadQRCode(imageUrl, identifier) {
-            const link = document.createElement('a');
-            link.href = imageUrl;
-            link.download = `${identifier}-qr-code.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            if (!imageUrl || imageUrl.includes('default-qr.png')) {
+                alert('No QR code available to download. Please contact admin to generate your QR code.');
+                return;
+            }
+            
+            // Fetch the image and trigger download
+            fetch(imageUrl)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${identifier}-qr-code.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error('Download error:', error);
+                    alert('Failed to download QR code. Please try again or contact support.');
+                });
         }
 
         // Save profile

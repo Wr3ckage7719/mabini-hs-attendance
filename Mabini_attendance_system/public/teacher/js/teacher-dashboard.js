@@ -180,6 +180,9 @@ async function loadStats() {
         const avgAttendanceEl = document.getElementById('avgAttendance');
         if (avgAttendanceEl) avgAttendanceEl.textContent = rate + '%';
 
+        // Store students globally for modal
+        window.allStudents = students;
+
         // Load classes table if teacher has assigned sections
         if (currentTeacher) {
             await loadClassesTable(activeSections, students);
@@ -214,7 +217,9 @@ async function loadClassesTable(sections, students) {
         return;
     }
 
-    tbody.innerHTML = teacherSections.map(section => {
+    window.allClassSections = teacherSections; // Store for modal view
+    
+    tbody.innerHTML = teacherSections.map((section, index) => {
         // Count students in this section
         const sectionStudents = students.filter(s => 
             s.grade_level === section.grade_level && s.section === section.section_name
@@ -227,6 +232,11 @@ async function loadClassesTable(sections, students) {
                 <td>${section.schedule || '-'}</td>
                 <td>${section.room || '-'}</td>
                 <td>${sectionStudents.length}</td>
+                <td>
+                    <button class="btn btn-sm btn-info" onclick="viewClassDetails(${index})">
+                        <i class="bi bi-eye"></i> View
+                    </button>
+                </td>
             </tr>
         `;
     }).join('');
@@ -303,6 +313,28 @@ window.doLogout = async function() {
         sessionStorage.removeItem('userRole');
         window.location.href = 'login.html';
     }
+};
+
+// View class details
+window.viewClassDetails = function(index) {
+    const section = window.allClassSections?.[index];
+    if (!section) return;
+    
+    document.getElementById('viewDay').textContent = section.day || 'N/A';
+    document.getElementById('viewTime').textContent = section.schedule || 'N/A';
+    document.getElementById('viewSubject').textContent = section.subject_name || '-';
+    document.getElementById('viewSection').textContent = section.section_name || 'Unnamed Section';
+    document.getElementById('viewRoom').textContent = section.room || 'N/A';
+    document.getElementById('viewGradeLevel').textContent = section.grade_level || 'N/A';
+    
+    // Count students
+    const studentCount = window.allStudents ? window.allStudents.filter(s => 
+        s.grade_level === section.grade_level && s.section === section.section_name
+    ).length : 0;
+    document.getElementById('viewStudents').textContent = studentCount;
+    
+    const modal = new bootstrap.Modal(document.getElementById('classDetailsModal'));
+    modal.show();
 };
 
 // Attach logout to button

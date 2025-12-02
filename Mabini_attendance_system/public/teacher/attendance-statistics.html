@@ -543,12 +543,21 @@
         // Helper function to load image and convert to base64
         function loadImageAsBase64(url) {
             return new Promise((resolve, reject) => {
-                // If it's already base64, return it
+                // If it's already base64 with data:image prefix, return it
                 if (url.startsWith('data:image')) {
                     resolve(url);
                     return;
                 }
                 
+                // If it looks like base64 without prefix, add the prefix
+                if (url.length > 100 && !url.startsWith('http') && !url.startsWith('/')) {
+                    // Assume it's a base64 QR code
+                    const base64Data = url.startsWith('data:') ? url : `data:image/png;base64,${url}`;
+                    resolve(base64Data);
+                    return;
+                }
+                
+                // Otherwise, load as URL
                 const img = new Image();
                 img.crossOrigin = 'Anonymous';
                 

@@ -7,6 +7,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/admin-theme.css">
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script>
         (function(){
             try{
@@ -630,54 +633,152 @@
             }
         }
 
-        // Download attendance report
-        window.downloadAttendanceReport = function() {
+        // Download attendance report as PDF with student photo
+        window.downloadAttendanceReport = async function() {
             if (!window.currentStudentRecords) {
                 alert('No attendance data available');
                 return;
             }
             
             const { student, records, stats } = window.currentStudentRecords;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
             
-            // Create CSV content
-            let csvContent = "data:text/csv;charset=utf-8,";
+            // Load student photo
+            let studentPhoto = null;
+            const imageUrl = student.qr_code_url || student.qr_code || '';
+            if (imageUrl) {
+                try {
+                    studentPhoto = await loadImageAsBase64(imageUrl);
+                } catch (err) {
+                    console.log('Could not load student photo:', err);
+                }
+            }
             
-            // Header
-            csvContent += `Attendance Report\n`;
-            csvContent += `Student: ${student.first_name} ${student.last_name}\n`;
-            csvContent += `Student ID: ${student.student_number || student.student_id}\n`;
-            csvContent += `Section: ${student.sectionName}\n`;
-            csvContent += `Grade Level: ${student.gradeLevel}\n`;
-            csvContent += `\n`;
-            csvContent += `Summary\n`;
-            csvContent += `Total Records: ${stats.total}\n`;
-            csvContent += `Present: ${stats.present}\n`;
-            csvContent += `Absent: ${stats.absent}\n`;
-            csvContent += `Attendance Rate: ${stats.rate}%\n`;
-            csvContent += `\n`;
-            csvContent += `Date,Time In,Time Out,Status,Remarks\n`;
+            // Add header with student photo
+            doc.setFontSize(18);
+            doc.text('Student Attendance Report', 14, 20);
             
-            // Records
-            records.forEach(record => {
+            // Add student photo if available
+            if (studentPhoto) {
+                try {
+                    doc.addImage(studentPhoto, 'PNG', 150, 10, 40, 40);
+                } catch (err) {
+                    console.log('Error adding photo to PDF:', err);
+                }
+            }
+            
+            // Add student information
+            doc.setFontSize(12);
+            let yPos = 35;
+            doc.text(`Student: ${student.first_name} ${student.last_name}`, 14, yPos);
+            yPos += 7;
+            doc.text(`Student ID: ${student.student_number || student.student_id}`, 14, yPos);
+            yPos += 7;
+            doc.text(`Section: ${student.sectionName}`, 14, yPos);
+            yPos += 7;
+            doc.text(`Grade Level: ${student.gradeLevel}`, 14, yPos);
+            yPos += 7;
+            doc.text(`Email: ${student.email || 'N/A'}`, 14, yPos);
+            yPos += 10;
+            
+            // Add summary box
+            doc.setFillColor(240, 240, 240);
+            doc.rect(14, yPos, 180, 30, 'F');
+            doc.setFontSize(11);
+            doc.text('Summary Statistics', 18, yPos + 7);
+            doc.setFontSize(10);
+            doc.text(`Total Records: ${stats.total}`, 18, yPos + 14);
+            doc.text(`Present: ${stats.present}`, 70, yPos + 14);
+            doc.text(`Absent: ${stats.absent}`, 120, yPos + 14);
+            doc.text(`Attendance Rate: ${stats.rate}%`, 18, yPos + 21);
+            yPos += 35;
+            
+            // Prepare attendance records table
+            const tableData = records.map(record => {
                 const date = new Date(record.date || record.created_at);
                 const dateStr = date.toLocaleDateString('en-US');
                 const timeIn = record.time_in || record.check_in || 'N/A';
                 const timeOut = record.time_out || record.check_out || 'N/A';
                 const status = record.status || 'unknown';
-                const remarks = (record.remarks || '-').replace(/,/g, ';'); // Escape commas
+                const remarks = record.remarks || '-';
                 
-                csvContent += `${dateStr},${timeIn},${timeOut},${status},${remarks}\n`;
+                return [dateStr, timeIn, timeOut, status, remarks];
             });
             
-            // Create download link
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement('a');
-            link.setAttribute('href', encodedUri);
-            link.setAttribute('download', `attendance_report_${student.student_number || student.id}_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Add attendance records table
+            doc.autoTable({
+                head: [['Date', 'Time In', 'Time Out', 'Status', 'Remarks']],
+                body: tableData,
+                startY: yPos,
+                styles: { fontSize: 9, cellPadding: 3 },
+                headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+                columnStyles: {
+                    0: { cellWidth: 30 },
+                    1: { cellWidth: 25 },
+                    2: { cellWidth: 25 },
+                    3: { cellWidth: 25 },
+                    4: { cellWidth: 'auto' }
+                },
+                margin: { top: yPos }
+            });
+            
+            // Add footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.text(`Generated: ${new Date().toLocaleString()}`, 14, doc.internal.pageSize.height - 10);
+                doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10);
+            }
+            
+            // Save the PDF
+            doc.save(`attendance_report_${student.student_number || student.id}_${new Date().toISOString().split('T')[0]}.pdf`);
         };
+        
+        // Helper function to load image and convert to base64
+        function loadImageAsBase64(url) {
+            return new Promise((resolve, reject) => {
+                // If it's already base64 with data:image prefix, return it
+                if (url.startsWith('data:image')) {
+                    resolve(url);
+                    return;
+                }
+                
+                // If it looks like base64 without prefix, add the prefix
+                if (url.length > 100 && !url.startsWith('http') && !url.startsWith('/')) {
+                    // Assume it's a base64 QR code
+                    const base64Data = url.startsWith('data:') ? url : `data:image/png;base64,${url}`;
+                    resolve(base64Data);
+                    return;
+                }
+                
+                // Otherwise, load as URL
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    try {
+                        const dataURL = canvas.toDataURL('image/jpeg', 0.7);
+                        resolve(dataURL);
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                
+                img.onerror = function() {
+                    reject(new Error('Failed to load image'));
+                };
+                
+                img.src = url;
+            });
+        }
 
         // Filter students
         function filterStudents() {

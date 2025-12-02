@@ -38,12 +38,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 // Initialize page data
 async function initializePage() {
     try {
+        // Load reference data first (teachers, subjects, sections)
         await Promise.all([
             loadTeachers(),
             loadSubjects(),
-            loadSections(),
-            loadTeachingLoads()
+            loadSections()
         ]);
+        
+        // Then load teaching loads (which depends on the reference data for display)
+        await loadTeachingLoads();
     } catch (error) {
         console.error('Error initializing page:', error);
         showAlert('Failed to load initial data', 'danger');

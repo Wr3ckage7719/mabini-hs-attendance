@@ -259,85 +259,77 @@
     <!-- View Details Modal -->
     <!-- Student Details Modal with Attendance -->
     <div class="modal fade" id="viewModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header bg-primary text-white py-2">
                     <div>
-                        <h5 class="modal-title mb-1" id="viewModalTitle">Student Attendance Details</h5>
-                        <small class="d-block opacity-75" id="viewModalSubject"></small>
+                        <h6 class="modal-title mb-0" id="viewModalTitle">Student Attendance Details</h6>
+                        <small class="d-block opacity-75" style="font-size: 0.75rem;" id="viewModalSubject"></small>
                     </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <!-- Student Info Header -->
-                    <div class="row mb-4">
-                        <div class="col-md-8">
-                            <h6 class="text-muted mb-3">Student Information</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p class="mb-2"><strong>Student ID:</strong> <span id="viewStudentId"></span></p>
-                                    <p class="mb-2"><strong>Full Name:</strong> <span id="viewName"></span></p>
-                                    <p class="mb-2"><strong>Email:</strong> <span id="viewEmail"></span></p>
+                <div class="modal-body p-3" style="max-height: 80vh; overflow-y: auto;">
+                    <!-- Student Info Header - Compact -->
+                    <div class="row mb-3">
+                        <div class="col-md-7">
+                            <h6 class="text-muted mb-2" style="font-size: 0.85rem;">Student Information</h6>
+                            <div class="row small">
+                                <div class="col-6">
+                                    <p class="mb-1"><strong>ID:</strong> <span id="viewStudentId"></span></p>
+                                    <p class="mb-1"><strong>Name:</strong> <span id="viewName"></span></p>
                                 </div>
-                                <div class="col-md-6">
-                                    <p class="mb-2"><strong>Section:</strong> <span id="viewSection"></span></p>
-                                    <p class="mb-2"><strong>Grade Level:</strong> <span id="viewGrade"></span></p>
-                                    <p class="mb-2"><strong>Status:</strong> <span id="viewStatus"></span></p>
+                                <div class="col-6">
+                                    <p class="mb-1"><strong>Section:</strong> <span id="viewSection"></span></p>
+                                    <p class="mb-1"><strong>Grade:</strong> <span id="viewGrade"></span></p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <h6 class="text-muted mb-3">Attendance Summary</h6>
-                            <div class="d-flex gap-2 mb-2">
-                                <span class="badge bg-success px-3 py-2">
-                                    <i class="bi bi-check-circle me-1"></i>
+                        <div class="col-md-5">
+                            <h6 class="text-muted mb-2" style="font-size: 0.85rem;">Summary</h6>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-success px-2 py-1" style="font-size: 0.75rem;">
                                     Present: <span id="presentCount">0</span>
                                 </span>
-                                <span class="badge bg-danger px-3 py-2">
-                                    <i class="bi bi-x-circle me-1"></i>
+                                <span class="badge bg-danger px-2 py-1" style="font-size: 0.75rem;">
                                     Absent: <span id="absentCount">0</span>
                                 </span>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <span class="badge bg-secondary px-3 py-2">
-                                    <i class="bi bi-calendar-check me-1"></i>
+                                <span class="badge bg-secondary px-2 py-1" style="font-size: 0.75rem;">
                                     Total: <span id="totalCount">0</span>
                                 </span>
-                                <span class="badge bg-info px-3 py-2">
-                                    <i class="bi bi-percent me-1"></i>
-                                    Rate: <span id="attendanceRate">0%</span>
+                                <span class="badge bg-info px-2 py-1" style="font-size: 0.75rem;">
+                                    <span id="attendanceRate">0%</span>
                                 </span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Download Report Button -->
-                    <div class="mb-3">
-                        <button class="btn btn-primary" id="downloadReportBtn" onclick="downloadAttendanceReport()">
-                            <i class="bi bi-download me-2"></i>Download Report
+                    <div class="mb-2">
+                        <button class="btn btn-primary btn-sm" id="downloadReportBtn" onclick="downloadAttendanceReport()">
+                            <i class="bi bi-download me-1"></i>Download Report
                         </button>
                     </div>
 
                     <!-- Attendance Records -->
                     <div class="card">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">Attendance Records</h6>
+                        <div class="card-header bg-light py-2">
+                            <h6 class="mb-0" style="font-size: 0.9rem;">Attendance Records</h6>
                         </div>
                         <div class="card-body p-0">
-                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                <table class="table table-hover mb-0">
+                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                <table class="table table-sm table-hover mb-0">
                                     <thead class="table-light sticky-top">
                                         <tr>
-                                            <th>Date</th>
-                                            <th>Time In</th>
-                                            <th>Time Out</th>
-                                            <th>Status</th>
-                                            <th>Remarks</th>
+                                            <th style="font-size: 0.85rem;">Date</th>
+                                            <th style="font-size: 0.85rem;">Time In</th>
+                                            <th style="font-size: 0.85rem;">Time Out</th>
+                                            <th style="font-size: 0.85rem;">Status</th>
+                                            <th style="font-size: 0.85rem;">Remarks</th>
                                         </tr>
                                     </thead>
                                     <tbody id="attendanceRecordsBody">
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted py-4">
+                                            <td colspan="5" class="text-center text-muted py-3" style="font-size: 0.85rem;">
                                                 <i class="bi bi-info-circle me-2"></i>
                                                 No attendance records found for the selected period
                                             </td>
@@ -567,18 +559,18 @@
                     const remarks = record.remarks || '-';
                     
                     const statusBadge = status === 'present' 
-                        ? '<span class="badge bg-success">Present</span>'
+                        ? '<span class="badge bg-success" style="font-size: 0.75rem;">Present</span>'
                         : status === 'absent'
-                        ? '<span class="badge bg-danger">Absent</span>'
-                        : '<span class="badge bg-secondary">Unknown</span>';
+                        ? '<span class="badge bg-danger" style="font-size: 0.75rem;">Absent</span>'
+                        : '<span class="badge bg-secondary" style="font-size: 0.75rem;">Unknown</span>';
                     
                     return `
-                        <tr>
+                        <tr style="font-size: 0.85rem;">
                             <td>${dateStr}</td>
                             <td>${timeIn}</td>
                             <td>${timeOut}</td>
                             <td>${statusBadge}</td>
-                            <td>${remarks}</td>
+                            <td class="text-truncate" style="max-width: 150px;" title="${remarks}">${remarks}</td>
                         </tr>
                     `;
                 }).join('');

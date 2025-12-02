@@ -92,8 +92,6 @@ SELECT
     section_name,
     section_code,
     grade_level,
-    capacity,
-    room,
     status
 FROM sections
 WHERE status = 'active'
@@ -103,17 +101,11 @@ ORDER BY grade_level, section_name;
 SELECT 
     sec.section_name,
     sec.grade_level,
-    COUNT(s.id) as student_count,
-    sec.capacity,
-    CASE 
-        WHEN sec.capacity IS NOT NULL THEN 
-            ROUND((COUNT(s.id)::NUMERIC / sec.capacity::NUMERIC) * 100, 1)
-        ELSE NULL 
-    END as capacity_percentage
+    COUNT(s.id) as student_count
 FROM sections sec
 LEFT JOIN students s ON s.section_id = sec.id AND s.status = 'active'
 WHERE sec.status = 'active'
-GROUP BY sec.id, sec.section_name, sec.grade_level, sec.capacity
+GROUP BY sec.id, sec.section_name, sec.grade_level
 ORDER BY sec.grade_level, sec.section_name;
 
 -- =====================================================

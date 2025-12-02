@@ -408,12 +408,25 @@
                     const subject = subjects.find(s => String(s.id) === String(load.subject_id));
                     const section = sections.find(s => String(s.id) === String(load.section_id));
                     
+                    // Parse schedule string (format: \"Monday, Tuesday, Wednesday 07:00-10:00\")
+                    let daysPart = 'N/A';
+                    let timePart = 'N/A';
+                    if (load.schedule) {
+                        const schedParts = load.schedule.split(/\\s+(?=\\d)/);
+                        if (schedParts.length >= 2) {
+                            daysPart = schedParts[0]; // \"Monday, Tuesday, Wednesday\"
+                            timePart = schedParts[1]; // \"07:00-10:00\"
+                        } else {
+                            daysPart = load.schedule;
+                        }
+                    }
+                    
                     return {
-                        day: load.day || 'N/A',
-                        time: load.time || load.start_time || 'N/A',
+                        day: daysPart,
+                        time: timePart,
                         subject: subject ? (subject.name || subject.subject_name) : 'Unknown',
                         section: section ? (section.name || section.section_name) : 'Unknown',
-                        room: section ? section.room : 'N/A'
+                        room: load.room || section?.room || 'N/A'
                     };
                 });
                 

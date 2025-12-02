@@ -301,14 +301,30 @@
                     const section = sections.find(s => String(s.id) === String(load.section_id));
                     const sectionStudents = students.filter(st => String(st.section_id) === String(load.section_id));
                     
+                    // Parse schedule string (format: "Monday, Tuesday, Wednesday 07:00-10:00")
+                    let daysPart = 'N/A';
+                    let timePart = 'N/A';
+                    if (load.schedule) {
+                        const schedParts = load.schedule.split(/\s+(?=\d)/);
+                        if (schedParts.length >= 2) {
+                            daysPart = schedParts[0]; // "Monday, Tuesday, Wednesday"
+                            timePart = schedParts[1]; // "07:00-10:00"
+                        } else {
+                            daysPart = load.schedule;
+                        }
+                    }
+                    
                     return {
                         ...load,
                         subjectName: subject ? (subject.name || subject.subject_name) : 'Unknown',
                         subjectCode: subject ? (subject.code || subject.subject_code) : 'N/A',
                         sectionName: section ? (section.name || section.section_name) : 'Unknown',
-                        room: section ? section.room : 'N/A',
+                        room: load.room || section?.room || 'N/A',
                         gradeLevel: section ? section.grade_level : 'N/A',
-                        studentCount: sectionStudents.length
+                        studentCount: sectionStudents.length,
+                        day: daysPart,
+                        time: timePart,
+                        school_year: load.school_year || load.academic_year || 'N/A'
                     };
                 });
                 
@@ -346,18 +362,15 @@
                 return;
             }
             
-            // Sort by day and time
-            const dayOrder = { 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7 };
+            // Sort by time (skip day sorting since days can be multiple)
             schedules.sort((a, b) => {
-                const dayCompare = dayOrder[a.day] - dayOrder[b.day];
-                if (dayCompare !== 0) return dayCompare;
                 return (a.time || '').localeCompare(b.time || '');
             });
             
             tbody.innerHTML = schedules.map((schedule, index) => `
                 <tr>
                     <td><strong>${schedule.day || 'N/A'}</strong></td>
-                    <td>${schedule.time || schedule.start_time || 'N/A'}</td>
+                    <td>${schedule.time || 'N/A'}</td>
                     <td>${schedule.subjectCode} - ${schedule.subjectName}</td>
                     <td>${schedule.sectionName}</td>
                     <td>${schedule.room || 'N/A'}</td>
@@ -377,7 +390,7 @@
             if (!schedule) return;
             
             document.getElementById('viewDay').textContent = schedule.day || 'N/A';
-            document.getElementById('viewTime').textContent = schedule.time || schedule.start_time || 'N/A';
+            document.getElementById('viewTime').textContent = schedule.time || 'N/A';
             document.getElementById('viewSubject').textContent = `${schedule.subjectCode} - ${schedule.subjectName}`;
             document.getElementById('viewSection').textContent = schedule.sectionName;
             document.getElementById('viewRoom').textContent = schedule.room || 'N/A';

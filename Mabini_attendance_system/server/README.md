@@ -1,131 +1,222 @@
-# 🚀 Database Migration & Frontend Adaptation
+# Mabini HS Attendance System - Server Documentation
 
-**Complete system to reset database, enable security, and update all frontend pages**
-
----
-
-## 📦 What This Package Contains
-
-### 1. Database Migration (SQL Scripts)
-- ✅ `MASTER_DATABASE_RESET.sql` - Complete database rebuild (~800 lines)
-- ✅ `VERIFY_DATABASE_SETUP.sql` - Comprehensive testing (~500 lines)
-
-### 2. Step-by-Step Guides
-- ✅ `MIGRATION_GUIDE.md` - Database migration instructions
-- ✅ `FRONTEND_GUIDE.md` - Frontend adaptation plan
+Complete setup and deployment guide for the backend server and database.
 
 ---
 
-## 🎯 Quick Start
+## 🚀 Quick Start
 
-### Part 1: Database Migration (5 minutes)
+### 1. Database Setup
 
-1. **Open Supabase Dashboard**
-   - Go to https://supabase.com/dashboard
-   - Select your project
-   - Click "SQL Editor" → "New Query"
+1. Open [Supabase Dashboard](https://supabase.com/dashboard)
+2. Go to **SQL Editor** → **New Query**
+3. Copy and paste `DATABASE_MIGRATION.sql`
+4. Click **Run**
+5. Verify all steps completed successfully
 
-2. **Run MASTER_DATABASE_RESET.sql**
-   - Copy entire file contents
-   - Paste into SQL Editor
-   - Click "Run"
-   - Wait ~60 seconds
-   - Verify success messages
+### 2. Environment Variables
 
-3. **Run VERIFY_DATABASE_SETUP.sql**
-   - Copy entire file contents
-   - Paste into SQL Editor  
-   - Click "Run"
-   - Verify all ✅ checks pass
+Create `.env` file in `/server` directory:
 
-**Result:**
-- 14 tables created
-- All RLS enabled (no "Unrestricted" status)
-- 40+ security policies active
-- 70+ indexes created
-- Default admin user created
+```env
+# Supabase Configuration
+SUPABASE_URL=your_project_url
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
----
+# SendGrid (Email)
+SENDGRID_API_KEY=your_sendgrid_key
+FROM_EMAIL=noreply@yourdomain.com
 
-### Part 2: Frontend Adaptation (4-5 days)
+# Server Configuration
+PORT=3000
+NODE_ENV=production
+```
 
-1. **Read `FRONTEND_GUIDE.md`**
-   - Understand all schema changes
-   - Review code examples
-   - Check file list (~35 files)
+### 3. Install Dependencies
 
-2. **Update Files Phase by Phase**
-   - Phase 1: Core JS clients (3 files)
-   - Phase 2: Admin pages (15 files)
-   - Phase 3: Teacher pages (12 files)
-   - Phase 4: Student pages (6 files)
-   - Phase 5: Backend + testing
+```bash
+cd server
+npm install
+```
 
-3. **Track Progress**
-   - Use checklist in `FRONTEND_GUIDE.md`
-   - Test after each phase
-   - Mark items complete as you go
+### 4. Start Server (Local Development)
 
-**Result:**
-- All pages work with new database
-- Authentication functional
-- CRUD operations working
-- Dashboards displaying correctly
+```bash
+npm start
+```
+
+Server runs on `http://localhost:3000`
 
 ---
 
-## 📊 Key Changes Overview
+## 📊 Database Schema Overview
 
-### Database Schema Changes
+### Core Tables
 
-**Students Table:**
-- Added: `lrn`, `middle_name`, `parent_guardian_*` fields
-- Changed: `section` (string) → `section_id` (FK to sections)
+1. **students** - Student profiles with attendance tracking
+   - Primary fields: `student_number`, `first_name`, `last_name`, `email`
+   - Storage: `profile_picture_url`, `qr_code_url`
+   - Auth: `username`, `password`
 
-**Teachers Table:**
-- Added: `employee_number`, `middle_name`, `suffix`, `specialization`
-- Added: `employment_status`, `hire_date`
+2. **teachers** - Teacher profiles and assignments
+   - Primary fields: `employee_number`, `first_name`, `last_name`, `email`
+   - Auth: `username`, `password`
 
-**Sections Table:**
-- Added: `section_code`, `section_name`, `adviser_id`, `capacity`
-- Added: `academic_year`, `semester`
+3. **users** - Admin and staff accounts
+   - Roles: `admin`, `staff`
+   - Auth: `email`, `password`, `auth_id` (links to Supabase Auth)
 
-**Teaching Loads:**
-- Changed: `school_year` → `academic_year`
-- Added: `semester`, `day_of_week`, `start_time`, `end_time`
+4. **sections** - Class sections
+   - Fields: `section_code`, `section_name`, `grade_level`
 
-**Users Table:**
-- Changed: Only 'admin' and 'staff' roles (teachers/students in separate tables)
+5. **subjects** - Subject catalog
+   - Fields: `subject_code`, `subject_name`, `description`
 
-**New Tables:**
-- `entrance_logs` - Entry/exit tracking
-- `account_retrievals` - Password recovery logs
-- `sms_logs` - SMS notification logs
+6. **teaching_loads** - Teacher-Section-Subject assignments
+   - Links: `teacher_id`, `section_id`, `subject_id`
+   - Schedule: `day_of_week`, `start_time`, `end_time`
 
-### Frontend Impact
+7. **attendance** - Student attendance records
+   - Types: `present`, `absent`, `late`, `excused`
+   - Methods: `qr_scan`, `manual`, `nfc`
 
-**~35 files need updates:**
-- 3 core JS clients
-- 15 admin pages (HTML + JS)
-- 12 teacher pages (HTML + JS)
-- 6 student pages (HTML + JS)
-- 1 backend API file
+8. **password_reset_tokens** - OTP tokens for password recovery
+   - Fields: `email`, `token`, `expires_at`, `used`
+
+### Storage Integration
+
+- **Bucket**: `student-images` (public)
+- **Folders**:
+  - `profile-pictures/` - Student profile photos
+  - `qr-codes/` - Student QR codes for login
+- **URL Pattern**: `https://[project].supabase.co/storage/v1/object/public/student-images/[folder]/[file]`
 
 ---
 
-## ⚠️ Important Warnings
+## 🔐 Security (Row Level Security)
 
-### Database Migration
-- **⚠️ This DELETES ALL DATA** - Backup first if needed
-- Must use **service_role** connection (not anon key)
-- Run during maintenance window
-- Cannot be reversed (one-way migration)
+### Students Table
 
-### Frontend Updates
-- Must complete database migration FIRST
-- Pages won't work correctly until updated
-- Test each phase before moving to next
-- Keep backup of working files
+- **SELECT**: Public (for login verification)
+- **UPDATE**: Students can update their own records
+- **INSERT/DELETE**: Service role only
+
+### Teachers Table
+
+- **SELECT**: Public (for login verification)
+- **UPDATE**: Teachers can update their own records
+
+### Password Reset Tokens
+
+- **ALL**: Permissive (application handles auth)
+
+### Storage Policies
+
+- **SELECT**: Public (anyone can view uploaded images)
+- **INSERT/UPDATE/DELETE**: Authenticated users only
+
+---
+
+## 🔧 API Endpoints (Vercel Serverless)
+
+Deployed to Vercel at `https://your-app.vercel.app/api/`
+
+### Password Reset Flow
+
+1. **POST** `/api/password-reset/send-otp`
+   - Body: `{ email, userType }`
+   - Sends 6-digit OTP via email
+   - Returns: `{ success, message }`
+
+2. **POST** `/api/password-reset/verify-otp`
+   - Body: `{ email, token, userType }`
+   - Verifies OTP code
+   - Returns: `{ success, message, verified }`
+
+3. **POST** `/api/password-reset/reset-password`
+   - Body: `{ email, token, newPassword, userType }`
+   - Updates password after OTP verification
+   - Returns: `{ success, message }`
+
+### Account Retrieval
+
+- **POST** `/api/account/retrieve`
+  - Body: `{ studentNumber, email }`
+  - Returns student account info via email
+  - Returns: `{ success, message }`
+
+### Health Check
+
+- **GET** `/api/health`
+  - Returns API status
+  - Returns: `{ status: "ok", timestamp }`
+
+---
+
+## 📦 Deployment
+
+### Vercel Deployment
+
+1. **Install Vercel CLI**
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Login to Vercel**
+   ```bash
+   vercel login
+   ```
+
+3. **Deploy**
+   ```bash
+   vercel --prod
+   ```
+
+4. **Add Environment Variables**
+   - Go to Vercel Dashboard → Project Settings → Environment Variables
+   - Add all variables from `.env`
+
+### Database Migration (Supabase)
+
+Run `DATABASE_MIGRATION.sql` to:
+- ✅ Add Storage URL columns (`profile_picture_url`, `qr_code_url`)
+- ✅ Create `password_reset_tokens` table
+- ✅ Set up RLS policies
+- ✅ Create indexes for performance
+- ✅ Add cleanup functions
+
+---
+
+## 🧪 Testing
+
+### Test Database Connection
+
+```bash
+node test-complete-system.js
+```
+
+Checks:
+- ✅ Supabase connection
+- ✅ Students table accessible
+- ✅ Teachers table accessible
+- ✅ RLS policies working
+
+### Test Email (SendGrid)
+
+```bash
+node test-email-now.js
+```
+
+Sends test email to verify SendGrid configuration.
+
+### Test Password Reset Flow
+
+```bash
+node test-sendgrid.js
+```
+
+Tests complete OTP password reset flow.
 
 ---
 
@@ -133,90 +224,109 @@
 
 ```
 server/
-├── README.md                    ⭐ START HERE (this file)
-│
-├── MASTER_DATABASE_RESET.sql    ⭐ Database migration script
-├── VERIFY_DATABASE_SETUP.sql    ⭐ Testing script
-│
-├── MIGRATION_GUIDE.md           ⭐ Database instructions
-├── FRONTEND_GUIDE.md            ⭐ Frontend adaptation guide
-│
-└── [deprecated files]           (can be deleted after migration)
+├── api/                    # Vercel serverless functions
+│   ├── account/
+│   │   └── retrieve.js    # Account retrieval endpoint
+│   ├── password-reset/
+│   │   ├── send-otp.js    # Send OTP email
+│   │   ├── verify-otp.js  # Verify OTP code
+│   │   └── reset-password.js  # Reset password
+│   ├── health.js          # Health check endpoint
+│   └── [...path].js       # Catch-all route
+├── .env                   # Environment variables (DO NOT COMMIT)
+├── .env.example          # Environment template
+├── package.json          # Dependencies
+├── DATABASE_MIGRATION.sql # Complete database setup
+└── README.md             # This file
 ```
 
 ---
 
-## ✅ Success Metrics
+## 🛠️ Common Issues & Solutions
 
-### Database Migration Complete When:
-- [ ] All 14 tables created
-- [ ] No tables show "Unrestricted" status
-- [ ] All RLS policies active
-- [ ] Admin login works (admin@mabinihs.local / admin123)
-- [ ] All verification tests pass (✅)
+### Issue: "relation does not exist"
+**Solution**: Run `DATABASE_MIGRATION.sql` to create missing tables/columns
 
-### Frontend Adaptation Complete When:
-- [ ] All logins work (admin, teacher, student)
-- [ ] All CRUD operations functional
-- [ ] All dashboards display correctly
-- [ ] No console errors
-- [ ] No RLS violations
-- [ ] All pages tested end-to-end
+### Issue: "permission denied for table"
+**Solution**: Check RLS policies are created correctly
 
----
+### Issue: Email not sending
+**Solution**: 
+- Verify SendGrid API key
+- Check sender email is verified in SendGrid
+- Review SendGrid dashboard for errors
 
-## 🚦 Current Status
+### Issue: Profile pictures not loading
+**Solution**:
+- Verify Storage bucket `student-images` exists
+- Check bucket is set to public
+- Ensure RLS policies allow SELECT
 
-**Database Migration:** ✅ Scripts ready, not executed yet
-**Frontend Adaptation:** 📝 Plan created, implementation pending
-
----
-
-## 📞 Need Help?
-
-### For Database Migration
-**Read:** `MIGRATION_GUIDE.md` (section 5: Troubleshooting)
-
-### For Frontend Adaptation
-**Read:** `FRONTEND_GUIDE.md` (section 8: Common Issues)
-
-### Common Issues
-
-**Problem:** Tables still show "Unrestricted"
-**Solution:** Make sure you used service_role key, not anon key
-
-**Problem:** Admin login doesn't work
-**Solution:** Check that MASTER_DATABASE_RESET.sql completed successfully
-
-**Problem:** Frontend pages show errors
-**Solution:** Make sure database migration completed before updating frontend
+### Issue: QR codes not generating
+**Solution**:
+- Check `qrcode.min.js` is loaded
+- Verify canvas element exists in DOM
+- Check browser console for errors
 
 ---
 
-## 🎯 Your Next Steps
+## 📝 Maintenance
 
-### Today (10 minutes)
-1. ✅ Read this README
-2. ✅ Read `MIGRATION_GUIDE.md`
-3. ✅ Backup any important data
-4. ✅ Run database migration
+### Clean up old password reset tokens
 
-### This Week (4-5 days)
-5. ✅ Read `FRONTEND_GUIDE.md`
-6. ✅ Update core JS clients
-7. ✅ Update admin pages
-8. ✅ Update teacher/student pages
-9. ✅ Test everything
+Run periodically (recommended: daily cron job):
 
-### Next Week
-10. ✅ Deploy to production
-11. ✅ Monitor for issues
-12. ✅ Clean up old files
+```sql
+SELECT cleanup_expired_password_reset_tokens();
+```
+
+Deletes tokens older than 24 hours.
+
+### Backup Database
+
+Use Supabase Dashboard:
+1. Go to **Database** → **Backups**
+2. Click **Create Backup**
+3. Download backup file
+
+### Update Dependencies
+
+```bash
+cd server
+npm update
+npm audit fix
+```
 
 ---
 
-**Created:** November 24, 2025
-**Status:** Ready to execute
-**Next Step:** Read `MIGRATION_GUIDE.md` and run database migration
+## 🔗 Related Documentation
 
-🚀 **Good luck!**
+- Main system docs: `/docs`
+- Frontend integration: `/public`
+- Storage setup: `/docs/STORAGE_IMPLEMENTATION_GUIDE.md`
+- Deployment guide: `/docs/DEPLOYMENT_GUIDE.md`
+
+---
+
+## 📞 Support
+
+For issues or questions:
+1. Check this README first
+2. Review database migration logs
+3. Check Supabase Dashboard logs
+4. Review Vercel deployment logs
+
+---
+
+## ⚡ Performance Tips
+
+1. **Indexes**: All foreign keys have indexes for fast lookups
+2. **RLS**: Use service role key for bulk operations
+3. **Storage**: Use CDN URLs for images (Supabase handles this)
+4. **Queries**: Use `.select()` with specific columns instead of `*`
+5. **Pagination**: Limit results with `.range(start, end)`
+
+---
+
+**Last Updated**: December 2, 2025  
+**Version**: 1.0.0

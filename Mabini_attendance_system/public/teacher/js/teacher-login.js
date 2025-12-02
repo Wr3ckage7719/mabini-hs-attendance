@@ -178,48 +178,83 @@ function startQRScanner() {
 // Handle QR code login
 async function handleQRLogin(qrData) {
     try {
-        // Parse QR code data
-        let data;
-        try {
-            data = JSON.parse(qrData);
-        } catch {
-            // Might be just an employee number
-            data = { employee_number: qrData };
+        console.log('QR Code scanned:', qrData);
+        
+        // QR code contains the employee number or email
+        const identifier = qrData.trim();
+        
+        if (!identifier) {
+            showAlert('Invalid QR code. No identifier found.');
+            qrStatus.textContent = 'Invalid QR code - Ready to scan again';
+            return;
         }
         
-        // Find teacher by employee number or QR code
-        const teacher = await dataClient.query('teachers', {
-            filter: data.employee_number ? 
-                { employee_number: data.employee_number } : 
-                { qr_code: qrData },
-            single: true
-        });
+        // Stop the scanner to prevent multiple scans
+        if (html5QrCode && html5QrCode.isScanning) {
+            await html5QrCode.stop();
+        }
+        
+        qrStatus.textContent = 'Authenticating teacher...';
+        
+        // Find teacher by employee_number first, then by email as fallback
+        let teacherResult = await dataClient.getAll('teachers', [
+            { field: 'employee_number', operator: '==', value: identifier }
+        ]);
+        
+        let teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
+        
+        // If not found by employee_number, try email
+        if (!teacher) {
+            teacherResult = await dataClient.getAll('teachers', [
+                { field: 'email', operator: '==', value: identifier }
+            ]);
+            teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
+        }
         
         if (!teacher) {
-            showAlert('Teacher not found. Please contact administration.');
-            qrStatus.textContent = 'Not found - Ready to scan again';
+            showAlert('Teacher not found. Invalid QR code.');
+            qrStatus.textContent = 'Teacher not found - Ready to scan again';
+            // Restart scanner
+            setTimeout(() => startQRScanner(), 2000);
             return;
         }
         
+        console.log('Teacher found via QR:', teacher);
+        
+        // Check if teacher account is active
         if (teacher.status !== 'active') {
-            showAlert('Your account is inactive. Please contact administration.');
+            showAlert('Your account is not active. Please contact administration.');
             qrStatus.textContent = 'Account inactive - Ready to scan again';
+            // Restart scanner
+            setTimeout(() => startQRScanner(), 2000);
             return;
         }
         
-        // For true QR login, redirect to email login with pre-filled email
-        showAlert('QR verified! Please log in with your email and password.', 'success');
-        qrStatus.textContent = 'Please use email login';
+        // Direct QR login - no password required (same as student QR login)
+        // Store teacher data in session
+        sessionStorage.setItem('teacherData', JSON.stringify(teacher));
+        sessionStorage.setItem('userRole', 'teacher');
+        sessionStorage.setItem('userData', JSON.stringify(teacher)); // Required by dashboard and other pages
+        sessionStorage.setItem('loginMethod', 'qr');
+        sessionStorage.setItem('loginTime', new Date().toISOString());
         
-        // Switch to email tab and pre-fill email
-        emailTabBtn.click();
-        emailInput.value = teacher.email || '';
-        passwordInput.focus();
+        // Clear any logout flag
+        sessionStorage.removeItem('justLoggedOut');
+        
+        qrStatus.textContent = 'Login successful! Redirecting...';
+        showAlert('QR Login successful! Welcome, ' + teacher.first_name + '!', 'success');
+        
+        // Redirect to teacher dashboard
+        setTimeout(() => {
+            window.location.href = 'dashboard.html';
+        }, 1000);
         
     } catch (error) {
         console.error('QR Login error:', error);
-        showAlert('Invalid QR code format');
-        qrStatus.textContent = 'Error - Ready to scan again';
+        showAlert('Network error. Please check your connection and try again.');
+        qrStatus.textContent = 'Network error - Ready to scan again';
+        // Restart scanner
+        setTimeout(() => startQRScanner(), 2000);
     }
 }
 
@@ -260,5 +295,26 @@ window.addEventListener('load', async () => {
         console.error('Auto-login check error:', error);
         // On error, clear session to be safe
         sessionStorage.clear();
+    }
+});
+
+// Cleanup: Stop scanner when leaving page
+window.addEventListener('beforeunload', () => {
+    if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(err => {
+            console.error('Error stopping scanner on unload:', err);
+        });
+    }
+});
+
+// Cleanup: Stop scanner when page is hidden (mobile)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(err => {
+            console.error('Error stopping scanner on visibility change:', err);
+        });
+    } else if (!document.hidden && qrTab.classList.contains('active') && html5QrCode && !html5QrCode.isScanning) {
+        // Restart scanner if QR tab is active and page becomes visible again
+        startQRScanner();
     }
 });

@@ -225,6 +225,12 @@
                         </div>
                         
                         <div class="mb-3">
+                            <label class="form-label">Employee Number</label>
+                            <input type="text" class="form-control" id="employeeNumber" readonly placeholder="Auto-generated" style="background-color: #f8f9fa;">
+                            <small class="text-muted">Automatically generated when creating new teacher</small>
+                        </div>
+                        
+                        <div class="mb-3">
                             <label class="form-label">Department</label>
                             <input type="text" class="form-control" id="department" placeholder="e.g., Mathematics">
                         </div>
@@ -355,6 +361,7 @@
             
             tbody.innerHTML = teachers.map(teacher => `
                 <tr>
+                    <td>${teacher.employee_number || 'N/A'}</td>
                     <td>${teacher.first_name || ''} ${teacher.last_name || ''}</td>
                     <td>${teacher.email || 'N/A'}</td>
                     <td>${teacher.department || 'N/A'}</td>
@@ -406,6 +413,10 @@
                 document.getElementById('qrPreviewTeacher').style.display = 'none';
                 qrCodeInstanceTeacher = null;
                 
+                // Auto-generate employee number for new teacher
+                const employeeNumber = generateEmployeeNumber();
+                document.getElementById('employeeNumber').value = employeeNumber;
+                
                 if (teacherModal) {
                     teacherModal.show();
                 } else {
@@ -437,6 +448,7 @@
             document.getElementById('modalTitle').textContent = 'Edit Teacher';
             document.getElementById('firstName').value = teacher.first_name || '';
             document.getElementById('lastName').value = teacher.last_name || '';
+            document.getElementById('employeeNumber').value = teacher.employee_number || '';
             document.getElementById('email').value = teacher.email || '';
             document.getElementById('department').value = teacher.department || '';
             document.getElementById('position').value = teacher.position || '';
@@ -478,27 +490,20 @@
                 return;
             }
             
-            // Generate employee_number if creating new teacher
-            let employeeNumber = null;
-            if (!editingTeacherId) {
-                // Generate employee number: EMP + timestamp
-                employeeNumber = 'EMP' + Date.now().toString().slice(-8);
-            }
+            // Get employee number from form (auto-generated for new teachers)
+            const employeeNumber = document.getElementById('employeeNumber').value.trim();
             
             const teacherData = {
                 first_name: firstName,
                 last_name: lastName,
+                employee_number: employeeNumber,
+                email: email,er: employeeNumber,
                 email: email,
                 department: department || null,
                 position: position || null,
                 phone: contactNumber || null,
                 status: status
             };
-            
-            // Add employee_number only for new teachers
-            if (employeeNumber) {
-                teacherData.employee_number = employeeNumber;
-            }
             
             console.log('Saving teacher data:', teacherData);
             
@@ -565,6 +570,16 @@
                 alert('Error deleting teacher: ' + error.message);
             }
         };
+
+        // Generate employee number (format: TCHR-YYYYMMDD-XXXX)
+        function generateEmployeeNumber() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+            return `TCHR-${year}${month}${day}-${random}`;
+        }
 
         // QR Code functionality for teachers
         let qrCodeInstanceTeacher = null;

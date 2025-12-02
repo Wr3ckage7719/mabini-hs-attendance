@@ -307,6 +307,9 @@ window.openAddModal = function() {
     if (modalTitle) modalTitle.textContent = 'Add New Teaching Load';
     if (loadForm) loadForm.reset();
     
+    // Clear all day checkboxes
+    document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+    
     if (loadModal) loadModal.show();
 };
 
@@ -329,16 +332,40 @@ window.editLoad = function(id) {
     const teacherIdEl = document.getElementById('teacherId');
     const subjectIdEl = document.getElementById('subjectId');
     const sectionIdEl = document.getElementById('sectionId');
-    const scheduleEl = document.getElementById('schedule');
     const roomEl = document.getElementById('room');
-    const schoolYearEl = document.getElementById('schoolYear');
     
     if (teacherIdEl) teacherIdEl.value = load.teacher_id || '';
     if (subjectIdEl) subjectIdEl.value = load.subject_id || '';
     if (sectionIdEl) sectionIdEl.value = load.section_id || '';
-    if (scheduleEl) scheduleEl.value = load.schedule || '';
     if (roomEl) roomEl.value = load.room || '';
-    if (schoolYearEl) schoolYearEl.value = load.school_year || '';
+    
+    // Parse schedule string to populate days and times
+    // Schedule format: "Monday, Tuesday, Wednesday 08:00-09:00"
+    if (load.schedule) {
+        // Clear all checkboxes first
+        document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+        
+        // Extract days and time
+        const scheduleMatch = load.schedule.match(/^(.+)\s+(\d{1,2}:\d{2})-(\d{1,2}:\d{2})$/);
+        if (scheduleMatch) {
+            const daysString = scheduleMatch[1];
+            const startTime = scheduleMatch[2];
+            const endTime = scheduleMatch[3];
+            
+            // Check the appropriate day checkboxes
+            const days = daysString.split(',').map(d => d.trim());
+            days.forEach(day => {
+                const checkbox = document.querySelector(`.day-checkbox[value="${day}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+            
+            // Set time fields
+            const startTimeEl = document.getElementById('startTime');
+            const endTimeEl = document.getElementById('endTime');
+            if (startTimeEl) startTimeEl.value = startTime;
+            if (endTimeEl) endTimeEl.value = endTime;
+        }
+    }
     
     if (loadModal) loadModal.show();
 };
@@ -388,6 +415,8 @@ async function handleSubmit(e) {
             });
         }
         
+        console.log('Selected days:', selectedDays);
+        
         // Build schedule string
         const startTimeEl = document.getElementById('startTime');
         const endTimeEl = document.getElementById('endTime');
@@ -396,6 +425,8 @@ async function handleSubmit(e) {
         const schedule = selectedDays.length > 0 && startTime && endTime 
             ? `${selectedDays.join(', ')} ${startTime}-${endTime}`
             : '';
+        
+        console.log('Built schedule string:', schedule);
         
         const teacherIdEl = document.getElementById('teacherId');
         const subjectIdEl = document.getElementById('subjectId');
@@ -408,8 +439,10 @@ async function handleSubmit(e) {
             section_id: sectionIdEl?.value || null,
             schedule: schedule,
             room: roomEl?.value?.trim() || null,
-            school_year: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1) // Auto-generate: 2025-2026
+            academic_year: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1) // Auto-generate: 2025-2026
         };
+        
+        console.log('Form data to save:', formData);
         
         // Validate required fields
         if (!formData.teacher_id || !formData.subject_id || !formData.section_id) {

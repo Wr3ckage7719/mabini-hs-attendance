@@ -75,13 +75,15 @@ WHERE tablename = 'students'
 -- Show current students without section assignment
 SELECT 
     id,
-    full_name,
+    student_number,
+    first_name,
+    last_name,
     grade_level,
     section_id,
     status
 FROM students
 WHERE section_id IS NULL AND status = 'active'
-ORDER BY grade_level, full_name
+ORDER BY grade_level, last_name, first_name
 LIMIT 20;
 
 -- Show available sections
@@ -165,7 +167,9 @@ ORDER BY grade_level;
 -- Verify referential integrity (students pointing to valid sections)
 SELECT 
     s.id as student_id,
-    s.full_name,
+    s.student_number,
+    s.first_name,
+    s.last_name,
     s.section_id,
     sec.section_name
 FROM students s

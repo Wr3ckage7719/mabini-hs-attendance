@@ -253,6 +253,14 @@
                             <input type="text" class="form-control" id="section" placeholder="e.g., Einstein">
                         </div>
                         
+                        <div class="mb-3">
+                            <label class="form-label">Status <span class="text-danger">*</span></label>
+                            <select class="form-select" id="status" required>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        
                         <!-- Account Credentials Section -->
                         <div class="mb-3" style="border-top: 1px solid #dee2e6; padding-top: 1rem; margin-top: 1rem;">
                             <h6 class="mb-3"><i class="bi bi-key-fill"></i> Account Credentials</h6>
@@ -483,6 +491,7 @@
             document.getElementById('lastName').value = student.last_name || '';
             document.getElementById('gradeLevel').value = student.grade_level || '';
             document.getElementById('section').value = student.section || '';
+            document.getElementById('status').value = student.status || 'active';
             
             // Load email
             document.getElementById('email').value = student.email || '';
@@ -528,10 +537,11 @@
             const gradeLevel = document.getElementById('gradeLevel').value;
             const section = document.getElementById('section').value.trim();
             const email = document.getElementById('email').value.trim();
+            const status = document.getElementById('status').value;
             
             // Validate required fields
-            if (!studentNumber || !firstName || !lastName || !gradeLevel || !email) {
-                alert('Please fill in all required fields (including email)');
+            if (!studentNumber || !firstName || !lastName || !gradeLevel || !email || !status) {
+                alert('Please fill in all required fields (including email and status)');
                 return;
             }
             
@@ -549,7 +559,7 @@
                 grade_level: gradeLevel,
                 section: section || null,
                 email: email,
-                status: 'active'
+                status: status
             };
             
             console.log('Saving student data:', studentData);

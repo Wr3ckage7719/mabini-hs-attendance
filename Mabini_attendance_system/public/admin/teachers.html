@@ -239,6 +239,14 @@
                             <input type="text" class="form-control" id="contactNumber" placeholder="09XXXXXXXXX">
                         </div>
                         
+                        <div class="mb-3">
+                            <label class="form-label">Status <span class="text-danger">*</span></label>
+                            <select class="form-select" id="status" required>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        
                         <!-- Account Credentials Section -->
                         <div class="mb-3" style="border-top: 1px solid #dee2e6; padding-top: 1rem; margin-top: 1rem;">
                             <h6 class="mb-3"><i class="bi bi-key-fill"></i> Account Credentials</h6>
@@ -400,6 +408,7 @@
             document.getElementById('department').value = teacher.department || '';
             document.getElementById('position').value = teacher.position || '';
             document.getElementById('contactNumber').value = teacher.phone || '';
+            document.getElementById('status').value = teacher.status || 'active';
             
             document.getElementById('editMode').value = 'true';
             
@@ -424,9 +433,10 @@
             const department = document.getElementById('department').value.trim();
             const position = document.getElementById('position').value.trim();
             const contactNumber = document.getElementById('contactNumber').value.trim();
+            const status = document.getElementById('status').value;
             
-            if (!firstName || !lastName || !email) {
-                alert('Please fill in all required fields');
+            if (!firstName || !lastName || !email || !status) {
+                alert('Please fill in all required fields (including status)');
                 return;
             }
             
@@ -444,7 +454,7 @@
                 department: department || null,
                 position: position || null,
                 phone: contactNumber || null,
-                status: 'active'
+                status: status
             };
             
             // Add employee_number only for new teachers

@@ -303,8 +303,31 @@
         let mySections = [];
         let currentTeacherId = null;
 
+        // Wait for teacher-common.js to load
+        async function waitForGetDocuments() {
+            let attempts = 0;
+            while (!window.getDocuments && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (!window.getDocuments) {
+                console.error('Failed to load getDocuments function');
+                return false;
+            }
+            return true;
+        }
+
         // Load attendance statistics
         async function loadAttendanceStatistics() {
+            // Wait for getDocuments to be available
+            const ready = await waitForGetDocuments();
+            if (!ready) {
+                document.getElementById('studentsTableBody').innerHTML = `
+                    <tr><td colspan="8" class="text-center text-danger">Error: Required functions not loaded</td></tr>
+                `;
+                return;
+            }
+
             try {
                 // Get current teacher ID
                 const userData = JSON.parse(sessionStorage.getItem('userData'));

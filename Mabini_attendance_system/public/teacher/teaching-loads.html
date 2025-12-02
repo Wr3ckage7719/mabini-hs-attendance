@@ -262,10 +262,17 @@
                 }
                 currentTeacherId = teacherData.id;
                 console.log('Loading schedule for teacher:', currentTeacherId);
+                console.log('Full teacher data:', teacherData);
                 
                 // Get teaching loads for this teacher
                 const teachingLoads = await getDocuments('teaching_loads');
-                const myLoads = teachingLoads.filter(load => load.teacher_id === currentTeacherId);
+                console.log('All teaching loads:', teachingLoads);
+                console.log('Filtering for teacher_id:', currentTeacherId);
+                const myLoads = teachingLoads.filter(load => {
+                    console.log('Checking load:', load.teacher_id, '===', currentTeacherId, '?', load.teacher_id === currentTeacherId);
+                    return load.teacher_id === currentTeacherId;
+                })
+                console.log('My loads after filter:', myLoads);
                 
                 // Get related data
                 const subjects = await getDocuments('subjects');

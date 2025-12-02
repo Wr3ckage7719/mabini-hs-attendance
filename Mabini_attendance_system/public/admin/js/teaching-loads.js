@@ -440,7 +440,7 @@ async function handleSubmit(e) {
             teacher_id: teacherIdEl?.value || null,
             subject_id: subjectIdEl?.value || null,
             section_id: sectionIdEl?.value || null,
-            schedule: schedule,
+            schedule: schedule || null,
             room: roomEl?.value?.trim() || null,
             academic_year: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1) // Auto-generate: 2025-2026
         };
@@ -450,6 +450,20 @@ async function handleSubmit(e) {
         // Validate required fields
         if (!formData.teacher_id || !formData.subject_id || !formData.section_id) {
             showAlert('Please fill in all required fields', 'warning');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Teaching Load';
+            }
+            return;
+        }
+        
+        // Validate schedule
+        if (!formData.schedule) {
+            showAlert('Please select at least one day and set the time schedule', 'warning');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Teaching Load';
+            }
             return;
         }
         
@@ -476,8 +490,13 @@ async function handleSubmit(e) {
                 .select()
                 .single();
             
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase insert error:', error);
+                console.error('Error details:', JSON.stringify(error, null, 2));
+                throw error;
+            }
             
+            console.log('Teaching load created:', data);
             showAlert('Teaching load created successfully', 'success');
         }
         
@@ -486,11 +505,13 @@ async function handleSubmit(e) {
         
     } catch (error) {
         console.error('Error saving teaching load:', error);
-        showAlert('Failed to save teaching load: ' + error.message, 'danger');
+        console.error('Error type:', typeof error);
+        console.error('Error keys:', Object.keys(error));
+        showAlert('Failed to save teaching load: ' + (error.message || error.error_description || JSON.stringify(error)), 'danger');
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = editingLoadId ? 'Update Load' : 'Create Load';
+            submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Teaching Load';
         }
     }
 }

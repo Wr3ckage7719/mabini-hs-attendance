@@ -313,6 +313,13 @@ window.openAddModal = function() {
     // Clear all day checkboxes
     document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
     
+    // Auto-populate academic year with current year
+    const academicYearEl = document.getElementById('academicYear');
+    if (academicYearEl) {
+        const currentYear = new Date().getFullYear();
+        academicYearEl.value = currentYear + '-' + (currentYear + 1);
+    }
+    
     if (loadModal) loadModal.show();
 };
 
@@ -336,11 +343,13 @@ window.editLoad = function(id) {
     const subjectIdEl = document.getElementById('subjectId');
     const sectionIdEl = document.getElementById('sectionId');
     const roomEl = document.getElementById('room');
+    const academicYearEl = document.getElementById('academicYear');
     
     if (teacherIdEl) teacherIdEl.value = load.teacher_id || '';
     if (subjectIdEl) subjectIdEl.value = load.subject_id || '';
     if (sectionIdEl) sectionIdEl.value = load.section_id || '';
     if (roomEl) roomEl.value = load.room || '';
+    if (academicYearEl) academicYearEl.value = load.academic_year || '';
     
     // Parse schedule string to populate days and times
     // Schedule format: "Monday, Tuesday, Wednesday 08:00-09:00"
@@ -435,6 +444,7 @@ async function handleSubmit(e) {
         const subjectIdEl = document.getElementById('subjectId');
         const sectionIdEl = document.getElementById('sectionId');
         const roomEl = document.getElementById('room');
+        const academicYearEl = document.getElementById('academicYear');
         
         const formData = {
             teacher_id: teacherIdEl?.value || null,
@@ -442,7 +452,7 @@ async function handleSubmit(e) {
             section_id: sectionIdEl?.value || null,
             schedule: schedule || null,
             room: roomEl?.value?.trim() || null,
-            academic_year: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1) // Auto-generate: 2025-2026
+            academic_year: academicYearEl?.value?.trim() || null
         };
         
         console.log('Form data to save:', formData);

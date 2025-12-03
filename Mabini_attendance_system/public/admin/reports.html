@@ -275,15 +275,17 @@
                             <tr>
                                 <th>Student ID</th>
                                 <th>Name</th>
-                                <th>Block</th>
+                                <th>Section</th>
+                                <th>Subject</th>
                                 <th>Date</th>
                                 <th>Time In</th>
+                                <th>Time Out</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="reportTableBody">
                             <tr>
-                                <td colspan="6" class="loading">Loading reports...</td>
+                                <td colspan="8" class="loading">Loading reports...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -309,6 +311,8 @@
         let allLogs = [];
         let allStudents = [];
         let allSections = [];
+        let allSubjects = [];
+        let allTeachingLoads = [];
         
         // Chart instances
         let attendanceTrendChart = null;
@@ -568,12 +572,13 @@
                 const dateStr = date.toISOString().split('T')[0];
                 last7Days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
                 
-                const dayLogs = logs.filter(log => {
-                    const logDate = new Date(log.timestamp).toISOString().split('T')[0];
-                    return logDate === dateStr;
-                });
+                const dayLogs = logs.filter(log => log.date === dateStr);
                 
-                const uniquePresent = new Set(dayLogs.map(log => log.student_id)).size;
+                const uniquePresent = new Set(
+                    dayLogs
+                        .filter(log => log.status && log.status.toLowerCase() !== 'absent')
+                        .map(log => log.student_id)
+                ).size;
                 const absent = allStudents.length - uniquePresent;
                 
                 presentData.push(uniquePresent);
@@ -590,15 +595,14 @@
             if (!hourlyChart) return;
             
             const todayStr = new Date().toISOString().split('T')[0];
-            const todayLogs = logs.filter(log => {
-                const logDate = new Date(log.timestamp).toISOString().split('T')[0];
-                return logDate === todayStr;
-            });
+            const todayLogs = logs.filter(log => log.date === todayStr);
             
             const hourCounts = [0, 0, 0, 0, 0, 0, 0, 0]; // 6 AM to 1 PM
             
             todayLogs.forEach(log => {
-                const hour = new Date(log.timestamp).getHours();
+                if (!log.time_in) return;
+                const timeParts = log.time_in.split(':');
+                const hour = parseInt(timeParts[0]);
                 if (hour >= 6 && hour <= 13) {
                     hourCounts[hour - 6]++;
                 }
@@ -612,10 +616,7 @@
             if (!sectionChart) return;
             
             const todayStr = new Date().toISOString().split('T')[0];
-            const todayLogs = logs.filter(log => {
-                const logDate = new Date(log.timestamp).toISOString().split('T')[0];
-                return logDate === todayStr;
-            });
+            const todayLogs = logs.filter(log => log.date === todayStr);
             
             const sectionStats = allSections.map(section => {
                 const studentsInSection = allStudents.filter(s => s.section_id === section.id);
@@ -625,7 +626,7 @@
                 
                 const presentInSection = new Set(
                     todayLogs
-                        .filter(log => studentsInSection.some(s => s.student_number === log.student_id))
+                        .filter(log => log.section_id === section.id && log.status && log.status.toLowerCase() !== 'absent')
                         .map(log => log.student_id)
                 ).size;
                 
@@ -650,6 +651,13 @@
                 
                 // Load sections
                 allSections = await window.getDocuments('sections');
+                
+                // Load subjects
+                allSubjects = await window.getDocuments('subjects');
+                
+                // Load teaching loads
+                allTeachingLoads = await window.getDocuments('teaching_loads');
+                
                 const blockFilter = document.getElementById('blockFilter');
                 blockFilter.innerHTML = '<option value="">All Sections</option>' +
                     allSections.map(block => `<option value="${block.id}">${block.section_name}</option>`).join('');
@@ -660,8 +668,8 @@
                 gradeLevelFilter.innerHTML = '<option value="">All Grades</option>' +
                     gradeLevels.map(grade => `<option value="${grade}">Grade ${grade}</option>`).join('');
                 
-                // Load entrance logs once (auto-polling disabled)
-                allLogs = await window.getDocuments('entrance_logs');
+                // Load attendance records
+                allLogs = await window.getDocuments('attendance');
                 
                 // Initialize charts
                 initCharts();
@@ -684,7 +692,7 @@
             
             // Filter logs by date range
             let filteredLogs = allLogs.filter(log => {
-                const logDate = new Date(log.timestamp).toISOString().split('T')[0];
+                const logDate = log.date;
                 return logDate >= dateFrom && logDate <= dateTo;
             });
             
@@ -707,14 +715,13 @@
                 filteredLogs = filteredLogs.filter(log => studentsInBlock.includes(log.student_id));
             }
             
-            // Filter by status (present/late)
+            // Filter by status (present/late/absent)
             if (statusFilter) {
                 filteredLogs = filteredLogs.filter(log => {
-                    const hour = new Date(log.timestamp).getHours();
                     if (statusFilter === 'late') {
-                        return hour >= 8;
+                        return log.status && log.status.toLowerCase() === 'late';
                     } else if (statusFilter === 'present') {
-                        return hour < 8;
+                        return log.status && log.status.toLowerCase() === 'present';
                     }
                     return true;
                 });
@@ -747,7 +754,7 @@
             if (logs.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="empty-state">
+                        <td colspan="8" class="empty-state">
                             <h3>No attendance records found</h3>
                             <p>Try adjusting the filters above</p>
                         </td>
@@ -756,24 +763,35 @@
                 return;
             }
             
-            // Sort logs by timestamp (newest first)
-            logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            // Sort logs by date (newest first)
+            logs.sort((a, b) => {
+                const dateCompare = new Date(b.date) - new Date(a.date);
+                if (dateCompare !== 0) return dateCompare;
+                return (b.time_in || '').localeCompare(a.time_in || '');
+            });
             
             tbody.innerHTML = logs.map(log => {
-                const student = allStudents.find(s => s.student_number === log.student_id);
-                const section = allSections.find(b => b.id === student?.section_id);
-                const timestamp = new Date(log.timestamp);
-                const hour = timestamp.getHours();
-                const status = hour >= 8 ? 'Late' : 'Present';
-                const statusClass = hour >= 8 ? 'badge-late' : 'badge-present';
+                const student = allStudents.find(s => s.id === log.student_id);
+                const section = allSections.find(b => b.id === log.section_id);
+                const subject = allSubjects.find(s => s.id === log.subject_id);
+                
+                const status = log.status || 'Present';
+                const statusClass = status.toLowerCase() === 'late' ? 'badge-late' : 
+                                   status.toLowerCase() === 'absent' ? 'badge-absent' : 'badge-present';
+                
+                const formattedDate = log.date ? new Date(log.date).toLocaleDateString() : '-';
+                const timeIn = log.time_in || '-';
+                const timeOut = log.time_out || '-';
                 
                 return `
                     <tr>
-                        <td>${log.student_id || '-'}</td>
+                        <td>${student?.student_number || log.student_id || '-'}</td>
                         <td>${student ? `${student.first_name} ${student.last_name}` : 'Unknown'}</td>
                         <td>${section ? section.section_name : '-'}</td>
-                        <td>${timestamp.toLocaleDateString()}</td>
-                        <td>${timestamp.toLocaleTimeString()}</td>
+                        <td>${subject ? subject.subject_name : '-'}</td>
+                        <td>${formattedDate}</td>
+                        <td>${timeIn}</td>
+                        <td>${timeOut}</td>
                         <td><span class="badge ${statusClass}">${status}</span></td>
                     </tr>
                 `;

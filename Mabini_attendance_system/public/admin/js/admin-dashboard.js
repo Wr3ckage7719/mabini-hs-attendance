@@ -1,15 +1,29 @@
 // =====================================================
-// ADMIN DASHBOARD - Supabase Data Integration
+// ADMIN DASHBOARD - Main Logic
 // =====================================================
 
-import { authClient } from '../../js/auth-client.js';
-import { dataClient } from '../../js/data-client.js';
-import { protectPage, setupAutoLogout } from '../../js/session-guard.js';
+console.log('[Dashboard] Script loaded');
+
+// Wait for admin-common.js to load CRUD functions
+await new Promise(resolve => {
+    if (window.getDocuments) {
+        resolve();
+    } else {
+        const checkInterval = setInterval(() => {
+            if (window.getDocuments) {
+                clearInterval(checkInterval);
+                resolve();
+            }
+        }, 50);
+    }
+});
+
+console.log('[Dashboard] CRUD functions available');
 
 // Update user profile in sidebar
-function updateUserProfile(profile) {
-    const fullName = profile.full_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Admin';
-    const role = profile.role === 'admin' ? 'Administrator' : profile.role;
+function updateUserProfile(user) {
+    const fullName = user.fullName || user.full_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Admin';
+    const role = user.role === 'admin' ? 'Administrator' : user.role || 'Admin';
     
     const userNameEl = document.getElementById('userName');
     const userRoleEl = document.getElementById('userRole');
@@ -28,34 +42,31 @@ function updateUserProfile(profile) {
 // Load dashboard statistics
 async function loadStats() {
     try {
+        console.log('[Dashboard] Loading stats...');
+        
         // Get total students
-        const studentsResult = await dataClient.getAll('students');
-        const students = studentsResult.data || studentsResult || [];
+        const students = await window.getDocuments('students');
         const totalStudentsEl = document.getElementById('totalStudents');
         if (totalStudentsEl) {
             totalStudentsEl.textContent = students.length;
         }
         
-        // Get total sections (blocks)
-        const sectionsResult = await dataClient.getAll('sections');
-        const sections = sectionsResult.data || sectionsResult || [];
+        // Get active sections
+        const sections = await window.getDocuments('sections');
+        const activeSections = sections.filter(s => s.status === 'active' || !s.status);
         const totalBlocksEl = document.getElementById('totalBlocks');
         if (totalBlocksEl) {
-            totalBlocksEl.textContent = sections.length;
+            totalBlocksEl.textContent = activeSections.length;
         }
         
-        // Get today's attendance
+        // Get today's attendance from entrance_logs
         const today = new Date().toISOString().split('T')[0];
-        const todayStart = new Date(today + 'T00:00:00').toISOString();
-        const todayEnd = new Date(today + 'T23:59:59').toISOString();
-        
-        // Query entrance logs for today
-        const logsResult = await dataClient.query('entrance_logs', {
-            filter: {
-                timestamp: { gte: todayStart, lte: todayEnd }
-            }
+        const logs = await window.getDocuments('entrance_logs');
+        const todayLogs = logs.filter(log => {
+            if (!log.scan_time) return false;
+            const logDate = new Date(log.scan_time).toISOString().split('T')[0];
+            return logDate === today;
         });
-        const todayLogs = logsResult.data || logsResult || [];
         
         // Count unique students who checked in today
         const uniqueStudents = new Set(todayLogs.map(log => log.student_id));
@@ -74,15 +85,16 @@ async function loadStats() {
         }
         
         // Load recent activity
-        await loadRecentActivity(todayLogs.slice(-5).reverse());
+        await loadRecentActivity(todayLogs.slice(-5).reverse(), students);
         
+        console.log('[Dashboard] Stats loaded successfully');
     } catch (error) {
-        console.error('Error loading stats:', error);
+        console.error('[Dashboard] Error loading stats:', error);
     }
 }
 
 // Load recent activity
-async function loadRecentActivity(logs) {
+async function loadRecentActivity(logs, students) {
     const activityContainer = document.getElementById('recentActivity');
     if (!activityContainer) return;
     
@@ -101,71 +113,54 @@ async function loadRecentActivity(logs) {
         return;
     }
     
-    // Get student names for the logs
-    const studentIds = [...new Set(logs.map(log => log.student_id))];
-    const students = await dataClient.query('students', {
-        filter: { id: { in: studentIds } }
-    });
-    
+    // Create a map of student IDs to names for quick lookup
     const studentMap = {};
     students.forEach(s => {
-        studentMap[s.id] = `${s.first_name} ${s.last_name}`;
+        studentMap[s.id] = `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Student';
     });
     
     activityContainer.innerHTML = logs.map(log => {
-        const time = new Date(log.timestamp);
+        const time = new Date(log.scan_time);
         const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         const studentName = studentMap[log.student_id] || 'Student';
+        const location = log.location || 'Main Entrance';
         
         return `
             <div class="activity-item">
                 <div class="activity-icon">
-                    <i class="bi bi-check-circle-fill" style="color: var(--success);"></i>
+                    <i class="bi bi-check-circle-fill" style="color: var(--success, #10b981);"></i>
                 </div>
                 <div class="activity-content">
                     <div class="activity-title">${studentName} checked in</div>
-                    <div class="activity-time">${timeStr}</div>
+                    <div class="activity-time">${timeStr} - ${location}</div>
                 </div>
             </div>
         `;
     }).join('');
 }
 
-// Sidebar toggle for mobile
-window.toggleSidebar = function() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('active');
-    }
-};
-
-// Logout function
-window.doLogout = async function() {
-    if (confirm('Are you sure you want to logout?')) {
-        await authClient.logout();
-        window.location.href = 'login.html';
-    }
-};
-
 // Initialize dashboard
 async function initDashboard() {
-    // Protect page - require admin role
-    const isAuthorized = await protectPage('admin');
-    if (!isAuthorized) return;
+    console.log('[Dashboard] Initializing...');
     
-    // Setup auto-logout on session expiry
-    setupAutoLogout();
+    // Get user data from sessionStorage (set during login by admin-common.js)
+    const userData = sessionStorage.getItem('userData');
+    if (userData) {
+        try {
+            const user = JSON.parse(userData);
+            updateUserProfile(user);
+        } catch (e) {
+            console.error('[Dashboard] Error parsing user data:', e);
+        }
+    }
     
-    // Get current user
-    const user = await authClient.getCurrentUser();
-    const profile = await authClient.getUserProfile(user.id);
-    
-    // Update user info in sidebar
-    updateUserProfile(profile);
-    
-    // Load dashboard statistics
+    // Load dashboard stats
     await loadStats();
+    
+    console.log('[Dashboard] Initialization complete');
 }
 
-// Initialize when DOM is ready
-initDashboard();
+// Run when page loads
+window.addEventListener('load', initDashboard);
+
+console.log('[Dashboard] Script ready');

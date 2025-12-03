@@ -1,203 +1,240 @@
 // =====================================================
-// TEACHER DASHBOARD - Supabase Data Integration
+// TEACHER DASHBOARD - Main Logic
 // =====================================================
 
-import { authClient } from '../../js/auth-client.js';
 import { dataClient } from '../../js/data-client.js';
-import { attendanceClient } from '../../js/attendance-client.js';
-import { protectPage, setupAutoLogout } from '../../js/session-guard.js';
 
-let currentTeacher = null;
+console.log('[Teacher Dashboard] Script loaded');
 
-// Initialize the dashboard
-async function initDashboard() {
-    try {
-        // Check if teacher is logged in via session
-        const teacherData = sessionStorage.getItem('teacherData');
-        const userRole = sessionStorage.getItem('userRole');
-        
-        if (!teacherData || userRole !== 'teacher') {
-            window.location.href = 'login.html';
-            return;
-        }
-        
-        const teacher = JSON.parse(teacherData);
-        
-        // Verify teacher still exists and is active
-        const teacherResult = await dataClient.getAll('teachers', [
-            { field: 'id', operator: '==', value: teacher.id }
-        ]);
-        
-        const currentTeacherData = teacherResult.data && teacherResult.data.length > 0 
-            ? teacherResult.data[0] : null;
-        
-        if (!currentTeacherData || currentTeacherData.status !== 'active') {
-            sessionStorage.clear();
-            sessionStorage.setItem('justLoggedOut', 'true');
-            window.location.href = 'login.html';
-            return;
-        }
-        
-        currentTeacher = currentTeacherData;
-        
-        // Update profile
-        await updateProfile(currentTeacher);
+let allSchedules = [];
+let currentTeacherId = null;
 
-        // Load statistics
-        await loadStats();
-    } catch (error) {
-        console.error('Error initializing dashboard:', error);
-        sessionStorage.clear();
-        sessionStorage.setItem('justLoggedOut', 'true');
-        sessionStorage.removeItem('userRole');
-        window.location.href = 'login.html';
-    }
-}
-
-// Update profile information
-async function updateProfile(teacher) {
-    try {
-        if (teacher) {
-            currentTeacher = teacher;
-            
-            // Update name and email
-            const fullName = `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() || 'Teacher';
-            const teacherNameEl = document.getElementById('teacherName');
-            if (teacherNameEl) teacherNameEl.textContent = fullName;
-            
-            const teacherEmailEl = document.getElementById('teacherEmail');
-            if (teacherEmailEl) teacherEmailEl.textContent = teacher.email || '';
-            
-            // Update professional info
-            const departmentEl = document.getElementById('department');
-            if (departmentEl) departmentEl.textContent = teacher.department || 'General';
-            
-            const positionEl = document.getElementById('position');
-            if (positionEl) positionEl.textContent = teacher.position || 'Professor';
-            
-            // Calculate years of service
-            if (teacher.created_at) {
-                const createdYear = new Date(teacher.created_at).getFullYear();
-                const currentYear = new Date().getFullYear();
-                const years = currentYear - createdYear;
-                const yearsOfServiceEl = document.getElementById('yearsOfService');
-                if (yearsOfServiceEl) yearsOfServiceEl.textContent = years > 0 ? years : '0';
+// Wait for teacher-common.js to provide CRUD functions and auth
+await new Promise(resolve => {
+    if (window.getDocuments) {
+        resolve();
+    } else {
+        const checkInterval = setInterval(() => {
+            if (window.getDocuments) {
+                clearInterval(checkInterval);
+                resolve();
             }
+        }, 50);
+    }
+});
+
+console.log('[Teacher Dashboard] CRUD functions available');
+
+// Load dashboard data
+async function loadDashboard() {
+    try {
+        const userData = JSON.parse(sessionStorage.getItem('userData') || sessionStorage.getItem('teacherData'));
+        if (!userData || !userData.id) {
+            console.error('[Teacher Dashboard] No valid user data found');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        currentTeacherId = userData.id;
+        console.log('[Teacher Dashboard] Loading for teacher:', currentTeacherId);
+        
+        // Get teaching loads
+        const teachingLoads = await window.getDocuments('teaching_loads');
+        console.log('[Teacher Dashboard] All teaching loads:', teachingLoads.length);
+        
+        const myLoads = teachingLoads.filter(load => {
+            return String(load.teacher_id) === String(currentTeacherId);
+        });
+        
+        console.log('[Teacher Dashboard] My teaching loads:', myLoads.length);
+        
+        // Get related data
+        const subjects = await window.getDocuments('subjects');
+        const sections = await window.getDocuments('sections');
+        const students = await window.getDocuments('students');
+        
+        // Calculate stats
+        const uniqueSections = [...new Set(myLoads.map(l => l.section_id))].filter(Boolean);
+        const uniqueSubjects = [...new Set(myLoads.map(l => l.subject_id))].filter(Boolean);
+        const myStudents = students.filter(s => uniqueSections.some(sId => String(sId) === String(s.section_id)));
+        
+        // Update stat cards
+        const mySectionsEl = document.getElementById('mySections');
+        const totalStudentsEl = document.getElementById('totalStudents');
+        const totalClassesEl = document.getElementById('totalClasses');
+        const totalSubjectsEl = document.getElementById('totalSubjects');
+        
+        if (mySectionsEl) mySectionsEl.textContent = uniqueSections.length;
+        if (totalStudentsEl) totalStudentsEl.textContent = myStudents.length;
+        if (totalClassesEl) totalClassesEl.textContent = myLoads.length;
+        if (totalSubjectsEl) totalSubjectsEl.textContent = uniqueSubjects.length;
+        
+        // Build schedule data
+        allSchedules = myLoads.map(load => {
+            const subject = subjects.find(s => String(s.id) === String(load.subject_id));
+            const section = sections.find(s => String(s.id) === String(load.section_id));
             
-            // Update contact info
-            const contactPhoneEl = document.getElementById('contactPhone');
-            if (contactPhoneEl) contactPhoneEl.textContent = teacher.contact_number || '09xxxxxxxx';
-            
-            const contactEmailEl = document.getElementById('contactEmail');
-            if (contactEmailEl) contactEmailEl.textContent = teacher.contact_email || teacher.email || '';
-            
-            const contactAddressEl = document.getElementById('contactAddress');
-            if (contactAddressEl) contactAddressEl.textContent = teacher.address || 'Not provided';
-            
-            // Update personal info
-            const teacherSexEl = document.getElementById('teacherSex');
-            if (teacherSexEl) teacherSexEl.textContent = teacher.sex || 'Not specified';
-            
-            const teacherNationalityEl = document.getElementById('teacherNationality');
-            if (teacherNationalityEl) teacherNationalityEl.textContent = teacher.nationality || 'Not specified';
-            
-            if (teacher.birth_date) {
-                const birthDate = new Date(teacher.birth_date);
-                const teacherBirthDateEl = document.getElementById('teacherBirthDate');
-                if (teacherBirthDateEl) {
-                    teacherBirthDateEl.textContent = birthDate.toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    });
+            // Parse schedule string (format: "Monday, Tuesday, Wednesday 07:00-10:00")
+            let daysPart = 'N/A';
+            let timePart = 'N/A';
+            if (load.schedule) {
+                const schedParts = load.schedule.split(/\s+(?=\d)/);
+                if (schedParts.length >= 2) {
+                    daysPart = schedParts[0]; // "Monday, Tuesday, Wednesday"
+                    timePart = schedParts[1]; // "07:00-10:00"
+                } else {
+                    daysPart = load.schedule;
                 }
             }
             
-            const teacherBirthPlaceEl = document.getElementById('teacherBirthPlace');
-            if (teacherBirthPlaceEl) teacherBirthPlaceEl.textContent = teacher.birth_place || 'Not provided';
-            
-            // Set profile initials
-            const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-            const profileInitialsEl = document.getElementById('profileInitials');
-            if (profileInitialsEl) profileInitialsEl.textContent = initials;
-
-            // Show profile photo if available
-            const photoEl = document.getElementById('profilePhoto');
-            const initialsEl = document.getElementById('profileInitials');
-            if (teacher.profile_photo && photoEl && initialsEl) {
-                photoEl.src = teacher.profile_photo;
-                photoEl.style.display = 'block';
-                initialsEl.style.display = 'none';
-            }
-        } else {
-            // Fallback - might be admin viewing
-            const teacherNameEl = document.getElementById('teacherName');
-            if (teacherNameEl) teacherNameEl.textContent = user.email.split('@')[0];
-            
-            const teacherEmailEl = document.getElementById('teacherEmail');
-            if (teacherEmailEl) teacherEmailEl.textContent = user.email;
-        }
-    } catch (error) {
-        console.error('Error loading profile:', error);
-    }
-}
-
-// Load statistics
-async function loadStats() {
-    try {
-        // Get all students
-        const studentsResult = await dataClient.getAll('students');
-        const students = studentsResult.data || studentsResult || [];
-        const totalStudentsEl = document.getElementById('totalStudents');
-        if (totalStudentsEl) totalStudentsEl.textContent = students.length;
-
-        // Get active sections
-        const sectionsResult = await dataClient.getAll('sections');
-        const allSections = sectionsResult.data || sectionsResult || [];
-        const activeSections = allSections.filter(s => s.status === 'active' || !s.status);
-        const activeClassesEl = document.getElementById('activeClasses');
-        if (activeClassesEl) activeClassesEl.textContent = activeSections.length;
-
-        // Get today's attendance
-        const today = new Date().toISOString().split('T')[0];
-        const todayStart = new Date(today + 'T00:00:00').toISOString();
-        const todayEnd = new Date(today + 'T23:59:59').toISOString();
-        
-        const attendanceResult = await dataClient.query('attendance', {
-            filter: {
-                date: today,
-                status: { in: ['present', 'late'] }
-            }
+            return {
+                day: daysPart,
+                time: timePart,
+                subject: subject ? (subject.name || subject.subject_name || subject.code) : 'Unknown',
+                section: section ? (section.section_name || section.name) : 'Unknown',
+                room: load.room || section?.room || 'N/A'
+            };
         });
-        const todayAttendance = attendanceResult.data || attendanceResult || [];
-
-        const presentToday = todayAttendance.length;
-        const todayPresentEl = document.getElementById('todayPresent');
-        if (todayPresentEl) todayPresentEl.textContent = presentToday;
-
-        // Calculate average attendance rate
-        const rate = students.length > 0 ? ((presentToday / students.length) * 100).toFixed(1) : 0;
-        const avgAttendanceEl = document.getElementById('avgAttendance');
-        if (avgAttendanceEl) avgAttendanceEl.textContent = rate + '%';
-
-        // Store students globally for modal
-        window.allStudents = students;
-
-        // Load classes table if teacher has assigned sections
-        if (currentTeacher) {
-            await loadClassesTable(activeSections, students);
-        }
-
-        // Load recent attendance
-        await loadRecentAttendance(todayAttendance, students);
-
+        
+        // Render schedules
+        renderTodaySchedule();
+        renderAllSchedules();
+        
+        console.log('[Teacher Dashboard] Dashboard loaded successfully');
     } catch (error) {
-        console.error('Error loading stats:', error);
+        console.error('[Teacher Dashboard] Error loading dashboard:', error);
+        if (window.showAlert) {
+            window.showAlert('Failed to load dashboard data', 'error');
+        }
     }
 }
 
-// Load classes table
-async function loadClassesTable(sections, students) {
+// Render today's schedule
+function renderTodaySchedule() {
+    const today = new Date();
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const todayName = dayNames[today.getDay()];
+    
+    const todayDateEl = document.getElementById('todayDate');
+    if (todayDateEl) {
+        todayDateEl.textContent = today.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+    
+    const tbody = document.getElementById('todayScheduleBody');
+    if (!tbody) return;
+    
+    const todaySchedules = allSchedules.filter(s => s.day.includes(todayName));
+    
+    if (todaySchedules.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No classes scheduled for today</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = todaySchedules.map(schedule => `
+        <tr>
+            <td>${schedule.time}</td>
+            <td>${schedule.subject}</td>
+            <td>${schedule.section}</td>
+            <td>${schedule.room}</td>
+        </tr>
+    `).join('');
+}
+
+// Render all schedules
+function renderAllSchedules(filterDay = '') {
+    const tbody = document.getElementById('allSchedulesBody');
+    if (!tbody) return;
+    
+    let filtered = allSchedules;
+    
+    if (filterDay) {
+        filtered = allSchedules.filter(s => s.day.includes(filterDay));
+    }
+    
+    // Sort by day and time
+    const dayOrder = { 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7 };
+    filtered.sort((a, b) => {
+        const dayCompare = (dayOrder[a.day] || 999) - (dayOrder[b.day] || 999);
+        if (dayCompare !== 0) return dayCompare;
+        return (a.time || '').localeCompare(b.time || '');
+    });
+    
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No schedules found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = filtered.map(schedule => `
+        <tr>
+            <td>${schedule.day}</td>
+            <td>${schedule.time}</td>
+            <td>${schedule.subject}</td>
+            <td>${schedule.section}</td>
+            <td>${schedule.room}</td>
+        </tr>
+    `).join('');
+}
+
+// Setup day filter
+function setupDayFilter() {
+    const daySelector = document.getElementById('daySelector');
+    if (!daySelector) return;
+    
+    daySelector.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            // Remove active class from all buttons
+            document.querySelectorAll('#daySelector button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            e.target.classList.add('active');
+            
+            const day = e.target.getAttribute('data-day');
+            renderAllSchedules(day);
+        }
+    });
+}
+
+// Setup schedule search
+function setupSearch() {
+    const scheduleSearch = document.getElementById('scheduleSearch');
+    if (!scheduleSearch) return;
+    
+    scheduleSearch.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#allSchedulesBody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+}
+
+// Initialize dashboard
+async function initDashboard() {
+    console.log('[Teacher Dashboard] Initializing...');
+    
+    // Load data
+    await loadDashboard();
+    
+    // Setup event listeners
+    setupDayFilter();
+    setupSearch();
+    
+    console.log('[Teacher Dashboard] Initialization complete');
+}
+
+// Run when page loads
+window.addEventListener('load', initDashboard);
+
+console.log('[Teacher Dashboard] Script ready');
     const tbody = document.querySelector('.class-details-table tbody');
     
     if (!tbody) return;

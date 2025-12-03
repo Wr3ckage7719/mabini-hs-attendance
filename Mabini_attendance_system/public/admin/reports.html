@@ -178,51 +178,15 @@
                     </div>
                 </div>
 
-                <div class="stats-grid" id="statsGrid">
-                    <div class="stat-card">
-                        <h3>Total Students</h3>
-                        <div class="value" id="totalStudents">-</div>
-                        <div class="label">Enrolled students</div>
-                    </div>
-
-                    <div class="stat-card">
-                        <h3>Present Today</h3>
-                        <div class="value" id="presentToday">-</div>
-                        <div class="label">Attendance rate: <span id="attendanceRate">-%</span></div>
-                    </div>
-
-                    <div class="stat-card">
-                        <h3>Absent Today</h3>
-                        <div class="value" id="absentToday">-</div>
-                        <div class="label">Missing students</div>
-                    </div>
-
-                    <div class="stat-card">
-                        <h3>Late Arrivals</h3>
-                        <div class="value" id="lateToday">-</div>
-                        <div class="label">After 8:00 AM</div>
-                    </div>
-                </div>
-
                 <!-- Charts Section -->
                 <div class="row mb-4" style="margin-top: 20px;">
-                    <div class="col-md-8">
+                    <div class="col-md-12">
                         <div class="card">
                             <div class="card-header">
                                 <h6 class="mb-0"><i class="bi bi-graph-up"></i> Attendance Trend (Last 7 Days)</h6>
                             </div>
                             <div class="card-body">
-                                <canvas id="attendanceTrendChart" height="80"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="bi bi-pie-chart"></i> Today's Status</h6>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="todayStatusChart" height="200"></canvas>
+                                <canvas id="attendanceTrendChart" height="60"></canvas>
                             </div>
                         </div>
                     </div>
@@ -297,7 +261,6 @@
         
         // Chart instances
         let attendanceTrendChart = null;
-        let todayStatusChart = null;
         let hourlyChart = null;
         let sectionChart = null;
         
@@ -361,30 +324,6 @@
                         },
                         scales: {
                             y: { beginAtZero: true }
-                        }
-                    }
-                });
-            }
-            
-            // Today's Status Chart (Doughnut)
-            const statusCtx = document.getElementById('todayStatusChart');
-            if (statusCtx) {
-                todayStatusChart = new Chart(statusCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Present', 'Absent', 'Late'],
-                        datasets: [{
-                            data: [0, 0, 0],
-                            backgroundColor: ['#28a745', '#dc3545', '#ffc107'],
-                            borderWidth: 2,
-                            borderColor: isDark ? '#1a1a1a' : '#fff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'bottom' }
                         }
                     }
                 });
@@ -457,9 +396,6 @@
             // Update Attendance Trend Chart (Last 7 Days)
             updateTrendChart(logs);
             
-            // Update Today's Status Chart
-            updateTodayStatusChart(logs);
-            
             // Update Hourly Chart
             updateHourlyChart(logs);
             
@@ -496,30 +432,6 @@
             attendanceTrendChart.data.datasets[0].data = presentData;
             attendanceTrendChart.data.datasets[1].data = absentData;
             attendanceTrendChart.update();
-        }
-        
-        function updateTodayStatusChart(logs) {
-            if (!todayStatusChart) return;
-            
-            const todayStr = new Date().toISOString().split('T')[0];
-            const todayLogs = logs.filter(log => {
-                const logDate = new Date(log.timestamp).toISOString().split('T')[0];
-                return logDate === todayStr;
-            });
-            
-            const uniqueStudentsToday = new Set(todayLogs.map(log => log.student_id));
-            const presentToday = uniqueStudentsToday.size;
-            const absentToday = allStudents.length - presentToday;
-            
-            const lateToday = todayLogs.filter(log => {
-                const hour = new Date(log.timestamp).getHours();
-                return hour >= 8;
-            }).length;
-            
-            const onTimeToday = presentToday - lateToday;
-            
-            todayStatusChart.data.datasets[0].data = [onTimeToday, absentToday, lateToday];
-            todayStatusChart.update();
         }
         
         function updateHourlyChart(logs) {
@@ -622,42 +534,12 @@
                 filteredLogs = filteredLogs.filter(log => studentsInBlock.includes(log.student_id));
             }
             
-            // Calculate stats
-            updateStats(filteredLogs);
-            
             // Update charts
             updateCharts(filteredLogs);
             
             // Render table based on report type
             renderReport(filteredLogs, reportType);
         };
-        
-        function updateStats(logs) {
-            const totalStudents = allStudents.length;
-            const todayStr = new Date().toISOString().split('T')[0];
-            const todayLogs = logs.filter(log => {
-                const logDate = new Date(log.timestamp).toISOString().split('T')[0];
-                return logDate === todayStr;
-            });
-            
-            const uniqueStudentsToday = new Set(todayLogs.map(log => log.student_id));
-            const presentToday = uniqueStudentsToday.size;
-            const absentToday = totalStudents - presentToday;
-            
-            // Count late arrivals (after 8:00 AM)
-            const lateToday = todayLogs.filter(log => {
-                const hour = new Date(log.timestamp).getHours();
-                return hour >= 8;
-            }).length;
-            
-            const attendanceRate = totalStudents > 0 ? ((presentToday / totalStudents) * 100).toFixed(1) : 0;
-            
-            document.getElementById('totalStudents').textContent = totalStudents;
-            document.getElementById('presentToday').textContent = presentToday;
-            document.getElementById('absentToday').textContent = absentToday;
-            document.getElementById('lateToday').textContent = lateToday;
-            document.getElementById('attendanceRate').textContent = attendanceRate + '%';
-        }
         
         function renderReport(logs, reportType) {
             const tbody = document.getElementById('reportTableBody');

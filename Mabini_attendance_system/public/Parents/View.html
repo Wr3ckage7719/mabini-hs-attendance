@@ -207,7 +207,7 @@
 
                 // Check if link is expired
                 const expiryTime = parseInt(expires);
-                if (Date.now() > expiryTime) {
+                if (Date.now() / 1000 > expiryTime) {
                     return { valid: false, error: 'This link has expired. Please request a new one.' };
                 }
 

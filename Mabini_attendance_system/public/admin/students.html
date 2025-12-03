@@ -898,7 +898,9 @@
             // Download QR Code
             const downloadQRBtn = document.getElementById('downloadQR');
             if (downloadQRBtn) {
-                downloadQRBtn.addEventListener('click', function() {
+                downloadQRBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log('[Students] Download QR clicked');
                     
                     try {
@@ -910,47 +912,35 @@
                         if (qrPreviewImage && qrPreviewImage.src && !qrPreviewImage.src.startsWith('data:')) {
                             console.log('[Students] Downloading saved QR from database for:', studentNumber);
                             
-                            // Convert image to canvas to force download
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            
-                            // Create a new image to load the QR code
-                            const img = new Image();
-                            img.crossOrigin = 'anonymous';
-                            
-                            img.onload = function() {
-                                canvas.width = img.width;
-                                canvas.height = img.height;
-                                ctx.drawImage(img, 0, 0);
+                            try {
+                                // Fetch the image as blob
+                                const response = await fetch(qrPreviewImage.src);
+                                if (!response.ok) throw new Error('Failed to fetch image');
                                 
-                                // Convert to blob and download
-                                canvas.toBlob(function(blob) {
-                                    const url = URL.createObjectURL(blob);
-                                    const link = document.createElement('a');
-                                    link.download = `student-${studentNumber}-qr.png`;
-                                    link.href = url;
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                    URL.revokeObjectURL(url);
-                                    console.log('[Students] Downloaded successfully');
-                                }, 'image/png');
-                            };
-                            
-                            img.onerror = function() {
-                                console.error('[Students] Failed to load image, using direct download');
-                                // Fallback: try direct download
+                                const blob = await response.blob();
+                                
+                                // Create download link
+                                const url = URL.createObjectURL(blob);
                                 const link = document.createElement('a');
                                 link.download = `student-${studentNumber}-qr.png`;
-                                link.href = qrPreviewImage.src;
-                                link.target = '_blank';
+                                link.href = url;
+                                link.style.display = 'none';
                                 document.body.appendChild(link);
                                 link.click();
-                                document.body.removeChild(link);
-                            };
-                            
-                            img.src = qrPreviewImage.src;
-                            return;
+                                
+                                // Cleanup
+                                setTimeout(() => {
+                                    document.body.removeChild(link);
+                                    URL.revokeObjectURL(url);
+                                }, 100);
+                                
+                                console.log('[Students] Downloaded successfully');
+                                return;
+                            } catch (fetchError) {
+                                console.error('[Students] Fetch failed:', fetchError);
+                                alert('Failed to download QR code. Please try again.');
+                                return;
+                            }
                         }
                         
                         // Fallback: check for base64 data (newly generated or legacy)

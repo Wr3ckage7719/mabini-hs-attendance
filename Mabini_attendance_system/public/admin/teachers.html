@@ -733,7 +733,9 @@
             // Download QR Code
             const downloadBtn = document.getElementById('downloadQRTeacher');
             if (downloadBtn) {
-                downloadBtn.addEventListener('click', async function() {
+                downloadBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log('[Teachers] Download QR clicked');
                     try {
                         const identifier = document.getElementById('qrContentTeacher').textContent;
@@ -745,47 +747,33 @@
                         if (qrImage && qrImage.src) {
                             console.log('[Teachers] Downloading saved QR for:', employeeNumber);
                             
-                            // Convert image to canvas to force download
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            
-                            // Create a new image to load the QR code
-                            const img = new Image();
-                            img.crossOrigin = 'anonymous';
-                            
-                            img.onload = function() {
-                                canvas.width = img.width;
-                                canvas.height = img.height;
-                                ctx.drawImage(img, 0, 0);
+                            try {
+                                // Fetch the image as blob
+                                const response = await fetch(qrImage.src);
+                                if (!response.ok) throw new Error('Failed to fetch image');
                                 
-                                // Convert to blob and download
-                                canvas.toBlob(function(blob) {
-                                    const url = URL.createObjectURL(blob);
-                                    const link = document.createElement('a');
-                                    link.download = `teacher-qr-${employeeNumber}.png`;
-                                    link.href = url;
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                    URL.revokeObjectURL(url);
-                                    console.log('[Teachers] Downloaded successfully');
-                                }, 'image/png');
-                            };
-                            
-                            img.onerror = function() {
-                                console.error('[Teachers] Failed to load image, using direct download');
-                                // Fallback: try direct download
+                                const blob = await response.blob();
+                                
+                                // Create download link
+                                const url = URL.createObjectURL(blob);
                                 const link = document.createElement('a');
                                 link.download = `teacher-qr-${employeeNumber}.png`;
-                                link.href = qrImage.src;
-                                link.target = '_blank';
+                                link.href = url;
+                                link.style.display = 'none';
                                 document.body.appendChild(link);
                                 link.click();
-                                document.body.removeChild(link);
-                            };
-                            
-                            img.src = qrImage.src;
-                            return;
+                                
+                                // Cleanup
+                                setTimeout(() => {
+                                    document.body.removeChild(link);
+                                    URL.revokeObjectURL(url);
+                                }, 100);
+                                
+                                console.log('[Teachers] Downloaded successfully');
+                                return;
+                            } catch (fetchError) {
+                                console.error('[Teachers] Fetch failed, trying canvas method:', fetchError);
+                            }
                         }
                         
                         // Fallback: check for canvas (newly generated QR)

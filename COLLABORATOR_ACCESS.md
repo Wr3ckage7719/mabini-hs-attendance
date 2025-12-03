@@ -19,8 +19,8 @@ GitHub offers different access levels for collaborators:
 |-----------------|---------------|
 | **Read** | View and clone repository, open issues |
 | **Triage** | Read access + manage issues and pull requests |
-| **Write** | Triage access + push to repository, edit code |
-| **Maintain** | Write access + manage repository settings (no admin access) |
+| **Write** | Triage access + push to repository, create branches, edit code, create pull requests |
+| **Maintain** | Write access + manage webhooks, deploy keys, and some repository settings (cannot delete repository or manage security) |
 | **Admin** | Full access including deleting repository and managing collaborators |
 
 **For editing access, you need to grant at least "Write" permission.**
@@ -59,7 +59,7 @@ If you have GitHub CLI installed:
 # Add collaborator with write access
 gh api repos/Wr3ckage7719/mabini-hs-attendance/collaborators/USERNAME \
   --method PUT \
-  --field permission=push
+  --field permission=write
 
 # Replace USERNAME with your workmate's GitHub username
 ```
@@ -146,6 +146,7 @@ Once your workmate has access, they should follow these steps:
 
 ### Collaborator Didn't Receive Invitation Email
 - Check spam/junk folder
+- Verify the email address in their GitHub profile is correct and current
 - Send invitation again from Settings → Collaborators
 - Collaborator can visit repository URL to see pending invitation
 

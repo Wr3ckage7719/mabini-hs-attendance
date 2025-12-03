@@ -321,8 +321,8 @@
             tbody.innerHTML = blocks.map(block => {
                 const gradeLevel = block.grade_level || '-';
                 
-                // Strand column doesn't exist in DB yet - show N/A
-                const strandDisplay = 'N/A';
+                // Display strand if available, otherwise show N/A
+                const strandDisplay = block.strand || 'N/A';
                 
                 const blockName = block.section_name || '-';
                 // Use actual status from database
@@ -457,7 +457,7 @@
             document.getElementById('blockName').value = block.section_name || '';
             document.getElementById('gradeLevel').value = block.grade_level || '';
             updateStrandOptions(); // Update strand options based on grade
-            document.getElementById('strand').value = ''; // Strand not stored in DB yet
+            document.getElementById('strand').value = block.strand || ''; // Load strand from database
             
             const modal = new bootstrap.Modal(document.getElementById('sectionModal'));
             modal.show();
@@ -468,6 +468,7 @@
             
             const gradeLevelNum = parseInt(document.getElementById('gradeLevel').value);
             const sectionName = document.getElementById('blockName').value.trim();
+            const strandValue = document.getElementById('strand').value;
             
             // Generate section_code from grade level and section name
             // Example: "Grade 7 - Section A" → "GR7-A"
@@ -476,7 +477,8 @@
             const blockData = {
                 section_code: sectionCode,
                 section_name: sectionName,
-                grade_level: gradeLevelNum.toString()
+                grade_level: gradeLevelNum.toString(),
+                strand: strandValue || null
                 // adviser_id and capacity are optional
             };
             

@@ -224,7 +224,8 @@
                 }
 
                 try {
-                    const { data, error } = await supabase
+                    // First, try to get student with section join
+                    let { data, error } = await supabase
                         .from('students')
                         .select(`
                             *,
@@ -234,15 +235,19 @@
                                 grade_level
                             )
                         `)
-                        .eq('id', studentId)
-                        .single();
+                        .eq('id', studentId);
 
-                    if (error) throw error;
-                    if (!data) throw new Error('Student not found');
+                    // If no results, the student doesn't exist
+                    if (error || !data || data.length === 0) {
+                        console.error('Student not found or error:', error);
+                        showError('Student not found. Please check the link or contact the school for a valid link.');
+                        return null;
+                    }
 
-                    studentData = data;
-                    updateStudentUI(data);
-                    return data;
+                    // Use the first (and should be only) result
+                    studentData = data[0];
+                    updateStudentUI(studentData);
+                    return studentData;
 
                 } catch (error) {
                     console.error('Error loading student:', error);

@@ -313,10 +313,24 @@
                 // Filter sections
                 allSections = sections.filter(s => mySections.some(sId => String(sId) === String(s.id)));
                 
-                // Get student counts
+                // Get student counts - check both section_id and section field
                 const students = await getDocuments('students');
                 allSections = allSections.map(section => {
-                    const studentCount = students.filter(s => String(s.section_id) === String(section.id)).length;
+                    // Count students by section_id or by matching section name
+                    const studentCount = students.filter(student => {
+                        // Check if student has section_id field that matches
+                        if (student.section_id && String(student.section_id) === String(section.id)) {
+                            return true;
+                        }
+                        // Fallback: check if student.section matches section name
+                        const sectionName = section.name || section.section_name;
+                        if (student.section && sectionName && 
+                            student.section.toLowerCase().trim() === sectionName.toLowerCase().trim()) {
+                            return true;
+                        }
+                        return false;
+                    }).length;
+                    
                     return { ...section, studentCount };
                 });
                 
@@ -353,17 +367,46 @@
         }
 
         // View section details
-        function viewSection(sectionId) {
+        async function viewSection(sectionId) {
             const section = allSections.find(s => s.id === sectionId);
             if (!section) return;
             
+            // Fetch teaching loads for this section to get schedule information
+            let scheduleInfo = 'N/A';
+            let roomInfo = 'N/A';
+            
+            try {
+                const { data: teachingLoads } = await window.dataClient.getAll('teaching_loads', [
+                    { field: 'section_id', operator: '==', value: sectionId }
+                ]);
+                
+                if (teachingLoads && teachingLoads.length > 0) {
+                    // Combine all schedules
+                    const schedules = teachingLoads
+                        .filter(load => load.schedule)
+                        .map(load => load.schedule);
+                    
+                    scheduleInfo = schedules.length > 0 ? schedules.join('<br>') : 'N/A';
+                    
+                    // Get room from first teaching load that has one
+                    const loadWithRoom = teachingLoads.find(load => load.room);
+                    roomInfo = loadWithRoom ? loadWithRoom.room : (section.room || 'N/A');
+                } else {
+                    // Fallback to section data if available
+                    roomInfo = section.room || 'N/A';
+                }
+            } catch (error) {
+                console.error('Error fetching teaching loads:', error);
+            }
+            
+            // Populate modal
             document.getElementById('viewSectionName').textContent = section.name || section.section_name || 'N/A';
             document.getElementById('viewGradeLevel').textContent = section.grade_level || 'N/A';
             document.getElementById('viewStrand').textContent = section.strand || 'N/A';
-            document.getElementById('viewRoom').textContent = section.room || 'N/A';
+            document.getElementById('viewRoom').textContent = roomInfo;
             document.getElementById('viewStudents').textContent = section.studentCount || 0;
             document.getElementById('viewStatus').textContent = section.status || 'inactive';
-            document.getElementById('viewSchedule').textContent = section.schedule || 'N/A';
+            document.getElementById('viewSchedule').innerHTML = scheduleInfo;
             
             const modal = new bootstrap.Modal(document.getElementById('viewModal'));
             modal.show();

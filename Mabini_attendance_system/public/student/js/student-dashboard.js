@@ -210,8 +210,80 @@ async function loadStudentData() {
         
         // Load attendance statistics
         await loadAttendanceStats(currentStudent.id);
+        
+        // Load class schedule
+        await loadClassSchedule();
     } catch (error) {
         console.error('Error loading student data:', error);
+    }
+}
+
+// Load class schedule from teaching_loads table
+async function loadClassSchedule() {
+    try {
+        if (!currentStudent || !currentStudent.section) {
+            console.log('No section assigned to student');
+            return;
+        }
+        
+        // Get the student's section
+        const sectionsResult = await dataClient.getAll('sections', [
+            { field: 'section_name', operator: '==', value: currentStudent.section }
+        ]);
+        
+        const sections = Array.isArray(sectionsResult.data) ? sectionsResult.data : [];
+        if (sections.length === 0) {
+            console.log('Section not found:', currentStudent.section);
+            return;
+        }
+        
+        const section = sections[0];
+        console.log('Found section:', section);
+        
+        // Get teaching loads for this section
+        const loadsResult = await dataClient.getAll('teaching_loads', [
+            { field: 'section_id', operator: '==', value: section.id }
+        ]);
+        
+        const teachingLoads = Array.isArray(loadsResult.data) ? loadsResult.data : [];
+        console.log('Teaching loads found:', teachingLoads);
+        
+        // Group schedules by day/time
+        const scheduleMap = {};
+        
+        for (const load of teachingLoads) {
+            if (load.schedule) {
+                // Parse schedule (e.g., "Monday, Wednesday 04:00 PM - 05:30 PM")
+                const scheduleStr = load.schedule.trim();
+                
+                if (!scheduleMap[scheduleStr]) {
+                    scheduleMap[scheduleStr] = true;
+                }
+            }
+        }
+        
+        // Update the schedule table
+        const tbody = document.querySelector('.attendance-schedule-table tbody');
+        if (tbody && Object.keys(scheduleMap).length > 0) {
+            tbody.innerHTML = Object.keys(scheduleMap).map(schedule => {
+                // Try to parse the schedule to separate days and time
+                const parts = schedule.split(/\s+(?=\d)/);
+                const days = parts[0] || schedule;
+                const time = parts.slice(1).join(' ') || 'Time not specified';
+                
+                return `
+                    <tr>
+                        <td data-label="Day">${days}</td>
+                        <td data-label="Time">${time}</td>
+                    </tr>
+                `;
+            }).join('');
+        } else if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; padding: 2rem;">No class schedule found</td></tr>';
+        }
+        
+    } catch (error) {
+        console.error('Error loading class schedule:', error);
     }
 }
 

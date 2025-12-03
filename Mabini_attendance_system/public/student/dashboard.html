@@ -376,7 +376,11 @@
         // Password Change Prompt Modal
         (function() {
             // Check if we should show the password prompt
-            if (sessionStorage.getItem('showPasswordPrompt') === 'true') {
+            // Only show if: session flag is set AND localStorage doesn't have password changed flag
+            const shouldShowPrompt = sessionStorage.getItem('showPasswordPrompt') === 'true';
+            const passwordAlreadyChanged = localStorage.getItem('passwordChanged') === 'true';
+            
+            if (shouldShowPrompt && !passwordAlreadyChanged) {
                 // Create modal
                 const modal = document.createElement('div');
                 modal.id = 'passwordPromptModal';
@@ -410,6 +414,9 @@
                     sessionStorage.removeItem('showPasswordPrompt');
                     window.location.href = 'settings.html';
                 });
+            } else {
+                // Clear the prompt flag if password was already changed
+                sessionStorage.removeItem('showPasswordPrompt');
             }
         })();
     </script>

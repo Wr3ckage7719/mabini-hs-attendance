@@ -736,37 +736,55 @@
                 downloadBtn.addEventListener('click', async function() {
                     console.log('[Teachers] Download QR clicked');
                     try {
+                        const identifier = document.getElementById('qrContentTeacher').textContent;
+                        const employeeNumber = identifier || 'teacher';
+                        
                         // First check if we have a saved QR code URL from database
                         const qrImage = document.querySelector('#qrcodeTeacher img');
                         
                         if (qrImage && qrImage.src) {
-                            // We have a saved QR code from database, download it directly
-                            const identifier = document.getElementById('qrContentTeacher').textContent;
-                            const employeeNumber = identifier || 'teacher';
                             console.log('[Teachers] Downloading saved QR for:', employeeNumber);
                             
-                            // Fetch the image with cors mode
-                            const response = await fetch(qrImage.src, { mode: 'cors' });
-                            const blob = await response.blob();
+                            // Convert image to canvas to force download
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
                             
-                            // Create a new blob with correct content type to force download
-                            const imageBlob = new Blob([blob], { type: 'image/png' });
-                            const url = URL.createObjectURL(imageBlob);
+                            // Create a new image to load the QR code
+                            const img = new Image();
+                            img.crossOrigin = 'anonymous';
                             
-                            const link = document.createElement('a');
-                            link.download = `teacher-qr-${employeeNumber}.png`;
-                            link.href = url;
-                            link.style.display = 'none';
-                            document.body.appendChild(link);
-                            link.click();
+                            img.onload = function() {
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                ctx.drawImage(img, 0, 0);
+                                
+                                // Convert to blob and download
+                                canvas.toBlob(function(blob) {
+                                    const url = URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.download = `teacher-qr-${employeeNumber}.png`;
+                                    link.href = url;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    URL.revokeObjectURL(url);
+                                    console.log('[Teachers] Downloaded successfully');
+                                }, 'image/png');
+                            };
                             
-                            // Clean up after a delay
-                            setTimeout(() => {
+                            img.onerror = function() {
+                                console.error('[Teachers] Failed to load image, using direct download');
+                                // Fallback: try direct download
+                                const link = document.createElement('a');
+                                link.download = `teacher-qr-${employeeNumber}.png`;
+                                link.href = qrImage.src;
+                                link.target = '_blank';
+                                document.body.appendChild(link);
+                                link.click();
                                 document.body.removeChild(link);
-                                URL.revokeObjectURL(url);
-                            }, 100);
+                            };
                             
-                            console.log('[Teachers] Downloaded from database successfully');
+                            img.src = qrImage.src;
                             return;
                         }
                         

@@ -680,6 +680,7 @@
                         qrContainer.innerHTML = '';
                         
                         document.getElementById('qrContentTeacher').textContent = identifier;
+                        console.log('[Teachers] Creating QR code for:', identifier);
                         
                         if (window.QRCode) {
                             qrCodeInstanceTeacher = new QRCode(qrContainer, {
@@ -691,14 +692,21 @@
                                 correctLevel: QRCode.CorrectLevel.H
                             });
                             
+                            console.log('[Teachers] QR code instance created');
+                            
                             // Save canvas reference for upload when saving teacher
                             setTimeout(() => {
                                 const canvas = qrContainer.querySelector('canvas');
+                                console.log('[Teachers] Canvas found after timeout:', !!canvas);
                                 if (canvas) {
                                     currentQRCanvas = canvas;
                                     console.log('[Teachers] QR Canvas saved for upload');
+                                } else {
+                                    console.error('[Teachers] Canvas not found in container');
                                 }
-                            }, 100);
+                            }, 200); // Increased timeout for better reliability
+                        } else {
+                            console.error('[Teachers] QRCode library not available');
                         }
                         
                         document.getElementById('qrPreviewTeacher').style.display = 'block';

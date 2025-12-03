@@ -812,104 +812,122 @@
             throw new Error('All CDN sources failed. Please check your internet connection.');
         }
         
-        // QR Code Generation
-        document.getElementById('generateQR')?.addEventListener('click', async function() {
-            const studentNumber = document.getElementById('studentNumber').value.trim();
+        // Setup student QR code event listeners when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[Students] Setting up QR code event listeners');
             
-            if (!studentNumber) {
-                alert('Please enter a student number first');
-                return;
-            }
-            
-            try {
-                // Dynamically load QR library if not already loaded
-                await loadQRCodeLibrary();
-                
-                if (typeof window.QRCode === 'undefined') {
-                    throw new Error('QR Code library failed to load from all sources.');
-                }
-                
-                // Generate QR code with student number as content
-                const qrCanvasElement = document.createElement('canvas');
-                
-                // Use QRCode library to generate on canvas
-                const qr = new window.QRCode(qrCanvasElement, {
-                    text: studentNumber,
-                    width: 200,
-                    height: 200,
-                    colorDark: '#000000',
-                    colorLight: '#FFFFFF',
-                    correctLevel: window.QRCode.CorrectLevel.H
+            // QR Code Generation
+            const generateQRBtn = document.getElementById('generateQR');
+            if (generateQRBtn) {
+                generateQRBtn.addEventListener('click', async function() {
+                    console.log('[Students] Generate QR clicked');
+                    const studentNumber = document.getElementById('studentNumber').value.trim();
+                    
+                    if (!studentNumber) {
+                        alert('Please enter a student number first');
+                        return;
+                    }
+                    
+                    try {
+                        // Dynamically load QR library if not already loaded
+                        await loadQRCodeLibrary();
+                        
+                        if (typeof window.QRCode === 'undefined') {
+                            throw new Error('QR Code library failed to load from all sources.');
+                        }
+                        
+                        // Generate QR code with student number as content
+                        const qrCanvasElement = document.createElement('canvas');
+                        
+                        // Use QRCode library to generate on canvas
+                        const qr = new window.QRCode(qrCanvasElement, {
+                            text: studentNumber,
+                            width: 200,
+                            height: 200,
+                            colorDark: '#000000',
+                            colorLight: '#FFFFFF',
+                            correctLevel: window.QRCode.CorrectLevel.H
+                        });
+                        
+                        // Wait a bit for rendering
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        
+                        // Get the canvas element (QRCode creates it inside the container)
+                        const canvas = qrCanvasElement.querySelector('canvas');
+                        console.log('[Students] Canvas found after generation:', !!canvas);
+                        
+                        if (!canvas) {
+                            throw new Error('Failed to generate QR code canvas');
+                        }
+                        
+                        // Store canvas for upload later
+                        qrCanvas = canvas;
+                        
+                        // Convert to base64 for preview
+                        qrCodeBase64 = canvas.toDataURL('image/png');
+                        console.log('[Students] QR code base64 generated:', qrCodeBase64.substring(0, 50) + '...');
+                        
+                        // Show preview
+                        document.getElementById('qrPreviewImage').src = qrCodeBase64;
+                        document.getElementById('qrPreview').style.display = 'block';
+                        document.getElementById('downloadQR').style.display = 'inline-block';
+                        document.getElementById('qrContent').textContent = studentNumber;
+                        
+                        // Hide upload section
+                        document.getElementById('qrUploadSection').style.display = 'none';
+                        
+                        console.log('[Students] QR code generated successfully');
+                    } catch (error) {
+                        console.error('[Students] QR Code generation error:', error);
+                        alert('Failed to generate QR code: ' + error.message);
+                    }
                 });
-                
-                // Wait a bit for rendering
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-                // Get the canvas element (QRCode creates it inside the container)
-                const canvas = qrCanvasElement.querySelector('canvas');
-                if (!canvas) {
-                    throw new Error('Failed to generate QR code canvas');
-                }
-                
-                // Store canvas for upload later
-                qrCanvas = canvas;
-                
-                // Convert to base64 for preview
-                qrCodeBase64 = canvas.toDataURL('image/png');
-                
-                // Show preview
-                document.getElementById('qrPreviewImage').src = qrCodeBase64;
-                document.getElementById('qrPreview').style.display = 'block';
-                document.getElementById('downloadQR').style.display = 'inline-block';
-                document.getElementById('qrContent').textContent = studentNumber;
-                
-                // Hide upload section
-                document.getElementById('qrUploadSection').style.display = 'none';
-                
-            } catch (error) {
-                console.error('QR Code generation error:', error);
-                alert('Failed to generate QR code: ' + error.message);
+            } else {
+                console.error('[Students] Generate QR button not found');
+            }
+            
+            // Toggle QR upload section
+            const uploadQRBtn = document.getElementById('uploadQR');
+            if (uploadQRBtn) {
+                uploadQRBtn.addEventListener('click', function() {
+                    const uploadSection = document.getElementById('qrUploadSection');
+                    uploadSection.style.display = uploadSection.style.display === 'none' ? 'block' : 'none';
+                });
+            }
+            
+            // Download QR Code
+            const downloadQRBtn = document.getElementById('downloadQR');
+            if (downloadQRBtn) {
+                downloadQRBtn.addEventListener('click', function() {
+                    console.log('[Students] Download QR clicked');
+                    console.log('[Students] qrCodeBase64 exists:', !!qrCodeBase64);
+                    
+                    if (!qrCodeBase64) {
+                        alert('QR code not generated yet. Please generate a QR code first.');
+                        return;
+                    }
+                    
+                    try {
+                        const studentNumber = document.getElementById('studentNumber').value.trim() || 'student-qr';
+                        console.log('[Students] Downloading for student:', studentNumber);
+                        
+                        const link = document.createElement('a');
+                        link.download = `student-${studentNumber}-qr.png`;
+                        link.href = qrCodeBase64;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        console.log('[Students] Download triggered successfully');
+                    } catch (error) {
+                        console.error('[Students] Error downloading QR code:', error);
+                        alert('Error downloading QR code: ' + error.message);
+                    }
+                });
+            } else {
+                console.error('[Students] Download QR button not found');
             }
         });
-        
-        // Toggle QR upload section
-        document.getElementById('uploadQR')?.addEventListener('click', function() {
-            const uploadSection = document.getElementById('qrUploadSection');
-            uploadSection.style.display = uploadSection.style.display === 'none' ? 'block' : 'none';
-        });
-        
-        // Download QR Code
-        const downloadQRBtn = document.getElementById('downloadQR');
-        if (downloadQRBtn) {
-            downloadQRBtn.addEventListener('click', function() {
-                console.log('[Students] Download QR clicked');
-                console.log('[Students] qrCodeBase64 exists:', !!qrCodeBase64);
-                
-                if (!qrCodeBase64) {
-                    alert('QR code not generated yet. Please generate a QR code first.');
-                    return;
-                }
-                
-                try {
-                    const studentNumber = document.getElementById('studentNumber').value.trim() || 'student-qr';
-                    console.log('[Students] Downloading for student:', studentNumber);
-                    
-                    const link = document.createElement('a');
-                    link.download = `student-${studentNumber}-qr.png`;
-                    link.href = qrCodeBase64;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    console.log('[Students] Download triggered successfully');
-                } catch (error) {
-                    console.error('[Students] Error downloading QR code:', error);
-                    alert('Error downloading QR code: ' + error.message);
-                }
-            });
-        } else {
-            console.error('[Students] Download QR button not found');
-        }
     </script>
     
 </body>

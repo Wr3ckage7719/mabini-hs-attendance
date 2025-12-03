@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMS Notifications - Mabini HS</title>
+    <title>SMS & Notifications - Mabini HS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/admin-theme.css">
@@ -97,8 +97,8 @@
                 <span>Analytics</span>
             </a>
             <a href="sms-notifications.html" class="menu-item active">
-                <i class="bi bi-chat-dots-fill"></i>
-                <span>SMS Notifications</span>
+                <i class="bi bi-bell-fill"></i>
+                <span>SMS & Notifications</span>
             </a>
         </div>
         
@@ -122,9 +122,9 @@
                         <div class="admin-breadcrumb muted">
                             <span class="muted">Admin</span>
                             <span aria-hidden="true">/</span>
-                            <span id="admin-section">SMS Notifications</span>
+                            <span id="admin-section">SMS & Notifications</span>
                         </div>
-                        <div class="admin-title">SMS Notifications</div>
+                        <div class="admin-title">SMS & Email Notifications</div>
                     </div>
 
                     <div class="admin-top-actions">
@@ -147,21 +147,21 @@
                 </header>
         
         <div class="content-area">
-                <!-- SMS Actions -->
+                <!-- Notification Actions -->
                 <div class="row mb-4">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="card h-100">
                             <div class="card-body text-center">
                                 <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
                                 <h5 class="card-title mt-3">Emergency Alert</h5>
-                                <p class="text-muted">Send urgent alerts to all parents/guardians</p>
+                                <p class="text-muted">Send urgent SMS to all parents/guardians</p>
                                 <button class="btn btn-danger" onclick="showEmergencyAlert()">
                                     <i class="bi bi-broadcast"></i> Send Emergency Alert
                                 </button>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="card h-100">
                             <div class="card-body text-center">
                                 <i class="bi bi-x-circle text-warning" style="font-size: 3rem;"></i>
@@ -173,9 +173,21 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-envelope-exclamation text-info" style="font-size: 3rem;"></i>
+                                <h5 class="card-title mt-3">Low Attendance Warning</h5>
+                                <p class="text-muted">Email students with low attendance rate</p>
+                                <button class="btn btn-info" onclick="showLowAttendanceWarning()">
+                                    <i class="bi bi-envelope"></i> Send Email Warnings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- SMS Statistics -->
+                <!-- Notification Statistics -->
                 <div class="row mb-4">
                     <div class="col-md-3">
                         <div class="stat-card">
@@ -333,6 +345,108 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-warning" id="sendAbsenceBtn" onclick="sendAbsenceNotifications()" style="display: none;">
                         <i class="bi bi-send"></i> Send SMS to Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Attendance Warning Modal -->
+    <div class="modal fade" id="lowAttendanceModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-envelope-exclamation"></i> Low Attendance Email Warnings
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Info:</strong> This will send email warnings to students who fall below the attendance threshold.
+                    </div>
+                    
+                    <!-- Configuration Section -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Date Range</label>
+                            <select id="attendanceDateRange" class="form-select" onchange="updateAttendancePeriod()">
+                                <option value="7">Last 7 Days</option>
+                                <option value="14">Last 14 Days</option>
+                                <option value="30" selected>Last 30 Days</option>
+                                <option value="60">Last 60 Days</option>
+                                <option value="90">Last 90 Days</option>
+                                <option value="custom">Custom Period</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Attendance Threshold</label>
+                            <select id="attendanceThreshold" class="form-select">
+                                <option value="50">Below 50%</option>
+                                <option value="60">Below 60%</option>
+                                <option value="70">Below 70%</option>
+                                <option value="75" selected>Below 75%</option>
+                                <option value="80">Below 80%</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="customDateRange" class="row mb-3" style="display: none;">
+                        <div class="col-md-6">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" id="customStartDate" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">End Date</label>
+                            <input type="date" id="customEndDate" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <button class="btn btn-primary" onclick="findLowAttendanceStudents()">
+                            <i class="bi bi-search"></i> Find Students
+                        </button>
+                        <button class="btn btn-outline-secondary ms-2" onclick="refreshAttendanceData()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+
+                    <!-- Student List -->
+                    <div id="lowAttendanceStudentsList"></div>
+
+                    <!-- Progress Bar -->
+                    <div id="emailProgress" class="mt-3" style="display: none;">
+                        <div class="progress">
+                            <div id="emailProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" 
+                                role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <p class="text-center mt-2" id="emailProgressText">Sending email warnings...</p>
+                    </div>
+
+                    <!-- Email Preview Template (hidden) -->
+                    <div id="emailPreview" style="display: none;">
+                        <hr>
+                        <h6>Email Preview:</h6>
+                        <div class="border p-3 bg-light">
+                            <p><strong>Subject:</strong> Attendance Warning - Low Attendance Rate</p>
+                            <p><strong>To:</strong> Student Email</p>
+                            <hr>
+                            <p>Dear Student,</p>
+                            <p>This is to inform you that your attendance rate has fallen below the acceptable threshold. Your current attendance rate is <strong>[XX%]</strong> over the last <strong>[N days]</strong>.</p>
+                            <p>Attendance is crucial for your academic success. Please ensure you attend classes regularly.</p>
+                            <p>If you have any concerns, please contact your adviser or the school administration.</p>
+                            <p>Best regards,<br>Mabini High School Administration</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-info" onclick="toggleEmailPreview()">
+                        <i class="bi bi-eye"></i> Preview Email
+                    </button>
+                    <button type="button" class="btn btn-info" id="sendEmailBtn" onclick="sendLowAttendanceEmails()" style="display: none;">
+                        <i class="bi bi-envelope"></i> Send Email Warnings
                     </button>
                 </div>
             </div>

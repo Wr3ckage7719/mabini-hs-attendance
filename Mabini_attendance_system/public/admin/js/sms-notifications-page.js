@@ -514,3 +514,290 @@ window.logout = function() {
         window.location.href = 'login.html';
     }
 }
+
+// ===== LOW ATTENDANCE EMAIL NOTIFICATIONS =====
+
+// Show low attendance warning modal
+window.showLowAttendanceWarning = function() {
+    const modal = new bootstrap.Modal(document.getElementById('lowAttendanceModal'));
+    modal.show();
+}
+
+// Update attendance period when date range changes
+window.updateAttendancePeriod = function() {
+    const dateRange = document.getElementById('attendanceDateRange').value;
+    const customDiv = document.getElementById('customDateRange');
+    
+    if (dateRange === 'custom') {
+        customDiv.style.display = 'block';
+        // Set default custom dates
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+        document.getElementById('customStartDate').value = startDate.toISOString().split('T')[0];
+        document.getElementById('customEndDate').value = endDate.toISOString().split('T')[0];
+    } else {
+        customDiv.style.display = 'none';
+    }
+}
+
+// Find students with low attendance
+window.findLowAttendanceStudents = async function() {
+    try {
+        const dateRange = document.getElementById('attendanceDateRange').value;
+        const threshold = parseInt(document.getElementById('attendanceThreshold').value);
+        
+        // Calculate date range
+        let startDate, endDate;
+        if (dateRange === 'custom') {
+            startDate = document.getElementById('customStartDate').value;
+            endDate = document.getElementById('customEndDate').value;
+            if (!startDate || !endDate) {
+                showAlert('Please select both start and end dates', 'warning');
+                return;
+            }
+        } else {
+            endDate = new Date();
+            startDate = new Date();
+            startDate.setDate(startDate.getDate() - parseInt(dateRange));
+        }
+        
+        const startDateStr = typeof startDate === 'string' ? startDate : startDate.toISOString().split('T')[0];
+        const endDateStr = typeof endDate === 'string' ? endDate : endDate.toISOString().split('T')[0];
+        
+        // Get all students
+        const students = await getDocuments('students');
+        
+        // Calculate attendance for each student
+        const lowAttendanceStudents = [];
+        const totalDays = Math.ceil((new Date(endDateStr) - new Date(startDateStr)) / (1000 * 60 * 60 * 24));
+        
+        for (const student of students) {
+            // Get attendance logs for this student in date range
+            const { data: logs, error } = await window.supabase
+                .from('entrance_logs')
+                .select('*')
+                .eq('student_id', student.id)
+                .gte('timestamp', startDateStr)
+                .lte('timestamp', endDateStr + 'T23:59:59');
+            
+            if (error) {
+                console.error('Error fetching logs for student:', student.student_number, error);
+                continue;
+            }
+            
+            // Count unique days present
+            const uniqueDays = new Set();
+            if (logs) {
+                logs.forEach(log => {
+                    const date = log.timestamp.split('T')[0];
+                    uniqueDays.add(date);
+                });
+            }
+            
+            const daysPresent = uniqueDays.size;
+            const attendanceRate = totalDays > 0 ? (daysPresent / totalDays) * 100 : 0;
+            
+            // Check if below threshold and has email
+            if (attendanceRate < threshold && student.email) {
+                lowAttendanceStudents.push({
+                    ...student,
+                    daysPresent,
+                    totalDays,
+                    attendanceRate: attendanceRate.toFixed(1)
+                });
+            }
+        }
+        
+        // Display results
+        displayLowAttendanceStudents(lowAttendanceStudents, totalDays);
+        
+    } catch (error) {
+        console.error('Error finding low attendance students:', error);
+        showAlert('Error analyzing attendance data', 'danger');
+    }
+}
+
+// Display low attendance students
+function displayLowAttendanceStudents(students, totalDays) {
+    const container = document.getElementById('lowAttendanceStudentsList');
+    const sendBtn = document.getElementById('sendEmailBtn');
+    
+    if (students.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle"></i>
+                <strong>Great news!</strong> No students found below the attendance threshold.
+            </div>
+        `;
+        sendBtn.style.display = 'none';
+        return;
+    }
+    
+    let html = `
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            Found <strong>${students.length}</strong> student(s) with low attendance rate.
+        </div>
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-sm table-hover">
+                <thead class="sticky-top bg-white">
+                    <tr>
+                        <th>Student #</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Days Present</th>
+                        <th>Attendance Rate</th>
+                        <th>
+                            <input type="checkbox" id="selectAllStudents" onchange="toggleAllStudents(this.checked)" checked>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    students.forEach((student, index) => {
+        const rateClass = student.attendanceRate < 50 ? 'text-danger' : 
+                         student.attendanceRate < 70 ? 'text-warning' : 'text-info';
+        html += `
+            <tr>
+                <td>${student.student_number}</td>
+                <td>${student.last_name}, ${student.first_name}</td>
+                <td><small>${student.email}</small></td>
+                <td>${student.daysPresent} / ${totalDays}</td>
+                <td class="${rateClass}"><strong>${student.attendanceRate}%</strong></td>
+                <td>
+                    <input type="checkbox" class="student-checkbox" data-index="${index}" checked>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    sendBtn.style.display = 'block';
+    
+    // Store students data for sending emails
+    window.lowAttendanceStudentsData = students;
+}
+
+// Toggle all student checkboxes
+window.toggleAllStudents = function(checked) {
+    document.querySelectorAll('.student-checkbox').forEach(cb => {
+        cb.checked = checked;
+    });
+}
+
+// Toggle email preview
+window.toggleEmailPreview = function() {
+    const preview = document.getElementById('emailPreview');
+    preview.style.display = preview.style.display === 'none' ? 'block' : 'none';
+}
+
+// Refresh attendance data
+window.refreshAttendanceData = function() {
+    document.getElementById('lowAttendanceStudentsList').innerHTML = '';
+    document.getElementById('sendEmailBtn').style.display = 'none';
+    showAlert('Data cleared. Click "Find Students" to search again.', 'info');
+}
+
+// Send low attendance emails
+window.sendLowAttendanceEmails = async function() {
+    try {
+        const sendBtn = document.getElementById('sendEmailBtn');
+        const progressDiv = document.getElementById('emailProgress');
+        const progressBar = document.getElementById('emailProgressBar');
+        const progressText = document.getElementById('emailProgressText');
+        
+        // Get selected students
+        const selectedIndices = [];
+        document.querySelectorAll('.student-checkbox:checked').forEach(cb => {
+            selectedIndices.push(parseInt(cb.dataset.index));
+        });
+        
+        if (selectedIndices.length === 0) {
+            showAlert('Please select at least one student', 'warning');
+            return;
+        }
+        
+        const selectedStudents = selectedIndices.map(i => window.lowAttendanceStudentsData[i]);
+        
+        if (!confirm(`Send email warnings to ${selectedStudents.length} student(s)?`)) {
+            return;
+        }
+        
+        sendBtn.disabled = true;
+        progressDiv.style.display = 'block';
+        
+        let success = 0;
+        let failed = 0;
+        
+        for (let i = 0; i < selectedStudents.length; i++) {
+            const student = selectedStudents[i];
+            const progress = ((i + 1) / selectedStudents.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `Sending ${i + 1} of ${selectedStudents.length}...`;
+            
+            try {
+                // Send email via API
+                const response = await fetch('/api/password-reset/send-otp.js', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: student.email,
+                        customSubject: 'Attendance Warning - Low Attendance Rate',
+                        customMessage: `Dear ${student.first_name} ${student.last_name},
+
+This is to inform you that your attendance rate has fallen below the acceptable threshold.
+
+Current Attendance Status:
+- Days Present: ${student.daysPresent} out of ${student.totalDays} days
+- Attendance Rate: ${student.attendanceRate}%
+- Student Number: ${student.student_number}
+
+Attendance is crucial for your academic success. Regular attendance helps you:
+- Keep up with lessons and coursework
+- Participate in class discussions
+- Build good study habits
+- Maintain good academic standing
+
+Please ensure you attend classes regularly. If you are experiencing difficulties that prevent you from attending, please contact your adviser or the school administration.
+
+Best regards,
+Mabini High School Administration`
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success || response.ok) {
+                    success++;
+                } else {
+                    failed++;
+                    console.error('Email send failed for:', student.email, result);
+                }
+            } catch (error) {
+                failed++;
+                console.error('Error sending email to:', student.email, error);
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        // Close modal and show results
+        bootstrap.Modal.getInstance(document.getElementById('lowAttendanceModal')).hide();
+        showAlert(`Email warnings sent! Success: ${success}, Failed: ${failed}`, success > 0 ? 'success' : 'danger');
+        
+    } catch (error) {
+        console.error('Error sending low attendance emails:', error);
+        showAlert('Error sending email warnings', 'danger');
+    } finally {
+        document.getElementById('sendEmailBtn').disabled = false;
+        document.getElementById('emailProgress').style.display = 'none';
+        document.getElementById('emailProgressBar').style.width = '0%';
+    }
+}

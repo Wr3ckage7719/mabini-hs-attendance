@@ -641,112 +641,141 @@
             return false;
         }
 
-        // Generate QR Code for teacher
-        document.getElementById('generateQRTeacher')?.addEventListener('click', async function() {
-            try {
-                const loaded = await loadQRCodeLibrary();
-                if (!loaded) {
-                    alert('Failed to load QR code library. Please refresh the page.');
-                    return;
-                }
-
-                // Get identifier (employee number or email)
-                const employeeNumber = document.getElementById('employeeNumber')?.value;
-                const email = document.getElementById('email')?.value;
-                const identifier = employeeNumber || email;
-
-                if (!identifier) {
-                    alert('Please enter employee number or email first');
-                    return;
-                }
-
-                const qrContainer = document.getElementById('qrcodeTeacher');
-                qrContainer.innerHTML = '';
-                
-                document.getElementById('qrContentTeacher').textContent = identifier;
-                
-                if (window.QRCode) {
-                    qrCodeInstanceTeacher = new QRCode(qrContainer, {
-                        text: identifier,
-                        width: 200,
-                        height: 200,
-                        colorDark: '#000000',
-                        colorLight: '#ffffff',
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
-                    
-                    // Save canvas reference for upload when saving teacher
-                    setTimeout(() => {
-                        const canvas = qrContainer.querySelector('canvas');
-                        if (canvas) {
-                            currentQRCanvas = canvas;
-                            console.log('QR Canvas saved for upload');
-                        }
-                    }, 100);
-                }
-                
-                document.getElementById('qrPreviewTeacher').style.display = 'block';
-            } catch (error) {
-                console.error('Error generating QR code:', error);
-                alert('Error generating QR code: ' + error.message);
-            }
-        });
-
-        // Remove QR Code
-        document.getElementById('removeQRTeacher')?.addEventListener('click', function() {
-            document.getElementById('qrcodeTeacher').innerHTML = '';
-            document.getElementById('qrPreviewTeacher').style.display = 'none';
-            qrCodeInstanceTeacher = null;
-        });
-
-        // Download QR Code
-        document.getElementById('downloadQRTeacher')?.addEventListener('click', function() {
-            try {
-                const canvas = document.querySelector('#qrcodeTeacher canvas');
-                if (!canvas) {
-                    alert('QR code not generated yet. Please generate a QR code first.');
-                    return;
-                }
-                
-                const identifier = document.getElementById('qrContentTeacher').textContent;
-                const employeeNumber = identifier || 'teacher';
-                
-                // Convert canvas to blob for better compatibility
-                canvas.toBlob(function(blob) {
-                    if (!blob) {
-                        // Fallback to dataURL method
-                        const link = document.createElement('a');
-                        link.download = `teacher-qr-${employeeNumber}.png`;
-                        link.href = canvas.toDataURL('image/png');
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        return;
-                    }
-                    
-                    // Use blob URL for download
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.download = `teacher-qr-${employeeNumber}.png`;
-                    link.href = url;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    // Clean up blob URL
-                    setTimeout(() => URL.revokeObjectURL(url), 100);
-                }, 'image/png');
-            } catch (error) {
-                console.error('Error downloading QR code:', error);
-                alert('Error downloading QR code. Please try generating it again.');
-            }
-        });
-
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {
             initializeModal();
             await loadTeachers();
+            
+            // Setup QR Code event listeners after DOM is ready
+            setupQRCodeListeners();
         });
+        
+        // Setup QR Code event listeners
+        function setupQRCodeListeners() {
+            console.log('[Teachers] Setting up QR code listeners');
+            
+            // Generate QR Code for teacher
+            const generateBtn = document.getElementById('generateQRTeacher');
+            if (generateBtn) {
+                generateBtn.addEventListener('click', async function() {
+                    console.log('[Teachers] Generate QR clicked');
+                    try {
+                        const loaded = await loadQRCodeLibrary();
+                        if (!loaded) {
+                            alert('Failed to load QR code library. Please refresh the page.');
+                            return;
+                        }
+
+                        // Get identifier (employee number or email)
+                        const employeeNumber = document.getElementById('employeeNumber')?.value;
+                        const email = document.getElementById('email')?.value;
+                        const identifier = employeeNumber || email;
+
+                        if (!identifier) {
+                            alert('Please enter employee number or email first');
+                            return;
+                        }
+
+                        const qrContainer = document.getElementById('qrcodeTeacher');
+                        qrContainer.innerHTML = '';
+                        
+                        document.getElementById('qrContentTeacher').textContent = identifier;
+                        
+                        if (window.QRCode) {
+                            qrCodeInstanceTeacher = new QRCode(qrContainer, {
+                                text: identifier,
+                                width: 200,
+                                height: 200,
+                                colorDark: '#000000',
+                                colorLight: '#ffffff',
+                                correctLevel: QRCode.CorrectLevel.H
+                            });
+                            
+                            // Save canvas reference for upload when saving teacher
+                            setTimeout(() => {
+                                const canvas = qrContainer.querySelector('canvas');
+                                if (canvas) {
+                                    currentQRCanvas = canvas;
+                                    console.log('[Teachers] QR Canvas saved for upload');
+                                }
+                            }, 100);
+                        }
+                        
+                        document.getElementById('qrPreviewTeacher').style.display = 'block';
+                    } catch (error) {
+                        console.error('[Teachers] Error generating QR code:', error);
+                        alert('Error generating QR code: ' + error.message);
+                    }
+                });
+            } else {
+                console.error('[Teachers] Generate QR button not found');
+            }
+
+            // Remove QR Code
+            const removeBtn = document.getElementById('removeQRTeacher');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    console.log('[Teachers] Remove QR clicked');
+                    document.getElementById('qrcodeTeacher').innerHTML = '';
+                    document.getElementById('qrPreviewTeacher').style.display = 'none';
+                    qrCodeInstanceTeacher = null;
+                });
+            }
+
+            // Download QR Code
+            const downloadBtn = document.getElementById('downloadQRTeacher');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', function() {
+                    console.log('[Teachers] Download QR clicked');
+                    try {
+                        const canvas = document.querySelector('#qrcodeTeacher canvas');
+                        console.log('[Teachers] Canvas found:', !!canvas);
+                        
+                        if (!canvas) {
+                            alert('QR code not generated yet. Please generate a QR code first.');
+                            return;
+                        }
+                        
+                        const identifier = document.getElementById('qrContentTeacher').textContent;
+                        const employeeNumber = identifier || 'teacher';
+                        console.log('[Teachers] Downloading for:', employeeNumber);
+                        
+                        // Convert canvas to blob for better compatibility
+                        canvas.toBlob(function(blob) {
+                            if (!blob) {
+                                console.log('[Teachers] Blob conversion failed, using fallback');
+                                // Fallback to dataURL method
+                                const link = document.createElement('a');
+                                link.download = `teacher-qr-${employeeNumber}.png`;
+                                link.href = canvas.toDataURL('image/png');
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                return;
+                            }
+                            
+                            console.log('[Teachers] Using blob download');
+                            // Use blob URL for download
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.download = `teacher-qr-${employeeNumber}.png`;
+                            link.href = url;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            
+                            // Clean up blob URL
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        }, 'image/png');
+                    } catch (error) {
+                        console.error('[Teachers] Error downloading QR code:', error);
+                        alert('Error downloading QR code. Please try generating it again.');
+                    }
+                });
+            } else {
+                console.error('[Teachers] Download QR button not found');
+            }
+        }
     </script>
 </body>
 </html>

@@ -879,17 +879,37 @@
         });
         
         // Download QR Code
-        document.getElementById('downloadQR')?.addEventListener('click', function() {
-            if (!qrCodeBase64) return;
-            
-            const studentNumber = document.getElementById('studentNumber').value.trim() || 'student-qr';
-            const link = document.createElement('a');
-            link.download = `student-${studentNumber}-qr.png`;
-            link.href = qrCodeBase64;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
+        const downloadQRBtn = document.getElementById('downloadQR');
+        if (downloadQRBtn) {
+            downloadQRBtn.addEventListener('click', function() {
+                console.log('[Students] Download QR clicked');
+                console.log('[Students] qrCodeBase64 exists:', !!qrCodeBase64);
+                
+                if (!qrCodeBase64) {
+                    alert('QR code not generated yet. Please generate a QR code first.');
+                    return;
+                }
+                
+                try {
+                    const studentNumber = document.getElementById('studentNumber').value.trim() || 'student-qr';
+                    console.log('[Students] Downloading for student:', studentNumber);
+                    
+                    const link = document.createElement('a');
+                    link.download = `student-${studentNumber}-qr.png`;
+                    link.href = qrCodeBase64;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    console.log('[Students] Download triggered successfully');
+                } catch (error) {
+                    console.error('[Students] Error downloading QR code:', error);
+                    alert('Error downloading QR code: ' + error.message);
+                }
+            });
+        } else {
+            console.error('[Students] Download QR button not found');
+        }
     </script>
     
 </body>

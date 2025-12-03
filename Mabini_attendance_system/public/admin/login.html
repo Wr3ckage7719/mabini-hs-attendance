@@ -99,6 +99,24 @@
             background:#fff;
         }
 
+        .password-wrapper {
+            position: relative;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 1.1rem;
+            padding: 4px;
+            transition: color 0.2s ease;
+        }
+        .password-toggle:hover {
+            color: var(--text-primary);
+        }
+
         .login-btn{
             width:100%;
             padding:0.9rem;
@@ -286,7 +304,10 @@
 
             <div class="form-group">
                 <label class="form-label" for="admin-password">Password</label>
-                <input type="password" id="admin-password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+                <div class="password-wrapper">
+                    <input type="password" id="admin-password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+                    <i class="bi bi-eye password-toggle" id="toggle-admin-password"></i>
+                </div>
             </div>
 
             <button type="submit" class="login-btn" id="login-btn">Sign In as Admin</button>
@@ -304,5 +325,17 @@
     </div>
 
     <script type="module" src="js/admin-login.js"></script>
+    <script>
+        // Password toggle functionality
+        const togglePassword = document.getElementById('toggle-admin-password');
+        const passwordInput = document.getElementById('admin-password');
+        
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.classList.toggle('bi-eye');
+            this.classList.toggle('bi-eye-slash');
+        });
+    </script>
 </body>
 </html>

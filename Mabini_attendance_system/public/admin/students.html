@@ -911,17 +911,27 @@
                             // We have a saved QR code from database (Supabase Storage URL)
                             console.log('[Students] Downloading saved QR from database for:', studentNumber);
                             
-                            // Fetch the image and download
-                            const response = await fetch(qrPreviewImage.src);
+                            // Fetch the image with cors mode
+                            const response = await fetch(qrPreviewImage.src, { mode: 'cors' });
                             const blob = await response.blob();
-                            const url = URL.createObjectURL(blob);
+                            
+                            // Create a new blob with correct content type to force download
+                            const imageBlob = new Blob([blob], { type: 'image/png' });
+                            const url = URL.createObjectURL(imageBlob);
+                            
                             const link = document.createElement('a');
                             link.download = `student-${studentNumber}-qr.png`;
                             link.href = url;
+                            link.style.display = 'none';
                             document.body.appendChild(link);
                             link.click();
-                            document.body.removeChild(link);
-                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                            
+                            // Clean up after a delay
+                            setTimeout(() => {
+                                document.body.removeChild(link);
+                                URL.revokeObjectURL(url);
+                            }, 100);
+                            
                             console.log('[Students] Downloaded from database successfully');
                             return;
                         }

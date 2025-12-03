@@ -898,18 +898,43 @@
             // Download QR Code
             const downloadQRBtn = document.getElementById('downloadQR');
             if (downloadQRBtn) {
-                downloadQRBtn.addEventListener('click', function() {
+                downloadQRBtn.addEventListener('click', async function() {
                     console.log('[Students] Download QR clicked');
-                    console.log('[Students] qrCodeBase64 exists:', !!qrCodeBase64);
-                    
-                    if (!qrCodeBase64) {
-                        alert('QR code not generated yet. Please generate a QR code first.');
-                        return;
-                    }
                     
                     try {
                         const studentNumber = document.getElementById('studentNumber').value.trim() || 'student-qr';
-                        console.log('[Students] Downloading for student:', studentNumber);
+                        
+                        // First check if we have a saved QR code URL from database
+                        const qrPreviewImage = document.getElementById('qrPreviewImage');
+                        
+                        if (qrPreviewImage && qrPreviewImage.src && !qrPreviewImage.src.startsWith('data:')) {
+                            // We have a saved QR code from database (Supabase Storage URL)
+                            console.log('[Students] Downloading saved QR from database for:', studentNumber);
+                            
+                            // Fetch the image and download
+                            const response = await fetch(qrPreviewImage.src);
+                            const blob = await response.blob();
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.download = `student-${studentNumber}-qr.png`;
+                            link.href = url;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                            console.log('[Students] Downloaded from database successfully');
+                            return;
+                        }
+                        
+                        // Fallback: check for base64 data (newly generated or legacy)
+                        console.log('[Students] qrCodeBase64 exists:', !!qrCodeBase64);
+                        
+                        if (!qrCodeBase64) {
+                            alert('QR code not available. Please generate a QR code first.');
+                            return;
+                        }
+                        
+                        console.log('[Students] Downloading from base64 for student:', studentNumber);
                         
                         const link = document.createElement('a');
                         link.download = `student-${studentNumber}-qr.png`;

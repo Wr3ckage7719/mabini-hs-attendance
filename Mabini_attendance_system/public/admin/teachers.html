@@ -733,26 +733,50 @@
             // Download QR Code
             const downloadBtn = document.getElementById('downloadQRTeacher');
             if (downloadBtn) {
-                downloadBtn.addEventListener('click', function() {
+                downloadBtn.addEventListener('click', async function() {
                     console.log('[Teachers] Download QR clicked');
                     try {
+                        // First check if we have a saved QR code URL from database
+                        const qrImage = document.querySelector('#qrcodeTeacher img');
+                        
+                        if (qrImage && qrImage.src) {
+                            // We have a saved QR code from database, download it directly
+                            const identifier = document.getElementById('qrContentTeacher').textContent;
+                            const employeeNumber = identifier || 'teacher';
+                            console.log('[Teachers] Downloading saved QR for:', employeeNumber);
+                            
+                            // Fetch the image and download
+                            const response = await fetch(qrImage.src);
+                            const blob = await response.blob();
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.download = `teacher-qr-${employeeNumber}.png`;
+                            link.href = url;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                            console.log('[Teachers] Downloaded from database successfully');
+                            return;
+                        }
+                        
+                        // Fallback: check for canvas (newly generated QR)
                         const canvas = document.querySelector('#qrcodeTeacher canvas');
                         console.log('[Teachers] Canvas found:', !!canvas);
                         
                         if (!canvas) {
-                            alert('QR code not generated yet. Please generate a QR code first.');
+                            alert('QR code not available. Please generate a QR code first.');
                             return;
                         }
                         
                         const identifier = document.getElementById('qrContentTeacher').textContent;
                         const employeeNumber = identifier || 'teacher';
-                        console.log('[Teachers] Downloading for:', employeeNumber);
+                        console.log('[Teachers] Downloading newly generated QR for:', employeeNumber);
                         
-                        // Convert canvas to blob for better compatibility
+                        // Convert canvas to blob
                         canvas.toBlob(function(blob) {
                             if (!blob) {
                                 console.log('[Teachers] Blob conversion failed, using fallback');
-                                // Fallback to dataURL method
                                 const link = document.createElement('a');
                                 link.download = `teacher-qr-${employeeNumber}.png`;
                                 link.href = canvas.toDataURL('image/png');
@@ -763,7 +787,6 @@
                             }
                             
                             console.log('[Teachers] Using blob download');
-                            // Use blob URL for download
                             const url = URL.createObjectURL(blob);
                             const link = document.createElement('a');
                             link.download = `teacher-qr-${employeeNumber}.png`;
@@ -771,13 +794,11 @@
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
-                            
-                            // Clean up blob URL
                             setTimeout(() => URL.revokeObjectURL(url), 100);
                         }, 'image/png');
                     } catch (error) {
                         console.error('[Teachers] Error downloading QR code:', error);
-                        alert('Error downloading QR code. Please try generating it again.');
+                        alert('Error downloading QR code: ' + error.message);
                     }
                 });
             } else {

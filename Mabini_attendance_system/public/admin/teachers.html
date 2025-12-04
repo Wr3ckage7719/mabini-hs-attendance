@@ -177,6 +177,7 @@
                         <table class="table table-hover" id="teachersTable">
                             <thead>
                                 <tr>
+                                    <th>Employee Number</th>
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Department</th>
@@ -187,7 +188,7 @@
                             </thead>
                             <tbody id="teachersTableBody">
                                 <tr>
-                                    <td colspan="6" class="text-center">
+                                    <td colspan="7" class="text-center">
                                         <div class="spinner-border text-primary" role="status">
                                             <span class="visually-hidden">Loading...</span>
                                         </div>
@@ -358,7 +359,7 @@
             const tbody = document.getElementById('teachersTableBody');
             
             if (!teachers || teachers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No teachers found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No teachers found</td></tr>';
                 return;
             }
             

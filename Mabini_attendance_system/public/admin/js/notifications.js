@@ -192,82 +192,80 @@ async function loadNotifications() {
         if (error) throw error;
 
         if (notifications.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
-                    <p>No notifications sent yet</p>
-                </div>
-            `;
-            return;
-        }
-
-        const typeIcons = {
-            info: '📢',
-            warning: '⚠️',
-            success: '✅',
-            danger: '🚨'
-        };
-
-        container.innerHTML = notifications.map(notif => {
-            const icon = typeIcons[notif.type] || typeIcons.info;
-            const date = new Date(notif.created_at).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric',
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-
-            let targetLabel = '';
-            switch (notif.target_type) {
-                case 'all':
-                    targetLabel = 'All Students';
-                    break;
-                case 'grade':
-                    targetLabel = `Grade ${notif.target_value}`;
-                    break;
-                case 'section':
-                    targetLabel = 'Specific Section';
-                    break;
-                case 'individual':
-                    targetLabel = 'Individual Student';
-                    break;
-            }
-
-            return `
-                <div class="notification-item ${notif.type}">
-                    <div class="notification-header">
-                        <div class="notification-title">
-                            <span>${icon}</span>
-                            ${notif.title}
-                        </div>
-                        <div class="notification-meta">
-                            <div>${date}</div>
-                            <div style="margin-top: 0.25rem;">
-                                <span class="notification-target">${targetLabel}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="notification-message">${notif.message}</div>
-                    <button class="delete-btn" onclick="deleteNotification('${notif.id}')">
-                        <i class="bi bi-trash-fill"></i> Delete
-                    </button>
-                </div>
-            `;
-        }).join('');
-
-    } catch (error) {
-        console.error('Error loading notifications:', error);
         container.innerHTML = `
-            <div style="text-align: center; padding: 3rem; color: #ef4444;">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-                <p>Failed to load notifications</p>
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                <p class="mt-3">No notifications sent yet</p>
             </div>
         `;
+        return;
     }
-}
 
-// Delete notification
+    const typeIcons = {
+        info: '📢',
+        warning: '⚠️',
+        success: '✅',
+        danger: '🚨'
+    };
+
+    container.innerHTML = notifications.map(notif => {
+        const icon = typeIcons[notif.type] || typeIcons.info;
+        const date = new Date(notif.created_at).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+
+        let targetLabel = '';
+        switch (notif.target_type) {
+            case 'all':
+                targetLabel = 'All Students';
+                break;
+            case 'grade':
+                targetLabel = `Grade ${notif.target_value}`;
+                break;
+            case 'section':
+                targetLabel = 'Specific Section';
+                break;
+            case 'individual':
+                targetLabel = 'Individual Student';
+                break;
+        }
+
+        return `
+            <div class="notification-card mb-3 p-3 border rounded">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span style="font-size: 1.5rem;">${icon}</span>
+                        <div>
+                            <h5 class="mb-0">${notif.title}</h5>
+                            <small class="text-muted">${date}</small>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        <span class="badge bg-primary">${targetLabel}</span>
+                        <button class="btn btn-sm btn-danger" onclick="deleteNotification('${notif.id}')">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="mb-0 text-muted">${notif.message}</p>
+            </div>
+        `;
+    }).join('');
+
+} catch (error) {
+    console.error('Error loading notifications:', error);
+    container.innerHTML = `
+        <div class="text-center text-danger py-5">
+            <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+            <p class="mt-3">Failed to load notifications</p>
+        </div>
+    `;
+}
+}// Delete notification
 window.deleteNotification = async function(id) {
     if (!confirm('Are you sure you want to delete this notification?')) {
         return;
@@ -293,18 +291,22 @@ window.deleteNotification = async function(id) {
 // Show alert
 function showAlert(message, type) {
     const container = document.getElementById('alertContainer');
-    const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
-    const icon = type === 'success' ? '✓' : '✕';
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
 
     container.innerHTML = `
-        <div class="alert ${alertClass}">
-            <i class="bi bi-${type === 'success' ? 'check-circle-fill' : 'exclamation-circle-fill'}"></i>
-            <span>${message}</span>
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="bi bi-${type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill'}"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `;
 
     setTimeout(() => {
-        container.innerHTML = '';
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }
     }, 5000);
 }
 

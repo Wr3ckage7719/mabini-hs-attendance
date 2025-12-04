@@ -28,7 +28,7 @@ class EmailClient {
                 body: JSON.stringify({
                     to,
                     subject,
-                    message: isHtml ? '' : message, // Send empty message if HTML is provided
+                    message: isHtml ? 'Please view this email in an HTML-capable email client.' : message,
                     html: isHtml ? message : this.formatMessage(message)
                 })
             });

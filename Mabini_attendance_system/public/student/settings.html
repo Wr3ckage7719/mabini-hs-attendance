@@ -748,8 +748,9 @@
                 document.getElementById('newPassword').value = '';
                 document.getElementById('confirmNewPassword').value = '';
 
-                // Mark that password has been changed
-                sessionStorage.setItem('passwordChanged', 'true');
+                // Mark that password has been changed (use localStorage so it persists)
+                localStorage.setItem('passwordChanged', 'true');
+                sessionStorage.removeItem('showPasswordPrompt');
                 
                 statusEl.textContent = 'Password updated successfully!';
                 statusEl.style.color = '#34d399';

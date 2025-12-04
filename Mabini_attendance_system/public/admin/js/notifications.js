@@ -17,9 +17,6 @@ async function init() {
 
         currentUser = JSON.parse(userData);
 
-        // Show loading state
-        updateRecipientDisplay('Loading student data...', 'text-muted');
-
         // Preload sections and students for better UX
         await Promise.all([
             loadSectionsCache(),
@@ -29,7 +26,7 @@ async function init() {
         // Setup event listeners
         setupFormHandlers();
         
-        // Update initial recipient count
+        // Update initial recipient count after data is loaded
         updateRecipientCount('all', null);
         
         // Load initial data
@@ -38,6 +35,12 @@ async function init() {
     } catch (error) {
         console.error('Initialization error:', error);
         showAlert('Failed to initialize page. Please refresh and try again.', 'error');
+        // Show error in recipient display
+        const recipientCount = document.getElementById('recipientCount');
+        if (recipientCount) {
+            recipientCount.textContent = 'Error loading student data';
+            recipientCount.className = 'text-danger';
+        }
     }
 }
 
@@ -70,9 +73,25 @@ async function loadStudentsCache() {
 
         if (error) throw error;
         studentsCache = students || [];
+        
+        console.log(`Loaded ${studentsCache.length} students`);
+        
+        // Show warning if no students found
+        if (studentsCache.length === 0) {
+            const recipientCount = document.getElementById('recipientCount');
+            if (recipientCount) {
+                recipientCount.textContent = 'No active students found in database';
+                recipientCount.className = 'text-warning';
+            }
+        }
     } catch (error) {
         console.error('Error loading students cache:', error);
         studentsCache = [];
+        const recipientCount = document.getElementById('recipientCount');
+        if (recipientCount) {
+            recipientCount.textContent = 'Error loading students: ' + error.message;
+            recipientCount.className = 'text-danger';
+        }
     }
 }
 
@@ -236,16 +255,18 @@ function updateRecipientCount(targetType, targetValue) {
 
     // Update send button
     const submitBtn = document.getElementById('sendButton');
-    if (count > 0) {
-        submitBtn.innerHTML = `<i class="bi bi-send-fill me-2"></i>Send to ${count} Student${count !== 1 ? 's' : ''}`;
-        submitBtn.disabled = false;
-    } else {
-        submitBtn.innerHTML = `<i class="bi bi-send-fill me-2"></i>Send Notification`;
-        submitBtn.disabled = targetType !== 'all';
+    if (submitBtn) {
+        if (count > 0) {
+            submitBtn.innerHTML = `<i class="bi bi-send-fill me-2"></i>Send to ${count} Student${count !== 1 ? 's' : ''}`;
+            submitBtn.disabled = false;
+        } else {
+            submitBtn.innerHTML = `<i class="bi bi-send-fill me-2"></i>Send Notification`;
+            submitBtn.disabled = targetType !== 'all';
+        }
+        
+        // Store student IDs for later use
+        submitBtn.dataset.studentIds = JSON.stringify(studentIds);
     }
-
-    // Store student IDs for later use
-    submitBtn.dataset.studentIds = JSON.stringify(studentIds);
 }
 
 // Helper function to update recipient display

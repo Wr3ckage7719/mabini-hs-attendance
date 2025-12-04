@@ -52,10 +52,17 @@ window.loadAbsentStudents = async function() {
     try {
         showLoading('Loading absent students...');
         
-        // Get all students
+        // Get all students with section info
         const { data: students, error: studentsError } = await supabase
             .from('students')
-            .select('*')
+            .select(`
+                *,
+                sections:section_id (
+                    id,
+                    name,
+                    grade_level
+                )
+            `)
             .eq('status', 'active');
         
         if (studentsError) throw studentsError;
@@ -63,17 +70,22 @@ window.loadAbsentStudents = async function() {
         // Get attendance records for the selected date
         const { data: attendance, error: attendanceError } = await supabase
             .from('attendance')
-            .select('student_id')
-            .gte('check_in_time', `${selectedDate} 00:00:00`)
-            .lte('check_in_time', `${selectedDate} 23:59:59`);
+            .select('student_id, status')
+            .eq('attendance_date', selectedDate)
+            .in('status', ['present', 'late']);
         
         if (attendanceError) throw attendanceError;
         
         // Students who checked in
         const presentStudentIds = new Set(attendance.map(a => a.student_id));
         
-        // Filter absent students
-        absentStudents = students.filter(student => !presentStudentIds.has(student.id));
+        // Filter absent students and add section names
+        absentStudents = students
+            .filter(student => !presentStudentIds.has(student.id))
+            .map(student => ({
+                ...student,
+                section_name: student.sections?.name || 'N/A'
+            }));
         filteredStudents = [...absentStudents];
         
         // Update stats

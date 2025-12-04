@@ -42,10 +42,17 @@ window.loadLowAttendanceStudents = async function() {
     try {
         showLoading('Calculating attendance rates...');
         
-        // Get all active students
+        // Get all active students with section info
         const { data: students, error: studentsError } = await supabase
             .from('students')
-            .select('*')
+            .select(`
+                *,
+                sections:section_id (
+                    id,
+                    name,
+                    grade_level
+                )
+            `)
             .eq('status', 'active');
         
         if (studentsError) throw studentsError;
@@ -55,31 +62,44 @@ window.loadLowAttendanceStudents = async function() {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - dateRange);
         
+        // Format dates for SQL date comparison (YYYY-MM-DD)
+        const endDateStr = endDate.toISOString().split('T')[0];
+        const startDateStr = startDate.toISOString().split('T')[0];
+        
         // Get attendance records for date range
         const { data: attendance, error: attendanceError } = await supabase
             .from('attendance')
-            .select('student_id, check_in_time')
-            .gte('check_in_time', startDate.toISOString())
-            .lte('check_in_time', endDate.toISOString());
+            .select('student_id, attendance_date, status')
+            .gte('attendance_date', startDateStr)
+            .lte('attendance_date', endDateStr)
+            .in('status', ['present', 'late']);
         
         if (attendanceError) throw attendanceError;
         
         // Calculate attendance rate for each student
+        // Count unique dates per student (a student can only attend once per day)
         const attendanceMap = {};
         attendance.forEach(record => {
             if (!attendanceMap[record.student_id]) {
-                attendanceMap[record.student_id] = 0;
+                attendanceMap[record.student_id] = new Set();
             }
-            attendanceMap[record.student_id]++;
+            attendanceMap[record.student_id].add(record.attendance_date);
+        });
+        
+        // Convert sets to counts
+        const attendanceCounts = {};
+        Object.keys(attendanceMap).forEach(studentId => {
+            attendanceCounts[studentId] = attendanceMap[studentId].size;
         });
         
         // Filter students with low attendance
         lowAttendanceStudents = students.map(student => {
-            const daysPresent = attendanceMap[student.id] || 0;
+            const daysPresent = attendanceCounts[student.id] || 0;
             const attendanceRate = dateRange > 0 ? (daysPresent / dateRange) * 100 : 0;
             
             return {
                 ...student,
+                section_name: student.sections?.name || 'N/A',
                 days_present: daysPresent,
                 days_absent: dateRange - daysPresent,
                 total_days: dateRange,

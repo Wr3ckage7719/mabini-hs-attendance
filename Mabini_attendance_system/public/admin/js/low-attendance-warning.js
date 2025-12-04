@@ -5,6 +5,7 @@
 
 import { supabase, ensureAuthenticated } from './ensure-auth.js';
 import { smsClient } from '../../js/sms-client.js';
+import { emailClient } from '../../js/email-client.js';
 
 let lowAttendanceStudents = [];
 let filteredStudents = [];
@@ -355,6 +356,7 @@ async function sendWarnings(students, notificationType) {
         // Auto-generate message based on attendance rate
         const message = generateAttendanceMessage(student);
         const studentName = `${student.first_name} ${student.last_name}`;
+        const rate = parseFloat(student.attendance_rate);
         
         try {
             let emailSent = false;
@@ -363,10 +365,19 @@ async function sendWarnings(students, notificationType) {
             // Send via Email to student's institutional email
             if (notificationType === 'email' || notificationType === 'both') {
                 if (student.email) {
-                    // TODO: Implement actual email sending via email service (SendGrid, AWS SES, etc.)
-                    // For now, logging to console as placeholder
-                    console.log(`📧 Email to be sent to ${studentName} (${student.email}): ${message}`);
-                    emailSent = true;
+                    const emailResult = await emailClient.sendLowAttendanceWarning(
+                        student.email,
+                        studentName,
+                        rate,
+                        message
+                    );
+                    
+                    if (emailResult.success) {
+                        console.log(`✅ Email sent to ${studentName} (${student.email})`);
+                        emailSent = true;
+                    } else {
+                        console.error(`❌ Email failed for ${studentName}:`, emailResult.error);
+                    }
                 } else {
                     console.warn(`⚠ No institutional email for ${studentName}`);
                     noEmailCount++;
@@ -379,10 +390,10 @@ async function sendWarnings(students, notificationType) {
                 if (contact) {
                     const result = await smsClient.sendCustom(contact, message);
                     if (result.success) {
-                        console.log(`✓ SMS sent to ${studentName}'s parent/guardian (${contact})`);
+                        console.log(`✅ SMS sent to ${studentName}'s parent/guardian (${contact})`);
                         smsSent = true;
                     } else {
-                        console.error(`✗ SMS failed for ${studentName}:`, result.error);
+                        console.error(`❌ SMS failed for ${studentName}:`, result.error);
                     }
                 } else {
                     console.warn(`⚠ No parent/guardian contact for ${studentName}`);
@@ -397,7 +408,7 @@ async function sendWarnings(students, notificationType) {
                 failCount++;
             }
         } catch (error) {
-            console.error(`✗ Error sending to ${studentName}:`, error);
+            console.error(`❌ Error sending to ${studentName}:`, error);
             failCount++;
         }
         
@@ -411,7 +422,7 @@ async function sendWarnings(students, notificationType) {
     if (successCount > 0) {
         const notifType = notificationType === 'both' ? 'Email & SMS' : 
                          notificationType === 'sms' ? 'SMS' : 'Email';
-        showToast(`Successfully queued ${successCount} ${notifType} warning(s)`, 'success');
+        showToast(`Successfully sent ${successCount} ${notifType} warning(s)`, 'success');
         deselectAll();
     }
     

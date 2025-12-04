@@ -62,6 +62,8 @@ async function initDashboard() {
         // Load student data
         if (currentStudent) {
             await loadStudentData();
+            // Load notifications after student data is ready
+            await loadNotifications();
         }
     } catch (error) {
         console.error('Error initializing dashboard:', error);
@@ -491,8 +493,16 @@ function formatTime(timeString) {
 
 async function loadNotifications() {
     try {
-        if (!currentStudent) return;
+        console.log('🔔 Loading notifications...');
+        console.log('Current student:', currentStudent);
+        
+        if (!currentStudent) {
+            console.warn('⚠️ No current student, cannot load notifications');
+            return;
+        }
 
+        console.log('Querying notifications for student_id:', currentStudent.id);
+        
         const { data, error} = await supabase
             .from('student_notifications')
             .select('*')
@@ -501,9 +511,19 @@ async function loadNotifications() {
             .limit(50);
 
         if (error) {
-            console.error('Error loading notifications:', error);
+            console.error('❌ Error loading notifications:', error);
+            console.error('Error details:', {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code
+            });
             return;
         }
+        
+        console.log('✅ Notifications query successful!');
+        console.log('Notifications data:', data);
+        console.log('Number of notifications:', data ? data.length : 0);
 
         const notifications = data || [];
         const unreadCount = notifications.filter(n => !n.is_read).length;
@@ -604,10 +624,13 @@ function setupNotifications() {
         });
     }
 
-    // Load initial count
-    loadNotifications();
+    // Load initial count will be called from initDashboard after student is loaded
 }
 
 // Initialize dashboard when DOM is ready
-initDashboard();
-setupNotifications();
+initDashboard().then(() => {
+    // Setup notifications after dashboard is initialized
+    setupNotifications();
+}).catch(error => {
+    console.error('Failed to initialize dashboard:', error);
+});

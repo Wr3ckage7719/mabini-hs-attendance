@@ -86,9 +86,13 @@ async function updateProfile(student) {
             const studentIdEl = document.getElementById('studentId');
             if (studentIdEl) studentIdEl.textContent = `Student ID: ${student.student_id || student.student_number || 'N/A'}`;
             
+            // Update student number in profile card
+            const studentNumberEl = document.getElementById('studentNumber');
+            if (studentNumberEl) studentNumberEl.textContent = student.student_number || student.student_id || 'N/A';
+            
             // Update grade level, section, strand
             const gradeLevelEl = document.getElementById('gradeLevel');
-            if (gradeLevelEl) gradeLevelEl.textContent = student.grade_level || 'Not assigned';
+            if (gradeLevelEl) gradeLevelEl.textContent = student.grade_level ? `Grade ${student.grade_level}` : 'Not assigned';
             
             const sectionEl = document.getElementById('section');
             if (sectionEl) sectionEl.textContent = student.section || 'Not assigned';
@@ -96,12 +100,12 @@ async function updateProfile(student) {
             const strandEl = document.getElementById('strand');
             if (strandEl) strandEl.textContent = student.strand || 'N/A';
             
-            // Update contact info - use phone as primary field
+            // Update contact info
             const contactPhoneEl = document.getElementById('contactPhone');
-            if (contactPhoneEl) contactPhoneEl.textContent = student.phone || student.contact_number || '09xxxxxxxx';
+            if (contactPhoneEl) contactPhoneEl.textContent = student.parent_guardian_contact || student.phone || student.contact_number || 'Not provided';
             
             const contactEmailEl = document.getElementById('contactEmail');
-            if (contactEmailEl) contactEmailEl.textContent = student.contact_email || student.email || '';
+            if (contactEmailEl) contactEmailEl.textContent = student.email || student.contact_email || 'Not provided';
             
             const contactAddressEl = document.getElementById('contactAddress');
             if (contactAddressEl) contactAddressEl.textContent = student.address || 'Not provided';
@@ -114,17 +118,31 @@ async function updateProfile(student) {
             if (studentNationalityEl) studentNationalityEl.textContent = student.nationality || 'Not specified';
             
             const studentBirthDateEl = document.getElementById('studentBirthDate');
-            if (studentBirthDateEl && (student.birth_date || student.date_of_birth)) {
-                const birthDate = new Date(student.birth_date || student.date_of_birth);
-                studentBirthDateEl.textContent = birthDate.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                });
+            if (studentBirthDateEl) {
+                if (student.birth_date || student.date_of_birth) {
+                    const birthDate = new Date(student.birth_date || student.date_of_birth);
+                    studentBirthDateEl.textContent = birthDate.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                } else {
+                    studentBirthDateEl.textContent = 'Not provided';
+                }
             }
             
             const studentBirthPlaceEl = document.getElementById('studentBirthPlace');
             if (studentBirthPlaceEl) studentBirthPlaceEl.textContent = student.birth_place || student.place_of_birth || 'Not provided';
+            
+            // Update parent/guardian info
+            const parentGuardianNameEl = document.getElementById('parentGuardianName');
+            if (parentGuardianNameEl) parentGuardianNameEl.textContent = student.parent_guardian_name || 'Not provided';
+            
+            const parentGuardianContactEl = document.getElementById('parentGuardianContact');
+            if (parentGuardianContactEl) parentGuardianContactEl.textContent = student.parent_guardian_contact || 'Not provided';
+            
+            const parentGuardianEmailEl = document.getElementById('parentGuardianEmail');
+            if (parentGuardianEmailEl) parentGuardianEmailEl.textContent = student.parent_guardian_email || 'Not provided';
             
             // Set profile initials from full name
             const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);

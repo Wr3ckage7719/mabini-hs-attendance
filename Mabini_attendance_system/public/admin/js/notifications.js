@@ -8,20 +8,40 @@ let studentsCache = [];
 // Initialize page
 async function init() {
     try {
+        console.log('🚀 Initializing Student Notifications page...');
+        
         // Get current user
         const userData = sessionStorage.getItem('userData');
         if (!userData) {
+            console.warn('⚠️ No user data found - redirecting to login');
             window.location.href = 'login.html';
             return;
         }
 
         currentUser = JSON.parse(userData);
+        console.log('✅ Current user:', currentUser.email || currentUser.username);
+
+        // Test Supabase connection
+        console.log('🔌 Testing Supabase connection...');
+        const { data: healthCheck, error: healthError } = await supabase
+            .from('students')
+            .select('count', { count: 'exact', head: true });
+        
+        if (healthError) {
+            console.error('❌ Supabase connection failed:', healthError);
+            throw new Error(`Cannot connect to database: ${healthError.message}`);
+        }
+        
+        console.log('✅ Supabase connection successful');
 
         // Preload sections and students for better UX
+        console.log('📊 Loading cache data...');
         await Promise.all([
             loadSectionsCache(),
             loadStudentsCache()
         ]);
+        
+        console.log(`✅ Cache loaded: ${sectionsCache.length} sections, ${studentsCache.length} students`);
 
         // Setup event listeners
         setupFormHandlers();
@@ -31,15 +51,25 @@ async function init() {
         
         // Load initial data
         await loadNotifications();
+        
+        console.log('✅ Initialization complete');
 
     } catch (error) {
-        console.error('Initialization error:', error);
-        showAlert('Failed to initialize page. Please refresh and try again.', 'error');
+        console.error('❌ CRITICAL INITIALIZATION ERROR:', error);
+        console.error('Full error details:', {
+            message: error.message,
+            stack: error.stack,
+            hint: error.hint,
+            details: error.details
+        });
+        
+        showAlert(`Failed to initialize: ${error.message}. Please check console for details.`, 'error');
+        
         // Show error in recipient display
         const recipientCount = document.getElementById('recipientCount');
         if (recipientCount) {
-            recipientCount.textContent = 'Error loading student data';
-            recipientCount.className = 'text-danger';
+            recipientCount.textContent = `🔴 Initialization failed: ${error.message}`;
+            recipientCount.className = 'text-danger fw-bold';
         }
     }
 }
@@ -64,33 +94,61 @@ async function loadSectionsCache() {
 // Load students into cache
 async function loadStudentsCache() {
     try {
+        console.log('🔍 Attempting to load students from database...');
+        
+        // Test Supabase connection first
+        const { data: testData, error: testError } = await supabase
+            .from('students')
+            .select('count', { count: 'exact', head: true });
+        
+        if (testError) {
+            console.error('❌ Database connection test failed:', testError);
+            throw new Error(`Database connection failed: ${testError.message}`);
+        }
+        
+        console.log(`✅ Database connected. Total students in table: ${testData || 'unknown'}`);
+        
+        // Now fetch active students
         const { data: students, error } = await supabase
             .from('students')
-            .select('id, full_name, first_name, last_name, student_id, grade_level, section_id')
+            .select('id, full_name, first_name, last_name, student_id, grade_level, section_id, status')
             .eq('status', 'active')
             .order('grade_level')
             .order('last_name');
 
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Error fetching students:', error);
+            throw error;
+        }
+        
         studentsCache = students || [];
         
-        console.log(`Loaded ${studentsCache.length} students`);
+        console.log(`✅ Loaded ${studentsCache.length} active students`);
+        console.log('Student sample:', studentsCache.slice(0, 3)); // Log first 3 students
         
         // Show warning if no students found
         if (studentsCache.length === 0) {
+            console.warn('⚠️ No active students found. Check database or RLS policies.');
             const recipientCount = document.getElementById('recipientCount');
             if (recipientCount) {
-                recipientCount.textContent = 'No active students found in database';
-                recipientCount.className = 'text-warning';
+                recipientCount.textContent = '⚠️ No active students in database - check filters';
+                recipientCount.className = 'text-warning fw-bold';
             }
         }
     } catch (error) {
-        console.error('Error loading students cache:', error);
+        console.error('❌ CRITICAL ERROR loading students:', error);
+        console.error('Error details:', {
+            message: error.message,
+            hint: error.hint,
+            details: error.details,
+            code: error.code
+        });
+        
         studentsCache = [];
         const recipientCount = document.getElementById('recipientCount');
         if (recipientCount) {
-            recipientCount.textContent = 'Error loading students: ' + error.message;
-            recipientCount.className = 'text-danger';
+            recipientCount.textContent = `🔴 Database error: ${error.message}`;
+            recipientCount.className = 'text-danger fw-bold';
         }
     }
 }
@@ -421,17 +479,15 @@ async function loadNotifications() {
         const uniqueNotifications = Array.from(grouped.values())
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
             .slice(0, 20); // Show last 20 unique notifications
-        return;
-    }
 
-    const typeIcons = {
-        info: '📢',
-        warning: '⚠️',
-        success: '✅',
-        danger: '🚨'
-    };
+        const typeIcons = {
+            info: '📢',
+            warning: '⚠️',
+            success: '✅',
+            danger: '🚨'
+        };
 
-    container.innerHTML = uniqueNotifications.map(notif => {
+        container.innerHTML = uniqueNotifications.map(notif => {
         const icon = typeIcons[notif.type] || typeIcons.info;
         const date = new Date(notif.created_at).toLocaleDateString('en-US', { 
             month: 'short', 

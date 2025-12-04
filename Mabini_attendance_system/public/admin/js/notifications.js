@@ -296,49 +296,31 @@ async function handleSubmit(e) {
             throw new Error('No recipients found. Please select valid recipients.');
         }
 
-        // Create the main notification record
-        const { data: notificationData, error: notifError } = await supabase
-            .from('student_notifications')
-            .insert([{
-                title,
-                message,
-                type,
-                target_type: targetType,
-                target_value: targetValue,
-                created_by: currentUser.id,
-                created_at: new Date().toISOString()
-            }])
-            .select();
-
-        if (notifError) throw notifError;
-
-        // Create individual notification entries for each student
-        // This ensures each student can see and mark notifications as read
-        const notificationId = notificationData[0].id;
-        const studentNotifications = studentIds.map(studentId => ({
-            notification_id: notificationId,
-            student_id: studentId,
+        // Create individual notification for each student
+        // This ensures each student sees the notification in their dashboard
+        const notifications = studentIds.map(studentId => ({
             title,
             message,
             type,
+            target_type: targetType,
+            target_value: targetValue,
+            student_id: studentId,
             is_read: false,
+            created_by: currentUser.id,
             created_at: new Date().toISOString()
         }));
 
-        // Insert individual student notification records
-        const { error: studentNotifError } = await supabase
-            .from('student_notification_recipients')
-            .insert(studentNotifications);
+        // Insert all notifications
+        const { data, error } = await supabase
+            .from('student_notifications')
+            .insert(notifications);
 
-        if (studentNotifError) {
-            console.error('Error creating student notifications:', studentNotifError);
-            // Don't throw - the main notification was created successfully
-        }
+        if (error) throw error;
 
         // Success
         const recipientCount = studentIds.length;
         showAlert(
-            `✅ Success! Notification sent to ${recipientCount} student${recipientCount !== 1 ? 's' : ''}. They will see it when they log in.`, 
+            `✅ Success! Notification sent to ${recipientCount} student${recipientCount !== 1 ? 's' : ''}. They will see it when they log in to their dashboard.`, 
             'success'
         );
         
@@ -373,21 +355,51 @@ async function loadNotifications() {
     const container = document.getElementById('notificationsList');
 
     try {
+        // Get notifications grouped by title, message, type, and target
+        // to show unique notifications sent (not individual student records)
         const { data: notifications, error } = await supabase
             .from('student_notifications')
-            .select('*')
+            .select('id, title, message, type, target_type, target_value, student_id, created_at, created_by')
             .order('created_at', { ascending: false })
-            .limit(20);
+            .limit(100); // Get more to group them
 
         if (error) throw error;
 
         if (notifications.length === 0) {
-        container.innerHTML = `
-            <div class="text-center text-muted py-5">
-                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-                <p class="mt-3">No notifications sent yet</p>
-            </div>
-        `;
+            container.innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    <p class="mt-3">No notifications sent yet</p>
+                    <small>Start by creating your first notification above</small>
+                </div>
+            `;
+            return;
+        }
+
+        // Group notifications by created_at, title, and message
+        // to show one entry per notification sent (even if it went to multiple students)
+        const grouped = new Map();
+        notifications.forEach(notif => {
+            // Create a unique key for grouping
+            const key = `${notif.title}-${notif.message}-${notif.type}-${notif.target_type}-${notif.target_value || 'null'}-${new Date(notif.created_at).toISOString().split('.')[0]}`;
+            
+            if (!grouped.has(key)) {
+                grouped.set(key, {
+                    ...notif,
+                    count: 1,
+                    ids: [notif.id]
+                });
+            } else {
+                const existing = grouped.get(key);
+                existing.count++;
+                existing.ids.push(notif.id);
+            }
+        });
+
+        // Convert map to array and sort by date
+        const uniqueNotifications = Array.from(grouped.values())
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, 20); // Show last 20 unique notifications
         return;
     }
 
@@ -398,7 +410,7 @@ async function loadNotifications() {
         danger: '🚨'
     };
 
-    container.innerHTML = notifications.map(notif => {
+    container.innerHTML = uniqueNotifications.map(notif => {
         const icon = typeIcons[notif.type] || typeIcons.info;
         const date = new Date(notif.created_at).toLocaleDateString('en-US', { 
             month: 'short', 
@@ -414,56 +426,56 @@ async function loadNotifications() {
         switch (notif.target_type) {
             case 'all':
                 targetLabel = 'All Students';
-                targetDetails = 'Sent to all active students';
+                targetDetails = `Sent to ${notif.count} student${notif.count !== 1 ? 's' : ''}`;
                 break;
             case 'grade':
                 targetLabel = `Grade ${notif.target_value}`;
-                targetDetails = `Sent to all Grade ${notif.target_value} students`;
+                targetDetails = `Sent to ${notif.count} Grade ${notif.target_value} student${notif.count !== 1 ? 's' : ''}`;
                 break;
             case 'section':
                 const section = sectionsCache.find(s => s.id === notif.target_value);
                 if (section) {
                     targetLabel = `${section.section_name}`;
-                    targetDetails = `Grade ${section.grade_level} - ${section.section_name}`;
+                    targetDetails = `Grade ${section.grade_level} - ${section.section_name} (${notif.count} student${notif.count !== 1 ? 's' : ''})`;
                 } else {
                     targetLabel = 'Specific Section';
-                    targetDetails = 'Section ID: ' + notif.target_value;
+                    targetDetails = `Sent to ${notif.count} student${notif.count !== 1 ? 's' : ''}`;
                 }
                 break;
             case 'individual':
-                const student = studentsCache.find(s => s.id === notif.target_value);
+                const student = studentsCache.find(s => s.id === notif.target_value || s.id === notif.student_id);
                 if (student) {
                     const name = student.full_name || `${student.first_name} ${student.last_name}`;
                     targetLabel = name;
                     targetDetails = `Student ID: ${student.student_id}`;
                 } else {
                     targetLabel = 'Individual Student';
-                    targetDetails = 'Student ID: ' + notif.target_value;
+                    targetDetails = `Sent to 1 student`;
                 }
                 break;
         }
 
         return `
-            <div class="notification-card mb-3 p-3 border rounded">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div class="d-flex align-items-center gap-2">
-                        <span style="font-size: 1.5rem;">${icon}</span>
-                        <div>
-                            <h5 class="mb-0">${notif.title}</h5>
-                            <small class="text-muted">${date}</small>
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-start gap-3 flex-grow-1">
+                            <span style="font-size: 2rem;">${icon}</span>
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1">${notif.title}</h5>
+                                <p class="mb-2 text-muted">${notif.message}</p>
+                                <div class="d-flex gap-2 flex-wrap align-items-center">
+                                    <span class="badge bg-primary">${targetLabel}</span>
+                                    <small class="text-muted">${targetDetails}</small>
+                                    <small class="text-muted">• ${date}</small>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="d-flex gap-2 align-items-center">
-                        <div class="text-end">
-                            <span class="badge bg-primary d-block mb-1">${targetLabel}</span>
-                            <small class="text-muted" style="font-size: 0.7rem;">${targetDetails}</small>
-                        </div>
-                        <button class="btn btn-sm btn-danger" onclick="deleteNotification('${notif.id}')">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteNotificationGroup('${notif.ids.join(',')}', '${notif.title}')" title="Delete this notification">
                             <i class="bi bi-trash-fill"></i>
                         </button>
                     </div>
                 </div>
-                <p class="mb-0 text-muted">${notif.message}</p>
             </div>
         `;
     }).join('');
@@ -477,7 +489,34 @@ async function loadNotifications() {
         </div>
     `;
 }
-}// Delete notification
+}
+// Delete notification group (all notifications sent at once)
+window.deleteNotificationGroup = async function(idsString, title) {
+    const ids = idsString.split(',');
+    const count = ids.length;
+    
+    if (!confirm(`Are you sure you want to delete "${title}"?\n\nThis will remove it from ${count} student${count !== 1 ? 's' : ''}.`)) {
+        return;
+    }
+
+    try {
+        const { error } = await supabase
+            .from('student_notifications')
+            .delete()
+            .in('id', ids);
+
+        if (error) throw error;
+
+        showAlert(`✅ Notification deleted successfully (removed from ${count} student${count !== 1 ? 's' : ''})`, 'success');
+        await loadNotifications();
+
+    } catch (error) {
+        console.error('Error deleting notification:', error);
+        showAlert('❌ Failed to delete notification: ' + error.message, 'error');
+    }
+};
+
+// Delete single notification (backward compatibility)
 window.deleteNotification = async function(id) {
     if (!confirm('Are you sure you want to delete this notification?')) {
         return;

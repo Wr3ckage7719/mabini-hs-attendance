@@ -384,6 +384,80 @@
                         <div class="form-description">Your contact number</div>
                         <input type="tel" id="phone" class="form-input" placeholder="09XXXXXXXXX">
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">Emergency Contact</label>
+                        <div class="form-description">Contact number for emergencies</div>
+                        <input type="tel" id="emergencyContact" class="form-input" placeholder="09XXXXXXXXX">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <div class="form-description">Your complete address</div>
+                        <textarea id="address" class="form-input" rows="2" placeholder="Enter your address"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal Information -->
+            <div class="settings-section">
+                <h2 class="section-title">Personal Information</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Sex</label>
+                        <div class="form-description">Your gender</div>
+                        <select id="sex" class="form-input">
+                            <option value="">-- Select --</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nationality</label>
+                        <div class="form-description">Your nationality</div>
+                        <input type="text" id="nationality" class="form-input" placeholder="e.g., Filipino">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Birth Date</label>
+                        <div class="form-description">Your date of birth</div>
+                        <input type="date" id="birthDate" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Birth Place</label>
+                        <div class="form-description">Your place of birth</div>
+                        <input type="text" id="birthPlace" class="form-input" placeholder="e.g., Manila, Philippines">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parent/Guardian Information -->
+            <div class="settings-section">
+                <h2 class="section-title">Parent/Guardian Information</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Parent/Guardian Name</label>
+                        <div class="form-description">Full name of parent or guardian</div>
+                        <input type="text" id="parentGuardianName" class="form-input" placeholder="Enter parent/guardian name">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Parent/Guardian Contact</label>
+                        <div class="form-description">Contact number of parent or guardian</div>
+                        <input type="tel" id="parentGuardianContact" class="form-input" placeholder="09XXXXXXXXX">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Parent/Guardian Email</label>
+                        <div class="form-description">Email address of parent or guardian</div>
+                        <input type="email" id="parentGuardianEmail" class="form-input" placeholder="parent@example.com">
+                    </div>
                 </div>
             </div>
         </form>
@@ -489,6 +563,17 @@
                     document.getElementById('email').value = profile.email || '';
                     document.getElementById('phone').value = profile.parent_guardian_contact || profile.emergency_contact || '';
                     
+                    // Load new fields
+                    document.getElementById('emergencyContact').value = profile.emergency_contact || '';
+                    document.getElementById('address').value = profile.address || '';
+                    document.getElementById('sex').value = profile.sex || '';
+                    document.getElementById('nationality').value = profile.nationality || '';
+                    document.getElementById('birthDate').value = profile.birth_date || '';
+                    document.getElementById('birthPlace').value = profile.birth_place || '';
+                    document.getElementById('parentGuardianName').value = profile.parent_guardian_name || '';
+                    document.getElementById('parentGuardianContact').value = profile.parent_guardian_contact || '';
+                    document.getElementById('parentGuardianEmail').value = profile.parent_guardian_email || '';
+                    
                     // Load profile photo from Storage URL or fallback to base64
                     const photoUrl = storageClient.getImageUrl(profile, 'profile_picture', '../assets/img/default-avatar.png');
                     document.getElementById('photoPreview').src = photoUrl;
@@ -543,7 +628,15 @@
                 const profileData = {
                     first_name: firstName,
                     last_name: lastName,
-                    parent_guardian_contact: document.getElementById('phone').value.trim() || null
+                    parent_guardian_contact: document.getElementById('phone').value.trim() || null,
+                    emergency_contact: document.getElementById('emergencyContact').value.trim() || null,
+                    address: document.getElementById('address').value.trim() || null,
+                    sex: document.getElementById('sex').value || null,
+                    nationality: document.getElementById('nationality').value.trim() || null,
+                    birth_date: document.getElementById('birthDate').value || null,
+                    birth_place: document.getElementById('birthPlace').value.trim() || null,
+                    parent_guardian_name: document.getElementById('parentGuardianName').value.trim() || null,
+                    parent_guardian_email: document.getElementById('parentGuardianEmail').value.trim() || null
                 };
                 
                 // Upload profile picture to Supabase Storage if file selected

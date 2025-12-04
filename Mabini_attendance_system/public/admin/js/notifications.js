@@ -2,6 +2,8 @@ import { supabase } from '../../js/supabase-client.js';
 import { dataClient } from '../../js/data-client.js';
 
 let currentUser = null;
+let sectionsCache = [];
+let studentsCache = [];
 
 // Initialize page
 async function init() {
@@ -15,6 +17,12 @@ async function init() {
 
         currentUser = JSON.parse(userData);
 
+        // Preload sections and students for better UX
+        await Promise.all([
+            loadSectionsCache(),
+            loadStudentsCache()
+        ]);
+
         // Setup event listeners
         setupFormHandlers();
         
@@ -24,6 +32,41 @@ async function init() {
     } catch (error) {
         console.error('Initialization error:', error);
         showAlert('Failed to initialize page', 'error');
+    }
+}
+
+// Load sections into cache
+async function loadSectionsCache() {
+    try {
+        const { data: sections, error } = await supabase
+            .from('sections')
+            .select('id, section_name, grade_level')
+            .order('grade_level')
+            .order('section_name');
+
+        if (error) throw error;
+        sectionsCache = sections || [];
+    } catch (error) {
+        console.error('Error loading sections cache:', error);
+        sectionsCache = [];
+    }
+}
+
+// Load students into cache
+async function loadStudentsCache() {
+    try {
+        const { data: students, error } = await supabase
+            .from('students')
+            .select('id, full_name, first_name, last_name, student_id, grade_level, section_id')
+            .eq('status', 'active')
+            .order('grade_level')
+            .order('last_name');
+
+        if (error) throw error;
+        studentsCache = students || [];
+    } catch (error) {
+        console.error('Error loading students cache:', error);
+        studentsCache = [];
     }
 }
 
@@ -63,12 +106,17 @@ async function handleTargetTypeChange(targetType) {
     if (targetType === 'all') {
         targetValueGroup.style.display = 'none';
         targetValueSelect.required = false;
+        updateRecipientCount(targetType, null);
         return;
     }
 
     targetValueGroup.style.display = 'block';
     targetValueSelect.required = true;
     targetValueSelect.innerHTML = '<option value="">-- Select --</option>';
+
+    // Add event listener for recipient count update
+    targetValueSelect.removeEventListener('change', handleTargetValueChange);
+    targetValueSelect.addEventListener('change', handleTargetValueChange);
 
     try {
         if (targetType === 'grade') {
@@ -78,42 +126,97 @@ async function handleTargetTypeChange(targetType) {
                 <option value="12">Grade 12</option>
             `;
         } else if (targetType === 'section') {
-            // Load sections
-            const { data: sections, error } = await supabase
-                .from('sections')
-                .select('id, section_name, grade_level')
-                .order('grade_level')
-                .order('section_name');
+            // Use cached sections
+            if (sectionsCache.length === 0) {
+                await loadSectionsCache();
+            }
 
-            if (error) throw error;
-
-            sections.forEach(section => {
+            sectionsCache.forEach(section => {
                 targetValueSelect.innerHTML += `
                     <option value="${section.id}">Grade ${section.grade_level} - ${section.section_name}</option>
                 `;
             });
+
+            if (sectionsCache.length === 0) {
+                targetValueSelect.innerHTML += '<option value="" disabled>No sections available</option>';
+            }
         } else if (targetType === 'individual') {
-            // Load students
-            const { data: students, error } = await supabase
-                .from('students')
-                .select('id, full_name, first_name, last_name, student_id, grade_level')
-                .eq('status', 'active')
-                .order('grade_level')
-                .order('last_name');
+            // Use cached students
+            if (studentsCache.length === 0) {
+                await loadStudentsCache();
+            }
 
-            if (error) throw error;
-
-            students.forEach(student => {
+            studentsCache.forEach(student => {
                 const name = student.full_name || `${student.first_name} ${student.last_name}`;
+                const sectionInfo = student.section_id ? 
+                    ` - ${getSectionName(student.section_id)}` : '';
+                
                 targetValueSelect.innerHTML += `
-                    <option value="${student.id}">${name} (${student.student_id}) - Grade ${student.grade_level}</option>
+                    <option value="${student.id}">${name} (${student.student_id}) - Grade ${student.grade_level}${sectionInfo}</option>
                 `;
             });
+
+            if (studentsCache.length === 0) {
+                targetValueSelect.innerHTML += '<option value="" disabled>No students available</option>';
+            }
         }
     } catch (error) {
         console.error('Error loading target options:', error);
         showAlert('Failed to load options', 'error');
     }
+}
+
+// Handle target value change
+function handleTargetValueChange(e) {
+    const targetType = document.querySelector('input[name="targetType"]:checked').value;
+    const targetValue = e.target.value;
+    updateRecipientCount(targetType, targetValue);
+}
+
+// Update recipient count display
+function updateRecipientCount(targetType, targetValue) {
+    let count = 0;
+    let details = '';
+
+    switch (targetType) {
+        case 'all':
+            count = studentsCache.length;
+            details = 'All active students';
+            break;
+        case 'grade':
+            count = studentsCache.filter(s => s.grade_level.toString() === targetValue).length;
+            details = `Grade ${targetValue} students`;
+            break;
+        case 'section':
+            count = studentsCache.filter(s => s.section_id === targetValue).length;
+            const section = sectionsCache.find(s => s.id === targetValue);
+            details = section ? `${section.section_name} students` : 'Selected section';
+            break;
+        case 'individual':
+            count = 1;
+            const student = studentsCache.find(s => s.id === targetValue);
+            if (student) {
+                const name = student.full_name || `${student.first_name} ${student.last_name}`;
+                details = name;
+            } else {
+                details = 'Selected student';
+            }
+            break;
+    }
+
+    // Display the count
+    const submitBtn = document.querySelector('button[type="submit"]');
+    if (count > 0) {
+        submitBtn.innerHTML = `<i class="bi bi-send-fill"></i> Send to ${count} Student${count !== 1 ? 's' : ''}`;
+    } else {
+        submitBtn.innerHTML = `<i class="bi bi-send-fill"></i> Send Notification`;
+    }
+}
+
+// Helper function to get section name from cache
+function getSectionName(sectionId) {
+    const section = sectionsCache.find(s => s.id === sectionId);
+    return section ? section.section_name : '';
 }
 
 // Handle form submission
@@ -219,18 +322,37 @@ async function loadNotifications() {
         });
 
         let targetLabel = '';
+        let targetDetails = '';
+        
         switch (notif.target_type) {
             case 'all':
                 targetLabel = 'All Students';
+                targetDetails = 'Sent to all active students';
                 break;
             case 'grade':
                 targetLabel = `Grade ${notif.target_value}`;
+                targetDetails = `Sent to all Grade ${notif.target_value} students`;
                 break;
             case 'section':
-                targetLabel = 'Specific Section';
+                const section = sectionsCache.find(s => s.id === notif.target_value);
+                if (section) {
+                    targetLabel = `${section.section_name}`;
+                    targetDetails = `Grade ${section.grade_level} - ${section.section_name}`;
+                } else {
+                    targetLabel = 'Specific Section';
+                    targetDetails = 'Section ID: ' + notif.target_value;
+                }
                 break;
             case 'individual':
-                targetLabel = 'Individual Student';
+                const student = studentsCache.find(s => s.id === notif.target_value);
+                if (student) {
+                    const name = student.full_name || `${student.first_name} ${student.last_name}`;
+                    targetLabel = name;
+                    targetDetails = `Student ID: ${student.student_id}`;
+                } else {
+                    targetLabel = 'Individual Student';
+                    targetDetails = 'Student ID: ' + notif.target_value;
+                }
                 break;
         }
 
@@ -245,7 +367,10 @@ async function loadNotifications() {
                         </div>
                     </div>
                     <div class="d-flex gap-2 align-items-center">
-                        <span class="badge bg-primary">${targetLabel}</span>
+                        <div class="text-end">
+                            <span class="badge bg-primary d-block mb-1">${targetLabel}</span>
+                            <small class="text-muted" style="font-size: 0.7rem;">${targetDetails}</small>
+                        </div>
                         <button class="btn btn-sm btn-danger" onclick="deleteNotification('${notif.id}')">
                             <i class="bi bi-trash-fill"></i>
                         </button>

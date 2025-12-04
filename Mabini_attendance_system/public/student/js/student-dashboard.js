@@ -502,8 +502,19 @@ async function loadNotifications() {
         }
 
         console.log('Querying notifications for student_id:', currentStudent.id);
+        console.log('Student ID type:', typeof currentStudent.id);
         
-        const { data, error} = await supabase
+        // First, let's try to get ALL notifications to see if RLS is blocking us
+        console.log('Testing: Getting all notifications (no filter)...');
+        const { data: allData, error: allError } = await supabase
+            .from('student_notifications')
+            .select('*')
+            .limit(5);
+            
+        console.log('All notifications test:', { allData, allError });
+        
+        // Now get notifications for this specific student
+        const { data, error } = await supabase
             .from('student_notifications')
             .select('*')
             .eq('student_id', currentStudent.id)
@@ -518,12 +529,19 @@ async function loadNotifications() {
                 hint: error.hint,
                 code: error.code
             });
+            
+            // Show error in UI
+            renderNotifications([]);
             return;
         }
         
         console.log('✅ Notifications query successful!');
         console.log('Notifications data:', data);
         console.log('Number of notifications:', data ? data.length : 0);
+        
+        if (data && data.length > 0) {
+            console.log('First notification:', data[0]);
+        }
 
         const notifications = data || [];
         const unreadCount = notifications.filter(n => !n.is_read).length;

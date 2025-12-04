@@ -385,7 +385,6 @@ async function handleSubmit(e) {
             target_value: targetValue,
             student_id: studentId,
             is_read: false,
-            created_by: currentUser.id,
             created_at: new Date().toISOString()
         }));
 

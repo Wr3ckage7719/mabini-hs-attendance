@@ -1,9 +1,10 @@
 /**
  * Low Attendance Warning Page - Admin Interface
- * Handles email/SMS warnings for students with low attendance
+ * Handles email/SMS warnings for students with low attendance and automated message generation
  */
 
 import { supabase, ensureAuthenticated } from './ensure-auth.js';
+import { smsClient } from '../../js/sms-client.js';
 
 let lowAttendanceStudents = [];
 let filteredStudents = [];
@@ -23,14 +24,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Setup event listeners
 function setupEventListeners() {
-    const messageText = document.getElementById('messageText');
-    if (messageText) {
-        messageText.addEventListener('input', () => {
-            const charCount = messageText.value.length;
-            document.getElementById('charCount').textContent = charCount;
-        });
-    }
-
     // Logout button
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
@@ -209,25 +202,6 @@ window.filterRecipients = function() {
     renderStudents();
 };
 
-// Apply message template
-window.applyTemplate = function() {
-    const template = document.getElementById('messageTemplate').value;
-    const messageText = document.getElementById('messageText');
-    
-    switch(template) {
-        case 'warning':
-            messageText.value = 'Dear [STUDENT_NAME], your attendance rate is currently [ATTENDANCE_RATE]%. You have been absent for [DAYS_ABSENT] days out of [TOTAL_DAYS] days. Please improve your attendance to meet school requirements. - Mabini HS';
-            break;
-        case 'critical':
-            messageText.value = 'URGENT: [STUDENT_NAME], your attendance rate has dropped to [ATTENDANCE_RATE]% ([DAYS_ABSENT] absences in [TOTAL_DAYS] days). This is below the minimum requirement. Immediate improvement is required. Please contact your adviser. - Mabini HS';
-            break;
-        default:
-            break;
-    }
-    
-    document.getElementById('charCount').textContent = messageText.value.length;
-};
-
 // Toggle student selection
 window.toggleStudent = function(studentId) {
     if (selectedStudents.has(studentId)) {
@@ -280,12 +254,6 @@ window.sendToSelected = async function() {
         return;
     }
     
-    const message = document.getElementById('messageText').value.trim();
-    if (!message) {
-        showToast('Please enter a message', 'warning');
-        return;
-    }
-    
     const notificationType = document.getElementById('notificationType').value;
     
     if (!confirm(`Send warning to ${selectedStudents.size} selected student(s) via ${notificationType}?`)) {
@@ -294,7 +262,7 @@ window.sendToSelected = async function() {
     
     try {
         const students = lowAttendanceStudents.filter(s => selectedStudents.has(s.id));
-        await sendWarnings(students, message, notificationType);
+        await sendWarnings(students, notificationType);
     } catch (error) {
         console.error('Error sending warnings:', error);
         showToast('Error sending warnings', 'error');
@@ -303,12 +271,6 @@ window.sendToSelected = async function() {
 
 // Send to all students
 window.sendToAll = async function() {
-    const message = document.getElementById('messageText').value.trim();
-    if (!message) {
-        showToast('Please enter a message', 'warning');
-        return;
-    }
-    
     const notificationType = document.getElementById('notificationType').value;
     const studentsWithContact = filteredStudents.filter(s => 
         s.email || s.parent_contact || s.contact_number
@@ -319,59 +281,83 @@ window.sendToAll = async function() {
     }
     
     try {
-        await sendWarnings(studentsWithContact, message, notificationType);
+        await sendWarnings(studentsWithContact, notificationType);
     } catch (error) {
         console.error('Error sending warnings:', error);
         showToast('Error sending warnings', 'error');
     }
 };
 
-// Send warnings
-async function sendWarnings(students, messageTemplate, notificationType) {
+// Generate automated message based on attendance rate
+function generateAttendanceMessage(student) {
+    const rate = parseFloat(student.attendance_rate);
+    const studentName = `${student.first_name} ${student.last_name}`;
+    
+    if (rate < 60) {
+        // Critical message
+        return `URGENT: ${studentName}, your attendance rate is critically low at ${rate}% (${student.days_absent} absences in ${student.total_days} days). This is below the minimum 75% requirement. Immediate action is required. Please contact your adviser at Mabini HS.`;
+    } else {
+        // Warning message
+        return `Dear ${studentName}, your attendance rate is currently ${rate}% (${student.days_absent} absences in ${student.total_days} days). You need to improve your attendance to meet the required 75% threshold. Please ensure regular attendance. - Mabini HS`;
+    }
+}
+
+// Send warnings with automated message generation
+async function sendWarnings(students, notificationType) {
     showLoading(`Sending ${notificationType} warnings...`);
     
     let successCount = 0;
     let failCount = 0;
     
     for (const student of students) {
-        // Replace placeholders
-        let message = messageTemplate
-            .replace('[STUDENT_NAME]', `${student.first_name} ${student.last_name}`)
-            .replace('[ATTENDANCE_RATE]', student.attendance_rate)
-            .replace('[DAYS_ABSENT]', student.days_absent)
-            .replace('[TOTAL_DAYS]', student.total_days);
+        // Auto-generate message based on attendance rate
+        const message = generateAttendanceMessage(student);
+        const studentName = `${student.first_name} ${student.last_name}`;
         
         try {
-            if (notificationType === 'email' || notificationType === 'both') {
-                if (student.email) {
-                    console.log(`Sending email to ${student.first_name} ${student.last_name} (${student.email}): ${message}`);
-                    // TODO: Implement email sending
-                    // await sendEmail(student.email, 'Low Attendance Warning', message);
-                }
-            }
+            let sent = false;
             
+            // Send via SMS
             if (notificationType === 'sms' || notificationType === 'both') {
                 const contact = student.parent_contact || student.contact_number;
                 if (contact) {
-                    console.log(`Sending SMS to ${student.first_name} ${student.last_name} (${contact}): ${message}`);
-                    // TODO: Implement SMS sending
-                    // await sendSMS(contact, message);
+                    const result = await smsClient.sendCustom(contact, message);
+                    if (result.success) {
+                        console.log(`✓ SMS sent to ${studentName} (${contact})`);
+                        sent = true;
+                    } else {
+                        console.error(`✗ SMS failed for ${studentName}:`, result.error);
+                    }
                 }
             }
             
-            successCount++;
+            // Send via Email
+            if (notificationType === 'email' || notificationType === 'both') {
+                if (student.email) {
+                    // TODO: Implement email sending when ready
+                    console.log(`📧 Email would be sent to ${studentName} (${student.email}): ${message}`);
+                    sent = true;
+                }
+            }
+            
+            if (sent) {
+                successCount++;
+            } else {
+                failCount++;
+            }
         } catch (error) {
-            console.error(`Failed to send to ${student.first_name} ${student.last_name}:`, error);
+            console.error(`✗ Error sending to ${studentName}:`, error);
             failCount++;
         }
+        
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
     }
     
     hideLoading();
     
     if (successCount > 0) {
         showToast(`Successfully sent ${successCount} warning(s)`, 'success');
-        
-        // Clear selection
         deselectAll();
     }
     

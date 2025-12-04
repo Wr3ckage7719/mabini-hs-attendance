@@ -253,32 +253,25 @@
                     </div>
                 </div>
 
-                <!-- Message Composition -->
+                <!-- Quick Send Actions -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h6 class="card-title mb-0">Compose Warning Message</h6>
+                        <h6 class="card-title mb-0">Send Low Attendance Warnings</h6>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">Notification Type</label>
-                            <select class="form-select mb-2" id="notificationType">
-                                <option value="email">Email</option>
-                                <option value="sms">SMS</option>
-                                <option value="both">Email & SMS</option>
-                            </select>
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle"></i>
+                            Messages are automatically generated based on attendance rate:<br>
+                            • <strong>Warning (60-75%):</strong> "Your attendance is [RATE]%. Please improve to meet the 75% requirement."<br>
+                            • <strong>Critical (&lt;60%):</strong> "URGENT: Your attendance is critically low at [RATE]%. Immediate action required."
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Message Template</label>
-                            <select class="form-select mb-2" id="messageTemplate" onchange="applyTemplate()">
-                                <option value="">Custom Message</option>
-                                <option value="warning">Warning Notice</option>
-                                <option value="critical">Critical Alert</option>
+                            <label class="form-label">Notification Type</label>
+                            <select class="form-select" id="notificationType">
+                                <option value="sms">SMS</option>
+                                <option value="email">Email</option>
+                                <option value="both">Email & SMS</option>
                             </select>
-                            <textarea class="form-control" id="messageText" rows="4" placeholder="Your attendance rate is [ATTENDANCE_RATE]% which is below the required threshold. Please improve your attendance."></textarea>
-                            <small class="text-muted">
-                                Available placeholders: [STUDENT_NAME], [ATTENDANCE_RATE], [DAYS_ABSENT], [TOTAL_DAYS]<br>
-                                Character count: <span id="charCount">0</span>
-                            </small>
                         </div>
                         <div class="d-flex gap-2">
                             <button class="btn btn-info" onclick="sendToSelected()">

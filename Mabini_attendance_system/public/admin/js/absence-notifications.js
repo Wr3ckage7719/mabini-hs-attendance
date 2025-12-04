@@ -1,9 +1,10 @@
 /**
  * Absence Notifications Page - Admin Interface
- * Handles SMS notifications for absent students
+ * Handles SMS notifications for absent students with automated message generation
  */
 
 import { supabase, ensureAuthenticated } from './ensure-auth.js';
+import { smsClient } from '../../js/sms-client.js';
 
 let absentStudents = [];
 let filteredStudents = [];
@@ -28,14 +29,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Setup event listeners
 function setupEventListeners() {
-    const messageText = document.getElementById('messageText');
-    if (messageText) {
-        messageText.addEventListener('input', () => {
-            const charCount = messageText.value.length;
-            document.getElementById('charCount').textContent = charCount;
-        });
-    }
-
     // Logout button
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
@@ -183,25 +176,6 @@ window.filterRecipients = function() {
     renderAbsentStudents();
 };
 
-// Apply message template
-window.applyTemplate = function() {
-    const template = document.getElementById('messageTemplate').value;
-    const messageText = document.getElementById('messageText');
-    
-    switch(template) {
-        case 'default':
-            messageText.value = 'Dear Parent/Guardian, your student [STUDENT_NAME] is absent today [DATE]. If this is unexpected, please contact the school. - Mabini HS';
-            break;
-        case 'concern':
-            messageText.value = 'IMPORTANT: [STUDENT_NAME] was marked absent on [DATE]. Please confirm if this absence is authorized. Contact the school office if you have concerns. - Mabini HS';
-            break;
-        default:
-            break;
-    }
-    
-    document.getElementById('charCount').textContent = messageText.value.length;
-};
-
 // Toggle student selection
 window.toggleStudent = function(studentId) {
     if (selectedStudents.has(studentId)) {
@@ -254,19 +228,13 @@ window.sendToSelected = async function() {
         return;
     }
     
-    const message = document.getElementById('messageText').value.trim();
-    if (!message) {
-        showToast('Please enter a message', 'warning');
-        return;
-    }
-    
     if (!confirm(`Send absence notification to ${selectedStudents.size} selected parent(s)?`)) {
         return;
     }
     
     try {
         const students = absentStudents.filter(s => selectedStudents.has(s.id));
-        await sendAbsenceNotifications(students, message);
+        await sendAbsenceNotifications(students);
     } catch (error) {
         console.error('Error sending notifications:', error);
         showToast('Error sending notifications', 'error');
@@ -275,12 +243,6 @@ window.sendToSelected = async function() {
 
 // Send to all absent students
 window.sendToAll = async function() {
-    const message = document.getElementById('messageText').value.trim();
-    if (!message) {
-        showToast('Please enter a message', 'warning');
-        return;
-    }
-    
     const studentsWithContact = filteredStudents.filter(s => s.parent_contact || s.contact_number);
     
     if (!confirm(`Send absence notification to all ${studentsWithContact.length} parent(s)?`)) {
@@ -288,19 +250,23 @@ window.sendToAll = async function() {
     }
     
     try {
-        await sendAbsenceNotifications(studentsWithContact, message);
+        await sendAbsenceNotifications(studentsWithContact);
     } catch (error) {
         console.error('Error sending notifications:', error);
         showToast('Error sending notifications', 'error');
     }
 };
 
-// Send absence notifications
-async function sendAbsenceNotifications(students, messageTemplate) {
+// Send absence notifications with automated message generation
+async function sendAbsenceNotifications(students) {
     showLoading('Sending absence notifications...');
     
     const selectedDate = document.getElementById('absenceDate').value;
-    const formattedDate = new Date(selectedDate).toLocaleDateString();
+    const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
     
     let successCount = 0;
     let failCount = 0;
@@ -312,32 +278,34 @@ async function sendAbsenceNotifications(students, messageTemplate) {
             continue;
         }
         
-        // Replace placeholders
-        let message = messageTemplate
-            .replace('[STUDENT_NAME]', `${student.first_name} ${student.last_name}`)
-            .replace('[DATE]', formattedDate)
-            .replace('[SECTION]', student.section_name || 'N/A');
+        // Auto-generate message for this student
+        const studentName = `${student.first_name} ${student.last_name}`;
+        const message = `Dear Parent/Guardian, your student ${studentName} is absent today (${formattedDate}). If this absence is unexpected, please contact Mabini HS immediately. Thank you.`;
         
         try {
-            // Here you would integrate with your SMS service
-            console.log(`Sending to ${student.first_name} ${student.last_name} (${contact}): ${message}`);
+            // Use the SMS client to send
+            const result = await smsClient.sendCustom(contact, message);
             
-            // TODO: Implement actual SMS sending
-            // await sendSMS(contact, message);
-            
-            successCount++;
+            if (result.success) {
+                console.log(`✓ Sent to ${studentName} (${contact})`);
+                successCount++;
+            } else {
+                console.error(`✗ Failed to send to ${studentName}:`, result.error);
+                failCount++;
+            }
         } catch (error) {
-            console.error(`Failed to send to ${student.first_name} ${student.last_name}:`, error);
+            console.error(`✗ Error sending to ${studentName}:`, error);
             failCount++;
         }
+        
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
     }
     
     hideLoading();
     
     if (successCount > 0) {
         showToast(`Successfully sent ${successCount} notification(s)`, 'success');
-        
-        // Clear selection
         deselectAll();
     }
     

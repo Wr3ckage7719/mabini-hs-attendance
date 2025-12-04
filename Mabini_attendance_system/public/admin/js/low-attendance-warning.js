@@ -14,11 +14,15 @@ let selectedStudents = new Set();
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await ensureAuthenticated('admin');
-        await loadSections();
-        await loadLowAttendanceStudents();
+        // Load sections and students in parallel, don't block on sections failure
+        Promise.all([
+            loadSections().catch(err => console.error('Sections load failed:', err)),
+            loadLowAttendanceStudents()
+        ]);
         setupEventListeners();
     } catch (error) {
         console.error('Error initializing low attendance warning page:', error);
+        showToast('Error initializing page: ' + error.message, 'error');
     }
 });
 
@@ -79,12 +83,14 @@ window.loadLowAttendanceStudents = async function() {
         // Calculate attendance rate for each student
         // Count unique dates per student (a student can only attend once per day)
         const attendanceMap = {};
-        attendance.forEach(record => {
-            if (!attendanceMap[record.student_id]) {
-                attendanceMap[record.student_id] = new Set();
-            }
-            attendanceMap[record.student_id].add(record.attendance_date);
-        });
+        if (attendance && attendance.length > 0) {
+            attendance.forEach(record => {
+                if (!attendanceMap[record.student_id]) {
+                    attendanceMap[record.student_id] = new Set();
+                }
+                attendanceMap[record.student_id].add(record.attendance_date);
+            });
+        }
         
         // Convert sets to counts
         const attendanceCounts = {};
@@ -141,7 +147,10 @@ async function loadSections() {
             .select('*')
             .order('name');
         
-        if (error) throw error;
+        if (error) {
+            console.error('Sections query error:', error);
+            throw error;
+        }
         
         const sectionFilter = document.getElementById('sectionFilter');
         if (sectionFilter && data) {
@@ -154,6 +163,7 @@ async function loadSections() {
         }
     } catch (error) {
         console.error('Error loading sections:', error);
+        // Don't show toast, this is optional filter data
     }
 }
 
@@ -339,47 +349,49 @@ async function sendWarnings(students, notificationType) {
     let successCount = 0;
     let failCount = 0;
     let noEmailCount = 0;
+    let noContactCount = 0;
     
     for (const student of students) {
         // Auto-generate message based on attendance rate
         const message = generateAttendanceMessage(student);
         const studentName = `${student.first_name} ${student.last_name}`;
         
-        // Check if student has institutional email
-        if (!student.email) {
-            console.warn(`⚠ No institutional email for ${studentName}`);
-            noEmailCount++;
-            failCount++;
-            continue;
-        }
-        
         try {
-            let sent = false;
+            let emailSent = false;
+            let smsSent = false;
             
             // Send via Email to student's institutional email
             if (notificationType === 'email' || notificationType === 'both') {
-                // TODO: Implement actual email sending via email service
-                console.log(`📧 Email sent to ${studentName} (${student.email}): ${message}`);
-                sent = true;
+                if (student.email) {
+                    // TODO: Implement actual email sending via email service (SendGrid, AWS SES, etc.)
+                    // For now, logging to console as placeholder
+                    console.log(`📧 Email to be sent to ${studentName} (${student.email}): ${message}`);
+                    emailSent = true;
+                } else {
+                    console.warn(`⚠ No institutional email for ${studentName}`);
+                    noEmailCount++;
+                }
             }
             
-            // Send via SMS (optional, to parents)
+            // Send via SMS to parents/guardians
             if (notificationType === 'sms' || notificationType === 'both') {
                 const contact = student.parent_contact || student.contact_number;
                 if (contact) {
                     const result = await smsClient.sendCustom(contact, message);
                     if (result.success) {
-                        console.log(`✓ SMS sent to ${studentName}'s parent (${contact})`);
-                        sent = true;
+                        console.log(`✓ SMS sent to ${studentName}'s parent/guardian (${contact})`);
+                        smsSent = true;
                     } else {
                         console.error(`✗ SMS failed for ${studentName}:`, result.error);
                     }
                 } else {
-                    console.warn(`⚠ No parent contact for ${studentName}`);
+                    console.warn(`⚠ No parent/guardian contact for ${studentName}`);
+                    noContactCount++;
                 }
             }
             
-            if (sent) {
+            // Count as success if at least one notification method succeeded
+            if (emailSent || smsSent) {
                 successCount++;
             } else {
                 failCount++;
@@ -395,20 +407,26 @@ async function sendWarnings(students, notificationType) {
     
     hideLoading();
     
-    let message = '';
+    // Show results
     if (successCount > 0) {
-        message = `Successfully sent ${successCount} warning(s)`;
-        showToast(message, 'success');
+        const notifType = notificationType === 'both' ? 'Email & SMS' : 
+                         notificationType === 'sms' ? 'SMS' : 'Email';
+        showToast(`Successfully queued ${successCount} ${notifType} warning(s)`, 'success');
         deselectAll();
     }
     
-    if (failCount > 0) {
+    if (failCount > 0 || noEmailCount > 0 || noContactCount > 0) {
+        let warnings = [];
         if (noEmailCount > 0) {
-            showToast(`${noEmailCount} student(s) have no institutional email`, 'warning');
+            warnings.push(`${noEmailCount} student(s) missing institutional email`);
         }
-        if (failCount > noEmailCount) {
-            showToast(`Failed to send ${failCount - noEmailCount} notification(s)`, 'warning');
+        if (noContactCount > 0) {
+            warnings.push(`${noContactCount} student(s) missing parent contact`);
         }
+        if (failCount > 0) {
+            warnings.push(`${failCount} notification(s) failed to send`);
+        }
+        showToast(warnings.join('; '), 'warning');
     }
 }
 

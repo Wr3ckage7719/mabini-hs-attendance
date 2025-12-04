@@ -19,11 +19,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('absenceDate').value = today;
         
-        await loadSections();
-        await loadAbsentStudents();
+        // Load sections and students in parallel, don't block on sections failure
+        Promise.all([
+            loadSections().catch(err => console.error('Sections load failed:', err)),
+            loadAbsentStudents()
+        ]);
         setupEventListeners();
     } catch (error) {
         console.error('Error initializing absence notifications page:', error);
+        showToast('Error initializing page: ' + error.message, 'error');
     }
 });
 
@@ -77,7 +81,10 @@ window.loadAbsentStudents = async function() {
         if (attendanceError) throw attendanceError;
         
         // Students who checked in
-        const presentStudentIds = new Set(attendance.map(a => a.student_id));
+        const presentStudentIds = new Set();
+        if (attendance && attendance.length > 0) {
+            attendance.forEach(a => presentStudentIds.add(a.student_id));
+        }
         
         // Filter absent students and add section names
         absentStudents = students
@@ -114,7 +121,10 @@ async function loadSections() {
             .select('*')
             .order('name');
         
-        if (error) throw error;
+        if (error) {
+            console.error('Sections query error:', error);
+            throw error;
+        }
         
         const sectionFilter = document.getElementById('sectionFilter');
         if (sectionFilter && data) {
@@ -127,6 +137,7 @@ async function loadSections() {
         }
     } catch (error) {
         console.error('Error loading sections:', error);
+        // Don't show toast, this is optional filter data
     }
 }
 

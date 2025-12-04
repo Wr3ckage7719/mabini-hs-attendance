@@ -85,6 +85,13 @@
                         </svg>
                     </span>
                 </div>
+                <!-- Notifications Button -->
+                <button id="notificationsBtn" class="portal-btn" style="position:relative; background:none; border:none; cursor:pointer; padding:0.5rem; margin-right:0.5rem;" aria-label="View notifications">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+                    </svg>
+                    <span id="notificationBadge" class="notification-badge" style="display:none; position:absolute; top:0.3rem; right:0.3rem; background:#ef4444; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:bold; display:flex; align-items:center; justify-content:center;"></span>
+                </button>
                 <div class="portal-settings" id="settingsDropdown" style="position:relative; margin-right: 0.5rem;">
                     <button id="settingsToggle" class="portal-settings" style="text-decoration:none; cursor:pointer; background:none; border:none; color:inherit; font-weight:600;">Settings ▾</button>
                     <div id="settingsMenu" style="display:none; position:absolute; right:0; top:36px; background:var(--card-bg); border:1px solid var(--border-color); padding:0.5rem; border-radius:8px; min-width:180px; box-shadow:0 6px 18px rgba(0,0,0,0.2);">
@@ -201,22 +208,17 @@
                                             <table class="attendance-schedule-table">
                                                 <thead>
                                                     <tr>
+                                                        <th>Subject</th>
                                                         <th>Day</th>
                                                         <th>Time</th>
+                                                        <th>Teacher</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody>
+                                                <tbody id="classScheduleBody">
                                                     <tr>
-                                                        <td data-label="Day">Monday, Wednesday</td>
-                                                        <td data-label="Time">04:00 PM - 05:30 PM</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td data-label="Day">Friday, Saturday</td>
-                                                        <td data-label="Time">02:30 PM - 04:00 PM</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td data-label="Day">Tuesday, Thursday</td>
-                                                        <td data-label="Time">11:30 AM - 01:00 PM</td>
+                                                        <td colspan="4" style="text-align:center; padding:2rem;">
+                                                            <span>Loading schedule...</span>
+                                                        </td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -420,6 +422,23 @@
             }
         })();
     </script>
+
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:10000; align-items:center; justify-content:center;">
+        <div style="background:var(--card-bg); border-radius:16px; width:90%; max-width:650px; max-height:85vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div style="padding:1.5rem 2rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h2 style="margin:0; font-size:1.5rem; color:white; font-weight:700;">📢 Notifications</h2>
+                <button id="closeNotificationsBtn" style="background:rgba(255,255,255,0.2); border:none; cursor:pointer; font-size:1.5rem; color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">&times;</button>
+            </div>
+            <div id="notificationsList" style="flex:1; overflow-y:auto; padding:1.5rem;">
+                <div style="text-align:center; padding:3rem; color:#666;">
+                    <div style="font-size:3rem; margin-bottom:1rem;">📭</div>
+                    <span>Loading notifications...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Student Dashboard Script -->
     <script type="module" src="js/student-dashboard.js"></script>
 </body>

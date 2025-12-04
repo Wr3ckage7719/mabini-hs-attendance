@@ -7,6 +7,7 @@ import { dataClient } from '../../js/data-client.js';
 import { attendanceClient } from '../../js/attendance-client.js';
 import { protectPage, setupAutoLogout } from '../../js/session-guard.js';
 import { storageClient } from '../../js/storage-client.js';
+import { supabase } from '../../js/supabase-client.js';
 
 let currentStudent = null;
 
@@ -218,72 +219,78 @@ async function loadStudentData() {
     }
 }
 
-// Load class schedule from teaching_loads table
+// Load class schedule from teaching_loads table with subject and teacher info
 async function loadClassSchedule() {
     try {
-        if (!currentStudent || !currentStudent.section) {
-            console.log('No section assigned to student');
-            return;
-        }
-        
-        // Get the student's section
-        const sectionsResult = await dataClient.getAll('sections', [
-            { field: 'section_name', operator: '==', value: currentStudent.section }
-        ]);
-        
-        const sections = Array.isArray(sectionsResult.data) ? sectionsResult.data : [];
-        if (sections.length === 0) {
-            console.log('Section not found:', currentStudent.section);
-            return;
-        }
-        
-        const section = sections[0];
-        console.log('Found section:', section);
-        
-        // Get teaching loads for this section
-        const loadsResult = await dataClient.getAll('teaching_loads', [
-            { field: 'section_id', operator: '==', value: section.id }
-        ]);
-        
-        const teachingLoads = Array.isArray(loadsResult.data) ? loadsResult.data : [];
-        console.log('Teaching loads found:', teachingLoads);
-        
-        // Group schedules by day/time
-        const scheduleMap = {};
-        
-        for (const load of teachingLoads) {
-            if (load.schedule) {
-                // Parse schedule (e.g., "Monday, Wednesday 04:00 PM - 05:30 PM")
-                const scheduleStr = load.schedule.trim();
-                
-                if (!scheduleMap[scheduleStr]) {
-                    scheduleMap[scheduleStr] = true;
-                }
-            }
-        }
-        
-        // Update the schedule table
-        const tbody = document.querySelector('.attendance-schedule-table tbody');
-        if (tbody && Object.keys(scheduleMap).length > 0) {
-            tbody.innerHTML = Object.keys(scheduleMap).map(schedule => {
-                // Try to parse the schedule to separate days and time
-                const parts = schedule.split(/\s+(?=\d)/);
-                const days = parts[0] || schedule;
-                const time = parts.slice(1).join(' ') || 'Time not specified';
-                
-                return `
-                    <tr>
-                        <td data-label="Day">${days}</td>
-                        <td data-label="Time">${time}</td>
-                    </tr>
+        if (!currentStudent || !currentStudent.section_id) {
+            const tbody = document.getElementById('classScheduleBody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr><td colspan="4" style="text-align:center; padding:2.5rem; color:#94a3b8; font-style:italic;">No section assigned</td></tr>
                 `;
-            }).join('');
-        } else if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; padding: 2rem;">No class schedule found</td></tr>';
+            }
+            return;
         }
-        
+
+        const { data, error } = await supabase
+            .from('teaching_loads')
+            .select(`
+                *,
+                subject:subject_id (code, name),
+                teacher:teacher_id (first_name, last_name),
+                section:section_id (section_name, section_code)
+            `)
+            .eq('section_id', currentStudent.section_id);
+
+        if (error) {
+            console.error('Error loading schedule:', error);
+            const tbody = document.getElementById('classScheduleBody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr><td colspan="4" style="text-align:center; padding:2.5rem; color:#ef4444;">Error loading schedule</td></tr>
+                `;
+            }
+            return;
+        }
+
+        const schedules = data || [];
+
+        const tbody = document.getElementById('classScheduleBody');
+        if (!tbody) return;
+
+        if (schedules.length === 0) {
+            tbody.innerHTML = `
+                <tr><td colspan="4" style="text-align:center; padding:2.5rem; color:#94a3b8; font-style:italic;">No class schedule available</td></tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = schedules.map(schedule => {
+            const subjectName = schedule.subject?.name || 'N/A';
+            const teacherName = schedule.teacher ? `${schedule.teacher.first_name} ${schedule.teacher.last_name}` : 'N/A';
+            const day = schedule.day || 'N/A';
+            const startTime = schedule.start_time ? formatTime(schedule.start_time) : '-';
+            const endTime = schedule.end_time ? formatTime(schedule.end_time) : '-';
+            const time = `${startTime} - ${endTime}`;
+
+            return `
+                <tr style="transition:background 0.2s;" onmouseover="this.style.background='rgba(102,126,234,0.05)'" onmouseout="this.style.background='transparent'">
+                    <td data-label="Subject" style="font-weight:600;">${subjectName}</td>
+                    <td data-label="Day">${day}</td>
+                    <td data-label="Time">${time}</td>
+                    <td data-label="Teacher">${teacherName}</td>
+                </tr>
+            `;
+        }).join('');
+
     } catch (error) {
-        console.error('Error loading class schedule:', error);
+        console.error('Error in loadClassSchedule:', error);
+        const tbody = document.getElementById('classScheduleBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr><td colspan="4" style="text-align:center; padding:2.5rem; color:#ef4444;">Error loading schedule</td></tr>
+            `;
+        }
     }
 }
 
@@ -460,5 +467,124 @@ function formatTime(timeString) {
     }
 }
 
+// =====================================================
+// NOTIFICATIONS SYSTEM
+// =====================================================
+
+async function loadNotifications() {
+    try {
+        if (!currentStudent) return;
+
+        const { data, error} = await supabase
+            .from('student_notifications')
+            .select('*')
+            .or(`target_type.eq.all,and(target_type.eq.grade,target_value.eq.${currentStudent.grade_level}),and(target_type.eq.section,target_value.eq.${currentStudent.section_id}),and(target_type.eq.individual,target_value.eq.${currentStudent.id})`)
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (error) {
+            console.error('Error loading notifications:', error);
+            return;
+        }
+
+        const notifications = data || [];
+        const unreadCount = notifications.filter(n => !n.is_read).length;
+
+        // Update badge
+        const badge = document.getElementById('notificationBadge');
+        if (badge && unreadCount > 0) {
+            badge.style.display = 'flex';
+            badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+        } else if (badge) {
+            badge.style.display = 'none';
+        }
+
+        renderNotifications(notifications);
+    } catch (error) {
+        console.error('Error in loadNotifications:', error);
+    }
+}
+
+function renderNotifications(notifications) {
+    const list = document.getElementById('notificationsList');
+    if (!list) return;
+
+    if (notifications.length === 0) {
+        list.innerHTML = `
+            <div style="text-align:center; padding:4rem 2rem; color:#666;">
+                <div style="font-size:4rem; margin-bottom:1rem; opacity:0.5;">📭</div>
+                <p style="font-size:1.2rem; font-weight:600; margin:0;">No notifications yet</p>
+                <p style="margin-top:0.5rem; opacity:0.7;">You're all caught up!</p>
+            </div>
+        `;
+        return;
+    }
+
+    const typeIcons = {
+        info: '📢',
+        warning: '⚠️',
+        success: '✅',
+        danger: '🚨'
+    };
+
+    const typeColors = {
+        info: '#3b82f6',
+        warning: '#f59e0b',
+        success: '#10b981',
+        danger: '#ef4444'
+    };
+
+    list.innerHTML = notifications.map(notif => {
+        const color = typeColors[notif.type] || typeColors.info;
+        const icon = typeIcons[notif.type] || typeIcons.info;
+        const date = new Date(notif.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        
+        return `
+            <div style="padding:1.25rem; border-left:4px solid ${color}; background:${notif.is_read ? 'transparent' : 'rgba(102,126,234,0.08)'}; margin-bottom:1rem; border-radius:8px; transition:all 0.2s;" onmouseover="this.style.background='rgba(102,126,234,0.12)'" onmouseout="this.style.background='${notif.is_read ? 'transparent' : 'rgba(102,126,234,0.08)'}'">
+                <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.75rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <span style="font-size:1.5rem;">${icon}</span>
+                        <h3 style="margin:0; font-size:1.1rem; color:var(--text-primary); font-weight:700;">${notif.title}</h3>
+                    </div>
+                    <span style="font-size:0.85rem; color:#94a3b8; white-space:nowrap; margin-left:1rem;">${date}</span>
+                </div>
+                <p style="margin:0 0 0 2rem; color:var(--text-secondary); line-height:1.6;">${notif.message}</p>
+                ${!notif.is_read ? `<span style="display:inline-block; margin-top:0.75rem; margin-left:2rem; padding:0.35rem 0.75rem; background:${color}; color:white; font-size:0.75rem; font-weight:600; border-radius:16px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">NEW</span>` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function setupNotifications() {
+    const notifBtn = document.getElementById('notificationsBtn');
+    const modal = document.getElementById('notificationsModal');
+    const closeBtn = document.getElementById('closeNotificationsBtn');
+
+    if (notifBtn && modal) {
+        notifBtn.addEventListener('click', () => {
+            modal.style.display = 'flex';
+            loadNotifications();
+        });
+    }
+
+    if (closeBtn && modal) {
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    }
+
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+
+    // Load initial count
+    loadNotifications();
+}
+
 // Initialize dashboard when DOM is ready
 initDashboard();
+setupNotifications();

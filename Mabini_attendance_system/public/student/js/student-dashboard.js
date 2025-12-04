@@ -496,7 +496,7 @@ async function loadNotifications() {
         const { data, error} = await supabase
             .from('student_notifications')
             .select('*')
-            .or(`target_type.eq.all,and(target_type.eq.grade,target_value.eq.${currentStudent.grade_level}),and(target_type.eq.section,target_value.eq.${currentStudent.section_id}),and(target_type.eq.individual,target_value.eq.${currentStudent.id})`)
+            .eq('student_id', currentStudent.id)
             .order('created_at', { ascending: false })
             .limit(50);
 

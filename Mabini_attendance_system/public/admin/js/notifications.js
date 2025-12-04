@@ -17,6 +17,9 @@ async function init() {
 
         currentUser = JSON.parse(userData);
 
+        // Show loading state
+        updateRecipientDisplay('Loading student data...', 'text-muted');
+
         // Preload sections and students for better UX
         await Promise.all([
             loadSectionsCache(),
@@ -26,12 +29,15 @@ async function init() {
         // Setup event listeners
         setupFormHandlers();
         
+        // Update initial recipient count
+        updateRecipientCount('all', null);
+        
         // Load initial data
         await loadNotifications();
 
     } catch (error) {
         console.error('Initialization error:', error);
-        showAlert('Failed to initialize page', 'error');
+        showAlert('Failed to initialize page. Please refresh and try again.', 'error');
     }
 }
 
@@ -177,39 +183,77 @@ function handleTargetValueChange(e) {
 function updateRecipientCount(targetType, targetValue) {
     let count = 0;
     let details = '';
+    let studentIds = [];
 
     switch (targetType) {
         case 'all':
             count = studentsCache.length;
-            details = 'All active students';
+            details = `Will be sent to all ${count} active students`;
+            studentIds = studentsCache.map(s => s.id);
             break;
         case 'grade':
-            count = studentsCache.filter(s => s.grade_level.toString() === targetValue).length;
-            details = `Grade ${targetValue} students`;
+            if (targetValue) {
+                const filtered = studentsCache.filter(s => s.grade_level.toString() === targetValue);
+                count = filtered.length;
+                details = `Will be sent to ${count} student${count !== 1 ? 's' : ''} in Grade ${targetValue}`;
+                studentIds = filtered.map(s => s.id);
+            } else {
+                details = 'Please select a grade level';
+            }
             break;
         case 'section':
-            count = studentsCache.filter(s => s.section_id === targetValue).length;
-            const section = sectionsCache.find(s => s.id === targetValue);
-            details = section ? `${section.section_name} students` : 'Selected section';
+            if (targetValue) {
+                const filtered = studentsCache.filter(s => s.section_id === targetValue);
+                count = filtered.length;
+                const section = sectionsCache.find(s => s.id === targetValue);
+                const sectionName = section ? `${section.section_name}` : 'the selected section';
+                details = `Will be sent to ${count} student${count !== 1 ? 's' : ''} in ${sectionName}`;
+                studentIds = filtered.map(s => s.id);
+            } else {
+                details = 'Please select a section';
+            }
             break;
         case 'individual':
-            count = 1;
-            const student = studentsCache.find(s => s.id === targetValue);
-            if (student) {
-                const name = student.full_name || `${student.first_name} ${student.last_name}`;
-                details = name;
+            if (targetValue) {
+                count = 1;
+                const student = studentsCache.find(s => s.id === targetValue);
+                if (student) {
+                    const name = student.full_name || `${student.first_name} ${student.last_name}`;
+                    details = `Will be sent to ${name} (${student.student_id})`;
+                    studentIds = [student.id];
+                } else {
+                    details = 'Student selected';
+                    studentIds = [targetValue];
+                }
             } else {
-                details = 'Selected student';
+                details = 'Please select a student';
             }
             break;
     }
 
-    // Display the count
-    const submitBtn = document.querySelector('button[type="submit"]');
+    // Update display
+    updateRecipientDisplay(details, count > 0 ? 'text-success' : 'text-warning');
+
+    // Update send button
+    const submitBtn = document.getElementById('sendButton');
     if (count > 0) {
-        submitBtn.innerHTML = `<i class="bi bi-send-fill"></i> Send to ${count} Student${count !== 1 ? 's' : ''}`;
+        submitBtn.innerHTML = `<i class="bi bi-send-fill me-2"></i>Send to ${count} Student${count !== 1 ? 's' : ''}`;
+        submitBtn.disabled = false;
     } else {
-        submitBtn.innerHTML = `<i class="bi bi-send-fill"></i> Send Notification`;
+        submitBtn.innerHTML = `<i class="bi bi-send-fill me-2"></i>Send Notification`;
+        submitBtn.disabled = targetType !== 'all';
+    }
+
+    // Store student IDs for later use
+    submitBtn.dataset.studentIds = JSON.stringify(studentIds);
+}
+
+// Helper function to update recipient display
+function updateRecipientDisplay(text, className = 'text-muted') {
+    const recipientCount = document.getElementById('recipientCount');
+    if (recipientCount) {
+        recipientCount.textContent = text;
+        recipientCount.className = className;
     }
 }
 
@@ -224,8 +268,9 @@ async function handleSubmit(e) {
     e.preventDefault();
 
     const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalHTML = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Sending notification...';
 
     try {
         const type = document.querySelector('input[name="type"]:checked').value;
@@ -236,15 +281,23 @@ async function handleSubmit(e) {
 
         // Validate
         if (!title || !message) {
-            throw new Error('Title and message are required');
+            throw new Error('Please fill in both title and message');
         }
 
         if (targetType !== 'all' && !targetValue) {
-            throw new Error('Please select a target');
+            throw new Error('Please select a target from the dropdown');
         }
 
-        // Create notification
-        const { data, error } = await supabase
+        // Get student IDs from button dataset
+        const studentIdsStr = submitBtn.dataset.studentIds;
+        const studentIds = studentIdsStr ? JSON.parse(studentIdsStr) : [];
+
+        if (studentIds.length === 0) {
+            throw new Error('No recipients found. Please select valid recipients.');
+        }
+
+        // Create the main notification record
+        const { data: notificationData, error: notifError } = await supabase
             .from('student_notifications')
             .insert([{
                 title,
@@ -252,14 +305,42 @@ async function handleSubmit(e) {
                 type,
                 target_type: targetType,
                 target_value: targetValue,
-                created_by: currentUser.id
+                created_by: currentUser.id,
+                created_at: new Date().toISOString()
             }])
             .select();
 
-        if (error) throw error;
+        if (notifError) throw notifError;
+
+        // Create individual notification entries for each student
+        // This ensures each student can see and mark notifications as read
+        const notificationId = notificationData[0].id;
+        const studentNotifications = studentIds.map(studentId => ({
+            notification_id: notificationId,
+            student_id: studentId,
+            title,
+            message,
+            type,
+            is_read: false,
+            created_at: new Date().toISOString()
+        }));
+
+        // Insert individual student notification records
+        const { error: studentNotifError } = await supabase
+            .from('student_notification_recipients')
+            .insert(studentNotifications);
+
+        if (studentNotifError) {
+            console.error('Error creating student notifications:', studentNotifError);
+            // Don't throw - the main notification was created successfully
+        }
 
         // Success
-        showAlert('✅ Notification sent successfully!', 'success');
+        const recipientCount = studentIds.length;
+        showAlert(
+            `✅ Success! Notification sent to ${recipientCount} student${recipientCount !== 1 ? 's' : ''}. They will see it when they log in.`, 
+            'success'
+        );
         
         // Reset form
         e.target.reset();
@@ -268,16 +349,22 @@ async function handleSubmit(e) {
         document.querySelectorAll('.target-option').forEach(o => o.classList.remove('active'));
         document.querySelector('.target-option').classList.add('active');
         document.getElementById('targetValueGroup').style.display = 'none';
+        
+        // Reset recipient count
+        updateRecipientCount('all', null);
 
         // Reload notifications list
         await loadNotifications();
+
+        // Scroll to top to see success message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (error) {
         console.error('Error sending notification:', error);
         showAlert('❌ Failed to send notification: ' + error.message, 'error');
     } finally {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="bi bi-send-fill"></i> Send Notification';
+        submitBtn.innerHTML = originalHTML;
     }
 }
 
@@ -417,22 +504,31 @@ window.deleteNotification = async function(id) {
 function showAlert(message, type) {
     const container = document.getElementById('alertContainer');
     const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill';
 
     container.innerHTML = `
-        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-            <i class="bi bi-${type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill'}"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert ${alertClass} alert-dismissible fade show shadow-sm" role="alert">
+            <div class="d-flex align-items-start gap-3">
+                <i class="bi bi-${icon}" style="font-size: 1.5rem;"></i>
+                <div class="flex-grow-1">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         </div>
     `;
 
+    // Auto-dismiss after 8 seconds for success, 10 seconds for errors
+    const dismissTime = type === 'success' ? 8000 : 10000;
     setTimeout(() => {
         const alert = container.querySelector('.alert');
         if (alert) {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
+            const bsAlert = bootstrap.Alert.getInstance(alert);
+            if (bsAlert) {
+                bsAlert.close();
+            }
         }
-    }, 5000);
+    }, dismissTime);
 }
 
 // Initialize on page load

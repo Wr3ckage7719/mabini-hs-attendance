@@ -227,101 +227,187 @@
         <div class="content-area">
             <div id="alertContainer"></div>
 
+            <!-- Help Banner -->
+            <div class="alert alert-info mb-4" role="alert">
+                <div class="d-flex align-items-start gap-3">
+                    <i class="bi bi-info-circle-fill" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <h6 class="alert-heading mb-2">How to Send Notifications</h6>
+                        <ol class="mb-0 ps-3">
+                            <li>Choose the notification type (Info, Warning, Success, or Danger)</li>
+                            <li>Enter a clear title and message</li>
+                            <li>Select who should receive it (All students, specific grade, section, or individual)</li>
+                            <li>Review the recipient count and click Send</li>
+                        </ol>
+                        <p class="mb-0 mt-2"><strong>Note:</strong> Notifications will appear in students' dashboards when they log in.</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Create Notification Card -->
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0"><i class="bi bi-plus-circle-fill"></i> Create New Notification</h5>
                 </div>
                 <div class="card-body">
                     <form id="notificationForm">
-                        <!-- Notification Type -->
+                        <!-- Step 1: Notification Type -->
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Notification Type</label>
+                            <label class="form-label fw-bold">
+                                <span class="badge bg-primary me-2">Step 1</span>
+                                Choose Notification Type
+                            </label>
+                            <p class="text-muted small mb-3">Select the importance level of your message</p>
                             <div class="type-selector">
-                                <label class="type-option active">
+                                <label class="type-option active" title="General information or announcements">
                                     <input type="radio" name="type" value="info" checked>
                                     <div class="type-icon">📢</div>
                                     <div class="type-name">Info</div>
+                                    <small class="text-muted d-block mt-1">General</small>
                                 </label>
-                                <label class="type-option">
+                                <label class="type-option" title="Important reminders or alerts">
                                     <input type="radio" name="type" value="warning">
                                     <div class="type-icon">⚠️</div>
                                     <div class="type-name">Warning</div>
+                                    <small class="text-muted d-block mt-1">Important</small>
                                 </label>
-                                <label class="type-option">
+                                <label class="type-option" title="Good news or achievements">
                                     <input type="radio" name="type" value="success">
                                     <div class="type-icon">✅</div>
                                     <div class="type-name">Success</div>
+                                    <small class="text-muted d-block mt-1">Positive</small>
                                 </label>
-                                <label class="type-option">
+                                <label class="type-option" title="Urgent or critical information">
                                     <input type="radio" name="type" value="danger">
                                     <div class="type-icon">🚨</div>
-                                    <div class="type-name">Danger</div>
+                                    <div class="type-name">Urgent</div>
+                                    <small class="text-muted d-block mt-1">Critical</small>
                                 </label>
                             </div>
                         </div>
 
-                        <!-- Title -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold" for="notificationTitle">Title <span class="text-danger">*</span></label>
-                            <input type="text" id="notificationTitle" class="form-control" placeholder="Enter notification title" required>
-                        </div>
+                        <hr class="my-4">
 
-                        <!-- Message -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold" for="notificationMessage">Message <span class="text-danger">*</span></label>
-                            <textarea id="notificationMessage" class="form-control" placeholder="Enter your message here..." rows="4" required></textarea>
-                        </div>
-
-                        <!-- Target Audience -->
+                        <!-- Step 2: Message Content -->
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Send To</label>
+                            <label class="form-label fw-bold">
+                                <span class="badge bg-primary me-2">Step 2</span>
+                                Write Your Message
+                            </label>
+                            <p class="text-muted small mb-3">Enter a clear title and detailed message</p>
+                            
+                            <div class="mb-3">
+                                <label class="form-label" for="notificationTitle">
+                                    Title <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="notificationTitle" 
+                                    class="form-control form-control-lg" 
+                                    placeholder="e.g., Important Announcement, Class Reminder, etc." 
+                                    required
+                                    maxlength="100">
+                                <small class="text-muted">Keep it short and clear (max 100 characters)</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="notificationMessage">
+                                    Message <span class="text-danger">*</span>
+                                </label>
+                                <textarea 
+                                    id="notificationMessage" 
+                                    class="form-control" 
+                                    placeholder="Enter the full message here. Be clear and specific about what students need to know or do..." 
+                                    rows="5" 
+                                    required
+                                    maxlength="500"></textarea>
+                                <small class="text-muted">Provide all necessary details (max 500 characters)</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Step 3: Target Audience -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <span class="badge bg-primary me-2">Step 3</span>
+                                Select Recipients
+                            </label>
+                            <p class="text-muted small mb-3">Choose who will receive this notification</p>
                             <div class="target-selector">
-                                <label class="target-option active">
+                                <label class="target-option active" title="Send to all active students">
                                     <input type="radio" name="targetType" value="all" checked>
-                                    <div><i class="bi bi-people-fill"></i> All Students</div>
+                                    <div class="mb-2"><i class="bi bi-people-fill" style="font-size: 1.5rem;"></i></div>
+                                    <div class="fw-bold">All Students</div>
+                                    <small class="text-muted d-block mt-1">Everyone</small>
                                 </label>
-                                <label class="target-option">
+                                <label class="target-option" title="Send to all students in a specific grade level">
                                     <input type="radio" name="targetType" value="grade">
-                                    <div><i class="bi bi-bookmark-fill"></i> Specific Grade</div>
+                                    <div class="mb-2"><i class="bi bi-bookmark-fill" style="font-size: 1.5rem;"></i></div>
+                                    <div class="fw-bold">Specific Grade</div>
+                                    <small class="text-muted d-block mt-1">Grade 11 or 12</small>
                                 </label>
-                                <label class="target-option">
+                                <label class="target-option" title="Send to all students in a specific section">
                                     <input type="radio" name="targetType" value="section">
-                                    <div><i class="bi bi-grid-3x3-gap-fill"></i> Specific Section</div>
+                                    <div class="mb-2"><i class="bi bi-grid-3x3-gap-fill" style="font-size: 1.5rem;"></i></div>
+                                    <div class="fw-bold">Specific Section</div>
+                                    <small class="text-muted d-block mt-1">One class</small>
                                 </label>
-                                <label class="target-option">
+                                <label class="target-option" title="Send to a single student">
                                     <input type="radio" name="targetType" value="individual">
-                                    <div><i class="bi bi-person-fill"></i> Individual Student</div>
+                                    <div class="mb-2"><i class="bi bi-person-fill" style="font-size: 1.5rem;"></i></div>
+                                    <div class="fw-bold">Individual Student</div>
+                                    <small class="text-muted d-block mt-1">One person</small>
                                 </label>
                             </div>
                         </div>
 
                         <!-- Target Value (conditional) -->
-                        <div class="mb-3" id="targetValueGroup" style="display: none;">
-                            <label class="form-label fw-bold" for="targetValue">Select Target</label>
-                            <select id="targetValue" class="form-select">
-                                <option value="">-- Select --</option>
+                        <div class="mb-4" id="targetValueGroup" style="display: none;">
+                            <label class="form-label fw-bold" for="targetValue">
+                                <i class="bi bi-funnel-fill me-2"></i>Select Specific Target
+                            </label>
+                            <select id="targetValue" class="form-select form-select-lg">
+                                <option value="">-- Choose from the list --</option>
                             </select>
+                            <small class="text-muted">Pick the specific grade, section, or student</small>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Recipient Summary -->
+                        <div class="alert alert-light border mb-4" id="recipientSummary">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-people-fill text-primary" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <div class="fw-bold">Recipients:</div>
+                                    <div id="recipientCount" class="text-muted">Loading student data...</div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Send Button -->
-                        <button type="submit" class="btn btn-primary btn-lg w-100">
-                            <i class="bi bi-send-fill"></i> Send Notification
-                        </button>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="sendButton">
+                                <i class="bi bi-send-fill me-2"></i>Send Notification
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
 
             <!-- Recent Notifications Card -->
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Notifications</h5>
-                    <span class="badge bg-primary">Last 20</span>
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Notifications</h5>
+                        <span class="badge bg-secondary">Last 20</span>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div id="notificationsList">
                         <div class="text-center text-muted py-5">
-                            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                            <i class="bi bi-hourglass-split" style="font-size: 3rem;"></i>
                             <p class="mt-3">Loading notifications...</p>
                         </div>
                     </div>

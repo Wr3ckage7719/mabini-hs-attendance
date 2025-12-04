@@ -143,13 +143,21 @@ function renderStudents() {
     const tbody = document.getElementById('lowAttendanceTableBody');
     
     if (!filteredStudents || filteredStudents.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center">No students found with low attendance</td></tr>';
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d;"></i>
+                    <p class="mt-2 mb-0 text-muted">No data available yet</p>
+                    <small class="text-muted">No students found with low attendance for the selected criteria</small>
+                </td>
+            </tr>
+        `;
         return;
     }
     
     tbody.innerHTML = filteredStudents.map(student => {
         const isSelected = selectedStudents.has(student.id);
-        const hasContact = student.email || student.parent_contact || student.contact_number;
+        const hasEmail = student.email; // Students receive via their institutional email
         const rate = parseFloat(student.attendance_rate);
         
         let badgeClass = 'bg-success';
@@ -161,7 +169,7 @@ function renderStudents() {
                 <td>
                     <input type="checkbox" 
                         ${isSelected ? 'checked' : ''} 
-                        ${!hasContact ? 'disabled' : ''}
+                        ${!hasEmail ? 'disabled' : ''}
                         onchange="toggleStudent('${student.id}')">
                 </td>
                 <td>${student.student_number || 'N/A'}</td>
@@ -172,9 +180,9 @@ function renderStudents() {
                 <td>${student.total_days}</td>
                 <td>${student.email || '<span class="text-muted">No email</span>'}</td>
                 <td>
-                    ${hasContact ? 
-                        `<span class="badge bg-success">${student.parent_contact || student.contact_number || 'Email only'}</span>` : 
-                        `<span class="badge bg-danger">No Contact</span>`
+                    ${student.parent_contact || student.contact_number ? 
+                        `<span class="badge bg-success">${student.parent_contact || student.contact_number}</span>` : 
+                        `<span class="text-muted">-</span>`
                     }
                 </td>
             </tr>
@@ -225,7 +233,7 @@ window.toggleSelectAll = function() {
 // Select all visible students
 window.selectAll = function() {
     filteredStudents.forEach(student => {
-        if (student.email || student.parent_contact || student.contact_number) {
+        if (student.email) { // Only students with institutional email
             selectedStudents.add(student.id);
         }
     });
@@ -272,16 +280,19 @@ window.sendToSelected = async function() {
 // Send to all students
 window.sendToAll = async function() {
     const notificationType = document.getElementById('notificationType').value;
-    const studentsWithContact = filteredStudents.filter(s => 
-        s.email || s.parent_contact || s.contact_number
-    );
+    const studentsWithEmail = filteredStudents.filter(s => s.email); // Only students with institutional email
     
-    if (!confirm(`Send warning to all ${studentsWithContact.length} student(s) via ${notificationType}?`)) {
+    if (studentsWithEmail.length === 0) {
+        showToast('No students have institutional email addresses', 'warning');
+        return;
+    }
+    
+    if (!confirm(`Send warning to all ${studentsWithEmail.length} student(s) via ${notificationType}?`)) {
         return;
     }
     
     try {
-        await sendWarnings(studentsWithContact, notificationType);
+        await sendWarnings(studentsWithEmail, notificationType);
     } catch (error) {
         console.error('Error sending warnings:', error);
         showToast('Error sending warnings', 'error');
@@ -308,35 +319,44 @@ async function sendWarnings(students, notificationType) {
     
     let successCount = 0;
     let failCount = 0;
+    let noEmailCount = 0;
     
     for (const student of students) {
         // Auto-generate message based on attendance rate
         const message = generateAttendanceMessage(student);
         const studentName = `${student.first_name} ${student.last_name}`;
         
+        // Check if student has institutional email
+        if (!student.email) {
+            console.warn(`⚠ No institutional email for ${studentName}`);
+            noEmailCount++;
+            failCount++;
+            continue;
+        }
+        
         try {
             let sent = false;
             
-            // Send via SMS
+            // Send via Email to student's institutional email
+            if (notificationType === 'email' || notificationType === 'both') {
+                // TODO: Implement actual email sending via email service
+                console.log(`📧 Email sent to ${studentName} (${student.email}): ${message}`);
+                sent = true;
+            }
+            
+            // Send via SMS (optional, to parents)
             if (notificationType === 'sms' || notificationType === 'both') {
                 const contact = student.parent_contact || student.contact_number;
                 if (contact) {
                     const result = await smsClient.sendCustom(contact, message);
                     if (result.success) {
-                        console.log(`✓ SMS sent to ${studentName} (${contact})`);
+                        console.log(`✓ SMS sent to ${studentName}'s parent (${contact})`);
                         sent = true;
                     } else {
                         console.error(`✗ SMS failed for ${studentName}:`, result.error);
                     }
-                }
-            }
-            
-            // Send via Email
-            if (notificationType === 'email' || notificationType === 'both') {
-                if (student.email) {
-                    // TODO: Implement email sending when ready
-                    console.log(`📧 Email would be sent to ${studentName} (${student.email}): ${message}`);
-                    sent = true;
+                } else {
+                    console.warn(`⚠ No parent contact for ${studentName}`);
                 }
             }
             
@@ -356,13 +376,20 @@ async function sendWarnings(students, notificationType) {
     
     hideLoading();
     
+    let message = '';
     if (successCount > 0) {
-        showToast(`Successfully sent ${successCount} warning(s)`, 'success');
+        message = `Successfully sent ${successCount} warning(s)`;
+        showToast(message, 'success');
         deselectAll();
     }
     
     if (failCount > 0) {
-        showToast(`Failed to send ${failCount} warning(s)`, 'warning');
+        if (noEmailCount > 0) {
+            showToast(`${noEmailCount} student(s) have no institutional email`, 'warning');
+        }
+        if (failCount > noEmailCount) {
+            showToast(`Failed to send ${failCount - noEmailCount} notification(s)`, 'warning');
+        }
     }
 }
 

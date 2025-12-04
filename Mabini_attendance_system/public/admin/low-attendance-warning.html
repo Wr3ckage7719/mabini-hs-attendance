@@ -152,7 +152,7 @@
                 <!-- Alert Info -->
                 <div class="alert alert-info mb-4" role="alert">
                     <i class="bi bi-info-circle-fill"></i>
-                    <strong>Low Attendance Warning:</strong> Send email/SMS warnings to students with low attendance rates.
+                    <strong>Low Attendance Warning:</strong> Send email/SMS warnings to students via their institutional email addresses and optionally to parents via SMS.
                 </div>
 
                 <!-- Filter Criteria -->
@@ -261,16 +261,16 @@
                     <div class="card-body">
                         <div class="alert alert-info mb-3">
                             <i class="bi bi-info-circle"></i>
-                            Messages are automatically generated based on attendance rate:<br>
+                            Messages are automatically generated and sent to students' institutional email addresses:<br>
                             • <strong>Warning (60-75%):</strong> "Your attendance is [RATE]%. Please improve to meet the 75% requirement."<br>
                             • <strong>Critical (&lt;60%):</strong> "URGENT: Your attendance is critically low at [RATE]%. Immediate action required."
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Notification Type</label>
                             <select class="form-select" id="notificationType">
-                                <option value="sms">SMS</option>
-                                <option value="email">Email</option>
-                                <option value="both">Email & SMS</option>
+                                <option value="email">Email (to student's institutional email)</option>
+                                <option value="sms">SMS (to parent's contact)</option>
+                                <option value="both">Email & SMS (student + parent)</option>
                             </select>
                         </div>
                         <div class="d-flex gap-2">

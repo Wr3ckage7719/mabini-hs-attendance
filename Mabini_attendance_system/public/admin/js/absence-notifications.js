@@ -124,7 +124,15 @@ function renderAbsentStudents() {
     const tbody = document.getElementById('absentTableBody');
     
     if (!filteredStudents || filteredStudents.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No absent students found for this date</td></tr>';
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d;"></i>
+                    <p class="mt-2 mb-0 text-muted">No data available yet</p>
+                    <small class="text-muted">No absent students found for the selected date</small>
+                </td>
+            </tr>
+        `;
         return;
     }
     

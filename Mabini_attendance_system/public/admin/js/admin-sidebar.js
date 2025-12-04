@@ -35,10 +35,18 @@ function generateAdminSidebar(activePage) {
                 <span>Users & Staff</span>
             </a>
             
-            <div class="menu-label">Reports</div>
+            <div class="menu-label">Reports & Notifications</div>
             <a href="reports.html" class="menu-item ${activePage === 'reports' ? 'active' : ''}">
                 <i class="bi bi-bar-chart-fill"></i>
                 <span>Analytics</span>
+            </a>
+            <a href="notifications.html" class="menu-item ${activePage === 'notifications' ? 'active' : ''}">
+                <i class="bi bi-megaphone-fill"></i>
+                <span>Student Notifications</span>
+            </a>
+            <a href="sms-notifications.html" class="menu-item ${activePage === 'sms-notifications' ? 'active' : ''}">
+                <i class="bi bi-chat-dots-fill"></i>
+                <span>SMS Notifications</span>
             </a>
             <!-- Change Password removed from generated sidebar -->
         </div>

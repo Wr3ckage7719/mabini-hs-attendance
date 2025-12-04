@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Notifications - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin-dashboard.css">
+    <link rel="stylesheet" href="css/admin-theme.css">
+    <style>
+        .notification-form {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .form-control, .form-select {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .type-selector {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .type-option {
+            flex: 1;
+            min-width: 150px;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            background: var(--card-bg);
+        }
+
+        .type-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .type-option.active {
+            border-color: #667eea;
+            background: rgba(102,126,234,0.1);
+        }
+
+        .type-option input[type="radio"] {
+            display: none;
+        }
+
+        .type-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .type-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .target-selector {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .target-option {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            background: var(--card-bg);
+        }
+
+        .target-option:hover {
+            border-color: #667eea;
+        }
+
+        .target-option.active {
+            border-color: #667eea;
+            background: rgba(102,126,234,0.1);
+        }
+
+        .target-option input[type="radio"] {
+            display: none;
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            font-size: 1.1rem;
+        }
+
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102,126,234,0.3);
+        }
+
+        .btn-send:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .notification-list {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .notification-item {
+            padding: 1.25rem;
+            border-left: 4px solid;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            background: var(--input-bg);
+            transition: all 0.2s;
+        }
+
+        .notification-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .notification-item.info { border-color: #3b82f6; }
+        .notification-item.warning { border-color: #f59e0b; }
+        .notification-item.success { border-color: #10b981; }
+        .notification-item.danger { border-color: #ef4444; }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.75rem;
+        }
+
+        .notification-title {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .notification-meta {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            text-align: right;
+        }
+
+        .notification-message {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 0.75rem;
+        }
+
+        .notification-target {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(102,126,234,0.1);
+            color: #667eea;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            margin-left: 0.5rem;
+        }
+
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background: rgba(16,185,129,0.1);
+            color: #10b981;
+            border: 1px solid rgba(16,185,129,0.3);
+        }
+
+        .alert-error {
+            background: rgba(239,68,68,0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239,68,68,0.3);
+        }
+
+        #targetValueGroup {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Include Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1><i class="bi bi-megaphone-fill"></i> Student Notifications</h1>
+            <p>Send notifications, announcements, and alerts to students</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Notification Form -->
+        <div class="notification-form">
+            <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);"><i class="bi bi-plus-circle-fill"></i> Create New Notification</h2>
+            
+            <form id="notificationForm">
+                <!-- Notification Type -->
+                <div class="form-group">
+                    <label class="form-label">Notification Type</label>
+                    <div class="type-selector">
+                        <label class="type-option active">
+                            <input type="radio" name="type" value="info" checked>
+                            <div class="type-icon">📢</div>
+                            <div class="type-name">Info</div>
+                        </label>
+                        <label class="type-option">
+                            <input type="radio" name="type" value="warning">
+                            <div class="type-icon">⚠️</div>
+                            <div class="type-name">Warning</div>
+                        </label>
+                        <label class="type-option">
+                            <input type="radio" name="type" value="success">
+                            <div class="type-icon">✅</div>
+                            <div class="type-name">Success</div>
+                        </label>
+                        <label class="type-option">
+                            <input type="radio" name="type" value="danger">
+                            <div class="type-icon">🚨</div>
+                            <div class="type-name">Danger</div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Title -->
+                <div class="form-group">
+                    <label class="form-label" for="notificationTitle">Title *</label>
+                    <input type="text" id="notificationTitle" class="form-control" placeholder="Enter notification title" required>
+                </div>
+
+                <!-- Message -->
+                <div class="form-group">
+                    <label class="form-label" for="notificationMessage">Message *</label>
+                    <textarea id="notificationMessage" class="form-control" placeholder="Enter your message here..." required></textarea>
+                </div>
+
+                <!-- Target Audience -->
+                <div class="form-group">
+                    <label class="form-label">Send To</label>
+                    <div class="target-selector">
+                        <label class="target-option active">
+                            <input type="radio" name="targetType" value="all" checked>
+                            <div><i class="bi bi-people-fill"></i> All Students</div>
+                        </label>
+                        <label class="target-option">
+                            <input type="radio" name="targetType" value="grade">
+                            <div><i class="bi bi-bookmark-fill"></i> Specific Grade</div>
+                        </label>
+                        <label class="target-option">
+                            <input type="radio" name="targetType" value="section">
+                            <div><i class="bi bi-grid-3x3-gap-fill"></i> Specific Section</div>
+                        </label>
+                        <label class="target-option">
+                            <input type="radio" name="targetType" value="individual">
+                            <div><i class="bi bi-person-fill"></i> Individual Student</div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Target Value (conditional) -->
+                <div class="form-group" id="targetValueGroup">
+                    <label class="form-label" for="targetValue">Select Target</label>
+                    <select id="targetValue" class="form-select">
+                        <option value="">-- Select --</option>
+                    </select>
+                </div>
+
+                <!-- Send Button -->
+                <button type="submit" class="btn-send">
+                    <i class="bi bi-send-fill"></i> Send Notification
+                </button>
+            </form>
+        </div>
+
+        <!-- Recent Notifications -->
+        <div class="notification-list">
+            <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);"><i class="bi bi-clock-history"></i> Recent Notifications</h2>
+            <div id="notificationsList">
+                <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+                    <p>Loading notifications...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/admin-common.js"></script>
+    <script type="module" src="js/notifications.js"></script>
+</body>
+</html>

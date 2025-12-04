@@ -511,9 +511,9 @@ function renderNotifications(notifications) {
 
     if (notifications.length === 0) {
         list.innerHTML = `
-            <div style="text-align:center; padding:4rem 2rem; color:#666;">
+            <div style="text-align:center; padding:4rem 2rem; color:var(--text-secondary);">
                 <div style="font-size:4rem; margin-bottom:1rem; opacity:0.5;">📭</div>
-                <p style="font-size:1.2rem; font-weight:600; margin:0;">No notifications yet</p>
+                <p style="font-size:1.2rem; font-weight:600; margin:0; color:var(--text-primary);">No notifications yet</p>
                 <p style="margin-top:0.5rem; opacity:0.7;">You're all caught up!</p>
             </div>
         `;
@@ -534,22 +534,27 @@ function renderNotifications(notifications) {
         danger: '#ef4444'
     };
 
+    // Check if dark theme is active
+    const isDark = document.documentElement.classList.contains('dark-theme');
+    const hoverBg = isDark ? 'rgba(102,126,234,0.15)' : 'rgba(102,126,234,0.12)';
+    const unreadBg = isDark ? 'rgba(102,126,234,0.12)' : 'rgba(102,126,234,0.08)';
+
     list.innerHTML = notifications.map(notif => {
         const color = typeColors[notif.type] || typeColors.info;
         const icon = typeIcons[notif.type] || typeIcons.info;
         const date = new Date(notif.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         
         return `
-            <div style="padding:1.25rem; border-left:4px solid ${color}; background:${notif.is_read ? 'transparent' : 'rgba(102,126,234,0.08)'}; margin-bottom:1rem; border-radius:8px; transition:all 0.2s;" onmouseover="this.style.background='rgba(102,126,234,0.12)'" onmouseout="this.style.background='${notif.is_read ? 'transparent' : 'rgba(102,126,234,0.08)'}'">
+            <div class="notification-card" style="padding:1.25rem; border-left:4px solid ${color}; background:${notif.is_read ? 'transparent' : unreadBg}; margin-bottom:1rem; border-radius:8px; transition:all 0.2s;" onmouseover="this.style.background='${hoverBg}'" onmouseout="this.style.background='${notif.is_read ? 'transparent' : unreadBg}'">
                 <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.75rem;">
                     <div style="display:flex; align-items:center; gap:0.5rem;">
                         <span style="font-size:1.5rem;">${icon}</span>
                         <h3 style="margin:0; font-size:1.1rem; color:var(--text-primary); font-weight:700;">${notif.title}</h3>
                     </div>
-                    <span style="font-size:0.85rem; color:#94a3b8; white-space:nowrap; margin-left:1rem;">${date}</span>
+                    <span style="font-size:0.85rem; color:var(--text-tertiary); white-space:nowrap; margin-left:1rem;">${date}</span>
                 </div>
                 <p style="margin:0 0 0 2rem; color:var(--text-secondary); line-height:1.6;">${notif.message}</p>
-                ${!notif.is_read ? `<span style="display:inline-block; margin-top:0.75rem; margin-left:2rem; padding:0.35rem 0.75rem; background:${color}; color:white; font-size:0.75rem; font-weight:600; border-radius:16px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">NEW</span>` : ''}
+                ${!notif.is_read ? `<span style="display:inline-block; margin-top:0.75rem; margin-left:2rem; padding:0.35rem 0.75rem; background:${color}; color:white; font-size:0.75rem; font-weight:600; border-radius:16px; box-shadow:0 2px 4px rgba(0,0,0,0.15);">NEW</span>` : ''}
             </div>
         `;
     }).join('');

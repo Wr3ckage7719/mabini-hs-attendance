@@ -111,7 +111,7 @@ async function loadStudentsCache() {
         // Now fetch active students
         const { data: students, error } = await supabase
             .from('students')
-            .select('id, first_name, last_name, student_id, grade_level, section_id, status, email')
+            .select('id, first_name, last_name, student_number, grade_level, section_id, status, email')
             .eq('status', 'active')
             .order('grade_level')
             .order('last_name');
@@ -235,7 +235,7 @@ async function handleTargetTypeChange(targetType) {
                     ` - ${getSectionName(student.section_id)}` : '';
                 
                 targetValueSelect.innerHTML += `
-                    <option value="${student.id}">${name} (${student.student_id}) - Grade ${student.grade_level}${sectionInfo}</option>
+                    <option value="${student.id}">${name} (${student.student_number}) - Grade ${student.grade_level}${sectionInfo}</option>
                 `;
             });
 
@@ -296,7 +296,7 @@ function updateRecipientCount(targetType, targetValue) {
                 const student = studentsCache.find(s => s.id === targetValue);
                 if (student) {
                     const name = `${student.first_name} ${student.last_name}`;
-                    details = `Will be sent to ${name} (${student.student_id})`;
+                    details = `Will be sent to ${name} (${student.student_number})`;
                     studentIds = [student.id];
                 } else {
                     details = 'Student selected';
@@ -524,7 +524,7 @@ async function loadNotifications() {
                 if (student) {
                     const name = `${student.first_name} ${student.last_name}`;
                     targetLabel = name;
-                    targetDetails = `Student ID: ${student.student_id}`;
+                    targetDetails = `Student Number: ${student.student_number}`;
                 } else {
                     targetLabel = 'Individual Student';
                     targetDetails = `Sent to 1 student`;

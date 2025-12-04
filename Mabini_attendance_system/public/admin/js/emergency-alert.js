@@ -71,7 +71,6 @@ async function loadSections() {
         const { data, error } = await supabase
             .from('sections')
             .select('*')
-            .eq('status', 'active')
             .order('name');
         
         if (error) throw error;

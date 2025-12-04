@@ -17,6 +17,9 @@ class EmailClient {
      */
     async sendCustom(to, subject, message) {
         try {
+            // Check if message is HTML
+            const isHtml = message.trim().startsWith('<');
+            
             const response = await fetch(this.apiUrl, {
                 method: 'POST',
                 headers: {
@@ -25,8 +28,8 @@ class EmailClient {
                 body: JSON.stringify({
                     to,
                     subject,
-                    message,
-                    html: this.formatMessage(message)
+                    message: isHtml ? '' : message, // Send empty message if HTML is provided
+                    html: isHtml ? message : this.formatMessage(message)
                 })
             });
 
@@ -62,62 +65,220 @@ class EmailClient {
             ? '🚨 URGENT: Critical Low Attendance Alert - Mabini HS'
             : '⚠️ Low Attendance Warning - Mabini HS';
 
+        const currentDate = new Date().toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+
         const html = `
             <!DOCTYPE html>
             <html>
             <head>
                 <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                    .warning-badge { display: inline-block; padding: 10px 20px; border-radius: 5px; font-weight: bold; margin: 15px 0; }
-                    .critical { background: #dc3545; color: white; }
-                    .warning { background: #ffc107; color: #000; }
-                    .stats { background: white; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #667eea; }
-                    .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+                    body { 
+                        font-family: 'Times New Roman', Times, serif; 
+                        line-height: 1.8; 
+                        color: #333; 
+                        background-color: #f5f5f5;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .container { 
+                        max-width: 700px; 
+                        margin: 40px auto; 
+                        background: white;
+                        padding: 60px;
+                        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                    }
+                    .letterhead {
+                        text-align: center;
+                        border-bottom: 3px solid #1a365d;
+                        padding-bottom: 20px;
+                        margin-bottom: 40px;
+                    }
+                    .letterhead h1 {
+                        color: #1a365d;
+                        font-size: 28px;
+                        margin: 10px 0 5px 0;
+                        font-weight: bold;
+                    }
+                    .letterhead p {
+                        margin: 5px 0;
+                        color: #555;
+                        font-size: 14px;
+                    }
+                    .date {
+                        text-align: right;
+                        margin-bottom: 30px;
+                        font-size: 14px;
+                    }
+                    .greeting {
+                        margin-bottom: 20px;
+                        font-size: 16px;
+                    }
+                    .body-text {
+                        text-align: justify;
+                        margin-bottom: 20px;
+                        font-size: 15px;
+                        line-height: 1.8;
+                    }
+                    .attendance-box {
+                        background: ${attendanceRate < 60 ? '#fff5f5' : '#fffbeb'};
+                        border-left: 5px solid ${attendanceRate < 60 ? '#dc2626' : '#f59e0b'};
+                        padding: 20px;
+                        margin: 25px 0;
+                        border-radius: 4px;
+                    }
+                    .attendance-box h3 {
+                        margin-top: 0;
+                        color: ${attendanceRate < 60 ? '#dc2626' : '#f59e0b'};
+                        font-size: 18px;
+                    }
+                    .attendance-rate {
+                        font-size: 36px;
+                        font-weight: bold;
+                        color: ${attendanceRate < 60 ? '#dc2626' : '#f59e0b'};
+                        margin: 15px 0;
+                    }
+                    .required-text {
+                        color: #666;
+                        font-style: italic;
+                        font-size: 14px;
+                    }
+                    .action-required {
+                        background: #fef3c7;
+                        border: 2px solid #f59e0b;
+                        padding: 20px;
+                        margin: 25px 0;
+                        border-radius: 5px;
+                    }
+                    .action-required strong {
+                        color: #b45309;
+                        font-size: 16px;
+                    }
+                    .recommendations {
+                        margin: 25px 0;
+                    }
+                    .recommendations ul {
+                        margin: 15px 0;
+                        padding-left: 25px;
+                    }
+                    .recommendations li {
+                        margin: 10px 0;
+                        line-height: 1.6;
+                    }
+                    .closing {
+                        margin-top: 40px;
+                        font-size: 15px;
+                    }
+                    .signature {
+                        margin-top: 50px;
+                    }
+                    .signature p {
+                        margin: 5px 0;
+                    }
+                    .footer {
+                        margin-top: 60px;
+                        padding-top: 20px;
+                        border-top: 1px solid #ddd;
+                        text-align: center;
+                        color: #666;
+                        font-size: 12px;
+                    }
                 </style>
             </head>
             <body>
                 <div class="container">
-                    <div class="header">
-                        <h1>🎓 Mabini High School</h1>
-                        <p style="margin: 0;">Attendance System</p>
+                    <div class="letterhead">
+                        <h1>🎓 MABINI HIGH SCHOOL</h1>
+                        <p>Attendance Monitoring Office</p>
+                        <p>Mabini Colleges, Philippines</p>
+                        <p>Email: attendance@mabinicolleges.edu.ph</p>
                     </div>
-                    <div class="content">
-                        <h2>Dear ${studentName},</h2>
-                        <div class="warning-badge ${attendanceRate < 60 ? 'critical' : 'warning'}">
-                            ${attendanceRate < 60 ? '🚨 CRITICAL' : '⚠️ WARNING'}
-                        </div>
-                        <div class="stats">
-                            <h3>📊 Your Current Attendance</h3>
-                            <p style="font-size: 32px; font-weight: bold; color: ${attendanceRate < 60 ? '#dc3545' : '#ffc107'}; margin: 10px 0;">
-                                ${attendanceRate}%
-                            </p>
-                            <p style="margin: 0; color: #666;">Required: 75% minimum</p>
-                        </div>
-                        <p style="font-size: 16px; line-height: 1.8;">${message}</p>
-                        
-                        ${attendanceRate < 60 ? `
-                            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
-                                <strong>⚠️ Immediate Action Required:</strong><br>
-                                Please contact your class adviser or visit the Guidance Office immediately to address this matter.
-                            </div>
-                        ` : ''}
-                        
-                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-                            <p><strong>What you can do:</strong></p>
-                            <ul>
-                                <li>Ensure you arrive on time every day</li>
-                                <li>Notify your adviser if you need to be absent</li>
-                                <li>Check in regularly using the QR code system</li>
-                                <li>Contact the Guidance Office if you need assistance</li>
+
+                    <div class="date">
+                        ${currentDate}
+                    </div>
+
+                    <div class="greeting">
+                        Dear ${studentName},
+                    </div>
+
+                    <div class="body-text">
+                        We are writing to inform you about your current attendance record. The Attendance Monitoring Office 
+                        has identified that your attendance rate requires immediate attention and improvement.
+                    </div>
+
+                    <div class="attendance-box">
+                        <h3>${attendanceRate < 60 ? '🚨 CRITICAL ATTENDANCE ALERT' : '⚠️ LOW ATTENDANCE WARNING'}</h3>
+                        <p><strong>Your Current Attendance Rate:</strong></p>
+                        <div class="attendance-rate">${attendanceRate}%</div>
+                        <p class="required-text">Required Minimum Attendance: 75%</p>
+                        ${attendanceRate < 60 ? 
+                            '<p style="color: #dc2626; font-weight: bold; margin-top: 15px;">You are currently below the critical threshold. This may affect your academic standing.</p>' 
+                            : '<p style="color: #f59e0b; font-weight: bold; margin-top: 15px;">Your attendance is below the required threshold and needs improvement.</p>'}
+                    </div>
+
+                    <div class="body-text">
+                        Regular attendance is crucial for your academic success and is a requirement for all students at 
+                        Mabini High School. The school policy mandates a minimum attendance rate of 75% to remain in good 
+                        academic standing and to be eligible for examinations.
+                    </div>
+
+                    ${attendanceRate < 60 ? `
+                        <div class="action-required">
+                            <strong>⚠️ IMMEDIATE ACTION REQUIRED</strong><br><br>
+                            Due to the critical nature of your attendance situation, you are required to:
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>Contact your class adviser within 48 hours</li>
+                                <li>Visit the Guidance Office to discuss your attendance concerns</li>
+                                <li>Submit any valid documentation for previous absences</li>
+                                <li>Develop an attendance improvement plan with school staff</li>
                             </ul>
+                            <strong>Failure to address this matter may result in academic consequences.</strong>
                         </div>
+                    ` : ''}
+
+                    <div class="recommendations">
+                        <strong>Recommendations for Improvement:</strong>
+                        <ul>
+                            <li>Ensure you arrive at school on time every day to avoid late marks</li>
+                            <li>Use the QR code attendance system to properly register your presence</li>
+                            <li>Notify your class adviser in advance if you need to be absent for valid reasons</li>
+                            <li>Maintain open communication with your teachers regarding any attendance concerns</li>
+                            <li>Seek assistance from the Guidance Office if you are experiencing difficulties</li>
+                            <li>Review the school attendance policy in your student handbook</li>
+                        </ul>
                     </div>
+
+                    <div class="body-text">
+                        We understand that unforeseen circumstances may affect attendance. If you have valid reasons for 
+                        your absences, please submit the necessary documentation to your class adviser or the Guidance 
+                        Office as soon as possible.
+                    </div>
+
+                    <div class="body-text">
+                        Your education and future success are important to us. We encourage you to take this matter seriously 
+                        and to make every effort to improve your attendance record moving forward.
+                    </div>
+
+                    <div class="closing">
+                        <p>Should you have any questions or concerns regarding this notice, please do not hesitate to contact 
+                        the Attendance Monitoring Office or your class adviser.</p>
+                        <p style="margin-top: 20px;">Respectfully yours,</p>
+                    </div>
+
+                    <div class="signature">
+                        <p><strong>Attendance Monitoring Office</strong></p>
+                        <p>Mabini High School</p>
+                        <p>Email: attendance@mabinicolleges.edu.ph</p>
+                    </div>
+
                     <div class="footer">
-                        <p>This is an automated message from Mabini High School Attendance System</p>
+                        <p>This is an official communication from Mabini High School Attendance System</p>
                         <p>© ${new Date().getFullYear()} Mabini Colleges. All rights reserved.</p>
+                        <p style="margin-top: 10px; font-style: italic;">Please do not reply to this email. For inquiries, contact your class adviser or the Guidance Office.</p>
                     </div>
                 </div>
             </body>

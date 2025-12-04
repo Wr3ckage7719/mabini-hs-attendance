@@ -111,7 +111,7 @@ async function loadStudentsCache() {
         // Now fetch active students
         const { data: students, error } = await supabase
             .from('students')
-            .select('id, full_name, first_name, last_name, student_id, grade_level, section_id, status')
+            .select('id, first_name, last_name, student_id, grade_level, section_id, status, email')
             .eq('status', 'active')
             .order('grade_level')
             .order('last_name');
@@ -230,7 +230,7 @@ async function handleTargetTypeChange(targetType) {
             }
 
             studentsCache.forEach(student => {
-                const name = student.full_name || `${student.first_name} ${student.last_name}`;
+                const name = `${student.first_name} ${student.last_name}`;
                 const sectionInfo = student.section_id ? 
                     ` - ${getSectionName(student.section_id)}` : '';
                 
@@ -295,7 +295,7 @@ function updateRecipientCount(targetType, targetValue) {
                 count = 1;
                 const student = studentsCache.find(s => s.id === targetValue);
                 if (student) {
-                    const name = student.full_name || `${student.first_name} ${student.last_name}`;
+                    const name = `${student.first_name} ${student.last_name}`;
                     details = `Will be sent to ${name} (${student.student_id})`;
                     studentIds = [student.id];
                 } else {
@@ -522,7 +522,7 @@ async function loadNotifications() {
             case 'individual':
                 const student = studentsCache.find(s => s.id === notif.target_value || s.id === notif.student_id);
                 if (student) {
-                    const name = student.full_name || `${student.first_name} ${student.last_name}`;
+                    const name = `${student.first_name} ${student.last_name}`;
                     targetLabel = name;
                     targetDetails = `Student ID: ${student.student_id}`;
                 } else {

@@ -54,7 +54,8 @@ window.loadLowAttendanceStudents = async function() {
                 *,
                 sections:section_id (
                     id,
-                    name,
+                    section_code,
+                    section_name,
                     grade_level
                 )
             `)
@@ -74,9 +75,9 @@ window.loadLowAttendanceStudents = async function() {
         // Get attendance records for date range
         const { data: attendance, error: attendanceError } = await supabase
             .from('attendance')
-            .select('student_id, attendance_date, status')
-            .gte('attendance_date', startDateStr)
-            .lte('attendance_date', endDateStr)
+            .select('student_id, date, status')
+            .gte('date', startDateStr)
+            .lte('date', endDateStr)
             .in('status', ['present', 'late']);
         
         if (attendanceError) throw attendanceError;
@@ -89,7 +90,7 @@ window.loadLowAttendanceStudents = async function() {
                 if (!attendanceMap[record.student_id]) {
                     attendanceMap[record.student_id] = new Set();
                 }
-                attendanceMap[record.student_id].add(record.attendance_date);
+                attendanceMap[record.student_id].add(record.date);
             });
         }
         
@@ -106,7 +107,7 @@ window.loadLowAttendanceStudents = async function() {
             
             return {
                 ...student,
-                section_name: student.sections?.name || 'N/A',
+                section_name: student.sections?.section_name || 'N/A',
                 days_present: daysPresent,
                 days_absent: dateRange - daysPresent,
                 total_days: dateRange,
@@ -146,7 +147,7 @@ async function loadSections() {
         const { data, error } = await supabase
             .from('sections')
             .select('*')
-            .order('name');
+            .order('section_name');
         
         if (error) {
             console.error('Sections query error:', error);
@@ -158,7 +159,7 @@ async function loadSections() {
             data.forEach(section => {
                 const option = document.createElement('option');
                 option.value = section.id;
-                option.textContent = section.name;
+                option.textContent = section.section_name || section.section_code || 'N/A';
                 sectionFilter.appendChild(option);
             });
         }

@@ -63,7 +63,8 @@ window.loadAbsentStudents = async function() {
                 *,
                 sections:section_id (
                     id,
-                    name,
+                    section_code,
+                    section_name,
                     grade_level
                 )
             `)
@@ -75,7 +76,7 @@ window.loadAbsentStudents = async function() {
         const { data: attendance, error: attendanceError } = await supabase
             .from('attendance')
             .select('student_id, status')
-            .eq('attendance_date', selectedDate)
+            .eq('date', selectedDate)
             .in('status', ['present', 'late']);
         
         if (attendanceError) throw attendanceError;
@@ -91,7 +92,7 @@ window.loadAbsentStudents = async function() {
             .filter(student => !presentStudentIds.has(student.id))
             .map(student => ({
                 ...student,
-                section_name: student.sections?.name || 'N/A'
+                section_name: student.sections?.section_name || 'N/A'
             }));
         filteredStudents = [...absentStudents];
         
@@ -119,7 +120,7 @@ async function loadSections() {
         const { data, error } = await supabase
             .from('sections')
             .select('*')
-            .order('name');
+            .order('section_name');
         
         if (error) {
             console.error('Sections query error:', error);
@@ -131,7 +132,7 @@ async function loadSections() {
             data.forEach(section => {
                 const option = document.createElement('option');
                 option.value = section.id;
-                option.textContent = section.name;
+                option.textContent = section.section_name || section.section_code || 'N/A';
                 sectionFilter.appendChild(option);
             });
         }

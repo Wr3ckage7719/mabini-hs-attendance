@@ -3,10 +3,6 @@
  * Handles emergency alerts, absence notifications, and SMS logs
  */
 
-import { checkAuth } from './admin-common.js';
-import { getDocuments } from './admin-common.js';
-import { showAlert } from './admin-common.js';
-import { setActiveNavFromLocation } from './admin-common.js';
 import { supabase } from '../../js/supabase-client.js';
 
 const SMS_API = '../api/services/sms_service.php';
@@ -14,21 +10,22 @@ const SMS_API = '../api/services/sms_service.php';
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        // Check authentication
-        await checkAuth('admin');
-        
-        // Set active navigation
-        setActiveNavFromLocation();
+        console.log('📱 Initializing SMS Notifications page...');
         
         // Initialize with error handling
         try {
             await loadSMSStats();
         } catch (error) {
             console.error('Error loading SMS stats:', error);
-            document.getElementById('totalSMSToday').textContent = '0';
-            document.getElementById('checkInSMS').textContent = '0';
-            document.getElementById('checkOutSMS').textContent = '0';
-            document.getElementById('absenceSMS').textContent = '0';
+            const totalEl = document.getElementById('totalSMSToday');
+            const checkInEl = document.getElementById('checkInSMS');
+            const checkOutEl = document.getElementById('checkOutSMS');
+            const absenceEl = document.getElementById('absenceSMS');
+            
+            if (totalEl) totalEl.textContent = '0';
+            if (checkInEl) checkInEl.textContent = '0';
+            if (checkOutEl) checkOutEl.textContent = '0';
+            if (absenceEl) absenceEl.textContent = '0';
         }
         
         try {
@@ -38,9 +35,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             const container = document.getElementById('smsLogsContainer');
             if (container) {
                 container.innerHTML = `
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        No SMS logs available yet. Logs will appear here after messages are sent.
+                    <div style="text-align: center; padding: 4rem 2rem;">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; color: var(--text-secondary, #94a3b8);">
+                            <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" style="opacity: 0.25;">
+                                <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z"/>
+                            </svg>
+                            <div>
+                                <p style="margin: 0; font-weight: 600; font-size: 1.1rem; color: var(--text-primary, #e2e8f0);">No Data Yet</p>
+                                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.8;">SMS logs will appear here after messages are sent</p>
+                            </div>
+                        </div>
                     </div>
                 `;
             }
@@ -58,10 +62,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             absenceDateInput.valueAsDate = new Date();
         }
         
-        // Setup sidebar toggle
-        setupSidebarToggle();
+        console.log('✅ SMS Notifications page initialized');
     } catch (error) {
-        console.error('Error initializing SMS notifications page:', error);
+        console.error('❌ Error initializing SMS notifications page:', error);
     }
 });
 

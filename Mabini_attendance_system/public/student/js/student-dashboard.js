@@ -341,6 +341,8 @@ async function loadClassSchedule() {
 // Load attendance statistics
 async function loadAttendanceStats(studentId) {
     try {
+        console.log('[Attendance Stats] Starting to load for student:', studentId);
+        
         // Define date range - current school year or last 6 months
         const endDate = new Date();
         const startDate = new Date();
@@ -348,6 +350,8 @@ async function loadAttendanceStats(studentId) {
         
         const startDateStr = startDate.toISOString().split('T')[0];
         const endDateStr = endDate.toISOString().split('T')[0];
+        
+        console.log('[Attendance Stats] Date range:', { startDateStr, endDateStr });
         
         // Get student's section to find scheduled days
         const studentData = await dataClient.getStudent(studentId);
@@ -375,50 +379,88 @@ async function loadAttendanceStats(studentId) {
             });
             
             scheduledDaysArray = Array.from(daysSet);
-            console.log('Scheduled class days:', scheduledDaysArray);
+            console.log('[Attendance Stats] Scheduled class days:', scheduledDaysArray);
         }
         
-        // Get attendance records from entrance_logs
-        const logsResult = await attendanceClient.getAttendanceRange(
-            studentId, 
-            startDateStr,
-            endDateStr
-        );
+        // Try to get attendance records from the 'attendance' table first
+        let logs = [];
+        try {
+            console.log('[Attendance Stats] Fetching from attendance table...');
+            const { data: attendanceData, error: attendanceError } = await supabase
+                .from('attendance')
+                .select('*')
+                .eq('student_id', studentId)
+                .gte('date', startDateStr)
+                .lte('date', endDateStr)
+                .order('date', { ascending: false });
+            
+            if (attendanceError) {
+                console.error('[Attendance Stats] Error fetching from attendance table:', attendanceError);
+            } else if (attendanceData && attendanceData.length > 0) {
+                console.log('[Attendance Stats] Found records in attendance table:', attendanceData.length);
+                logs = attendanceData;
+            } else {
+                console.log('[Attendance Stats] No records in attendance table, trying entrance_logs...');
+                // Fallback to entrance_logs
+                const logsResult = await attendanceClient.getAttendanceRange(
+                    studentId, 
+                    startDateStr,
+                    endDateStr
+                );
+                logs = Array.isArray(logsResult.data) ? logsResult.data : 
+                       Array.isArray(logsResult) ? logsResult : [];
+                console.log('[Attendance Stats] Entrance logs found:', logs.length);
+            }
+        } catch (err) {
+            console.error('[Attendance Stats] Error fetching attendance:', err);
+            logs = [];
+        }
         
-        // Ensure we have an array
-        const logs = Array.isArray(logsResult.data) ? logsResult.data : 
-                     Array.isArray(logsResult) ? logsResult : [];
+        console.log('[Attendance Stats] Total logs retrieved:', logs.length);
         
-        console.log('Attendance logs:', logs);
+        // If no data at all, show "no data yet" state
+        if (logs.length === 0) {
+            console.log('[Attendance Stats] No attendance data found - showing empty state');
+            updateAttendanceSummary(0, 0, 0, 0, true); // true = no data
+            updateRecentActivity([]);
+            loadAttendanceTable([]);
+            return;
+        }
         
-        // Calculate statistics from entrance logs
+        // Calculate statistics from attendance records
         const uniqueDates = new Set();
         logs.forEach(log => {
-            if (log.scan_time) {
-                const date = log.scan_time.split('T')[0];
+            const dateField = log.date || log.scan_time;
+            if (dateField) {
+                const date = typeof dateField === 'string' ? dateField.split('T')[0] : dateField;
                 uniqueDates.add(date);
             }
         });
         
         const daysPresent = uniqueDates.size;
+        console.log('[Attendance Stats] Days present:', daysPresent);
         
         // Calculate total scheduled class days based on student's actual schedule
         const totalDays = scheduledDaysArray.length > 0 
             ? calculateScheduledClassDays(startDate, endDate, scheduledDaysArray)
             : calculateSchoolDays(startDate, endDate);
             
+        console.log('[Attendance Stats] Total scheduled days:', totalDays);
+        
         const daysAbsent = Math.max(0, totalDays - daysPresent);
         const attendanceRate = totalDays > 0 ? (daysPresent / totalDays) * 100 : 0;
         
+        console.log('[Attendance Stats] Calculated:', { daysPresent, daysAbsent, totalDays, attendanceRate: attendanceRate.toFixed(1) + '%' });
+        
         // Update all UI elements
-        updateAttendanceSummary(daysPresent, daysAbsent, totalDays, attendanceRate);
+        updateAttendanceSummary(daysPresent, daysAbsent, totalDays, attendanceRate, false);
         updateRecentActivity(logs);
         
         // Load attendance records for table
         loadAttendanceTable(logs);
     } catch (error) {
-        console.error('Error loading attendance stats:', error);
-        updateAttendanceSummary(0, 0, 0, 0);
+        console.error('[Attendance Stats] Error loading attendance stats:', error);
+        updateAttendanceSummary(0, 0, 0, 0, true); // true = error/no data
     }
 }
 
@@ -476,8 +518,58 @@ function calculateScheduledClassDays(startDate, endDate, scheduledDays) {
 }
 
 // Update attendance summary UI with all the new elements
-function updateAttendanceSummary(present, absent, total, rate) {
-    // Update summary card
+function updateAttendanceSummary(present, absent, total, rate, noData = false) {
+    console.log('[Update Summary] Updating UI:', { present, absent, total, rate, noData });
+    
+    // If no data, show "No Data Yet" state
+    if (noData || total === 0) {
+        // Update summary card
+        const rateDisplay = document.getElementById('attendanceRateDisplay');
+        if (rateDisplay) rateDisplay.textContent = '--';
+        
+        const summaryPresent = document.getElementById('summaryPresent');
+        if (summaryPresent) summaryPresent.textContent = '--';
+        
+        const summaryAbsent = document.getElementById('summaryAbsent');
+        if (summaryAbsent) summaryAbsent.textContent = '--';
+        
+        const summaryTotal = document.getElementById('summaryTotal');
+        if (summaryTotal) summaryTotal.textContent = '--';
+        
+        // Update progress bar to 0
+        const progressBar = document.getElementById('attendanceProgress');
+        if (progressBar) {
+            progressBar.style.width = '0%';
+            progressBar.style.background = 'rgba(128, 128, 128, 0.3)';
+        }
+        
+        // Update status text
+        const statusEl = document.getElementById('attendanceStatus');
+        if (statusEl) {
+            statusEl.textContent = 'No Attendance Data Yet';
+            statusEl.style.color = '#9ca3af';
+        }
+        
+        // Hide warning
+        const warningEl = document.getElementById('attendanceWarning');
+        if (warningEl) {
+            warningEl.style.display = 'none';
+        }
+        
+        // Update performance insights
+        const monthlyRateEl = document.getElementById('monthlyRate');
+        if (monthlyRateEl) monthlyRateEl.textContent = '--';
+        
+        const streakEl = document.getElementById('presentStreak');
+        if (streakEl) streakEl.textContent = '--';
+        
+        const classesNeededEl = document.getElementById('classesNeeded');
+        if (classesNeededEl) classesNeededEl.textContent = '--';
+        
+        return;
+    }
+    
+    // Update summary card with actual data
     const rateDisplay = document.getElementById('attendanceRateDisplay');
     if (rateDisplay) rateDisplay.textContent = rate.toFixed(1) + '%';
     
@@ -534,7 +626,10 @@ function updateAttendanceSummary(present, absent, total, rate) {
     if (classesNeededEl) {
         if (rate >= 75) {
             classesNeededEl.textContent = '0';
-            classesNeededEl.parentElement.parentElement.style.borderLeftColor = '#10b981';
+            const parentCard = classesNeededEl.parentElement?.parentElement;
+            if (parentCard) {
+                parentCard.style.borderLeftColor = '#10b981';
+            }
             classesNeededEl.style.color = '#10b981';
         } else {
             classesNeededEl.textContent = classesNeeded;
@@ -557,28 +652,42 @@ function updateRecentActivity(logs) {
     
     if (logsArray.length === 0) {
         feedEl.innerHTML = `
-            <div style="text-align: center; padding: 3rem 1rem; opacity: 0.5;">
+            <div style="text-align: center; padding: 3rem 1rem; opacity: 0.5; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                 <svg viewBox="0 0 24 24" width="56" height="56" fill="currentColor" style="opacity: 0.2;">
                     <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
                 </svg>
-                <p style="margin: 0.75rem 0 0 0; font-size: 0.875rem;">No recent activity</p>
+                <p style="margin: 0.75rem 0 0 0; font-size: 0.875rem; font-weight: 500;">No attendance records yet</p>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; opacity: 0.7;">Your attendance history will appear here</p>
             </div>
         `;
+        
+        // Set streak to 0 when no data
+        const streakEl = document.getElementById('presentStreak');
+        if (streakEl) streakEl.textContent = '0';
+        
         return;
     }
     
     // Sort by date descending and take last 5
     const sortedLogs = logsArray
-        .sort((a, b) => new Date(b.scan_time) - new Date(a.scan_time))
+        .sort((a, b) => {
+            const dateA = new Date(a.date || a.scan_time);
+            const dateB = new Date(b.date || b.scan_time);
+            return dateB - dateA;
+        })
         .slice(0, 5);
     
     // Calculate streak
     let streak = 0;
     const today = new Date();
-    const sortedByDateAsc = [...logsArray].sort((a, b) => new Date(a.scan_time) - new Date(b.scan_time));
+    const sortedByDateAsc = [...logsArray].sort((a, b) => {
+        const dateA = new Date(a.date || a.scan_time);
+        const dateB = new Date(b.date || b.scan_time);
+        return dateA - dateB;
+    });
     
     for (let i = sortedByDateAsc.length - 1; i >= 0; i--) {
-        const logDate = new Date(sortedByDateAsc[i].scan_time);
+        const logDate = new Date(sortedByDateAsc[i].date || sortedByDateAsc[i].scan_time);
         const expectedDate = new Date(today);
         expectedDate.setDate(expectedDate.getDate() - streak);
         
@@ -595,12 +704,12 @@ function updateRecentActivity(logs) {
     }
     
     feedEl.innerHTML = sortedLogs.map(log => {
-        const date = new Date(log.scan_time);
-        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const logDate = new Date(log.date || log.scan_time);
+        const dateStr = logDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = log.time_in || (log.scan_time ? logDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '--');
         
-        const isToday = date.toDateString() === new Date().toDateString();
-        const isYesterday = date.toDateString() === new Date(Date.now() - 86400000).toDateString();
+        const isToday = logDate.toDateString() === new Date().toDateString();
+        const isYesterday = logDate.toDateString() === new Date(Date.now() - 86400000).toDateString();
         
         let displayDate = dateStr;
         if (isToday) displayDate = 'Today';
@@ -640,50 +749,88 @@ function loadAttendanceTable(logs) {
     const logsArray = Array.isArray(logs) ? logs : [];
 
     if (logsArray.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">No attendance records found</td></tr>';
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 3rem; opacity: 0.6;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem;">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" style="opacity: 0.3;">
+                            <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                        </svg>
+                        <div>
+                            <p style="margin: 0; font-weight: 500; font-size: 0.95rem;">No attendance records yet</p>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; opacity: 0.7;">Your attendance history will be displayed here</p>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
         return;
     }
 
-    // Group logs by date and get first entry per day
+    // Group logs by date and get the record per day
     const logsByDate = {};
     logsArray.forEach(log => {
-        if (log.scan_time) {
-            const date = log.scan_time.split('T')[0];
-            if (!logsByDate[date] || log.scan_time < logsByDate[date].scan_time) {
-                logsByDate[date] = log;
+        // Support both attendance table (date field) and entrance_logs (scan_time field)
+        const dateKey = log.date || (log.scan_time ? log.scan_time.split('T')[0] : null);
+        if (dateKey) {
+            // For attendance table, use the record as-is
+            // For entrance_logs, prefer earliest scan of the day
+            if (!logsByDate[dateKey] || (log.scan_time && log.scan_time < logsByDate[dateKey].scan_time)) {
+                logsByDate[dateKey] = log;
             }
         }
     });
     
     // Convert to array and sort by date descending
     const sortedLogs = Object.values(logsByDate)
-        .sort((a, b) => new Date(b.scan_time) - new Date(a.scan_time))
+        .sort((a, b) => {
+            const dateA = new Date(a.date || a.scan_time);
+            const dateB = new Date(b.date || b.scan_time);
+            return dateB - dateA;
+        })
         .slice(0, 15); // Take recent 15 records
 
     tbody.innerHTML = sortedLogs.map(log => {
-        const scanDate = new Date(log.scan_time);
-        const date = scanDate.toLocaleDateString('en-US', { 
+        // Support both data formats
+        const logDate = new Date(log.date || log.scan_time);
+        const date = logDate.toLocaleDateString('en-US', { 
             year: 'numeric', 
             month: 'short', 
             day: 'numeric' 
         });
-        const timeIn = scanDate.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
-        const timeOut = '-'; // Entrance logs don't track exit
         
-        // Determine status based on time (before 8 AM = on time, after = late)
-        const hour = scanDate.getHours();
-        const status = hour < 8 ? 'present' : 'late';
+        // Time In: Use time_in field if available, otherwise extract from scan_time
+        let timeIn = '-';
+        if (log.time_in) {
+            timeIn = formatTime(log.time_in);
+        } else if (log.scan_time) {
+            timeIn = logDate.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+        
+        // Time Out: Use time_out field if available
+        const timeOut = log.time_out ? formatTime(log.time_out) : '-';
+        
+        // Status: Use status field from attendance table, or calculate from time
+        let status = log.status || 'present';
+        if (!log.status && log.scan_time) {
+            // Fallback: determine from scan time (before 8 AM = on time, after = late)
+            const hour = logDate.getHours();
+            status = hour < 8 ? 'present' : 'late';
+        }
         
         let statusBadge = '';
-        switch(status) {
+        switch(status.toLowerCase()) {
             case 'present':
                 statusBadge = '<span class="badge bg-success">Present</span>';
                 break;
             case 'late':
                 statusBadge = '<span class="badge bg-warning">Late</span>';
+                break;
+            case 'absent':
+                statusBadge = '<span class="badge bg-danger">Absent</span>';
                 break;
             default:
                 statusBadge = '<span class="badge bg-secondary">Unknown</span>';

@@ -7,6 +7,7 @@ import { checkAuth } from './admin-common.js';
 import { getDocuments } from './admin-common.js';
 import { showAlert } from './admin-common.js';
 import { setActiveNavFromLocation } from './admin-common.js';
+import supabase from '../../js/supabase-client.js';
 
 const SMS_API = '../api/services/sms_service.php';
 
@@ -85,8 +86,30 @@ function setupSidebarToggle() {
 
 // Load SMS statistics
 async function loadSMSStats() {
+    console.log('📊 Loading SMS statistics from sms_logs table...');
     try {
-        const logs = await getSMSLogs(1000);
+        // Fetch from Supabase sms_logs table
+        const { data: logs, error } = await supabase
+            .from('sms_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1000);
+        
+        if (error) {
+            console.error('❌ Error fetching SMS logs:', error);
+            throw error;
+        }
+        
+        console.log('✅ Fetched SMS logs:', logs?.length || 0, 'records');
+        
+        if (!logs || logs.length === 0) {
+            document.getElementById('totalSMSToday').textContent = '0';
+            document.getElementById('checkInSMS').textContent = '0';
+            document.getElementById('checkOutSMS').textContent = '0';
+            document.getElementById('absenceSMS').textContent = '0';
+            return;
+        }
+        
         const today = new Date().toDateString();
         
         let todayCount = 0;
@@ -95,14 +118,20 @@ async function loadSMSStats() {
         let absenceCount = 0;
         
         logs.forEach(log => {
-            const logDate = new Date(log.timestamp).toDateString();
+            const logDate = new Date(log.created_at || log.sent_at).toDateString();
             if (logDate === today) {
                 todayCount++;
                 
-                const msg = log.message.toLowerCase();
-                if (msg.includes('checked in')) checkInCount++;
-                else if (msg.includes('checked out')) checkOutCount++;
-                else if (msg.includes('absent')) absenceCount++;
+                const msgType = (log.message_type || '').toLowerCase();
+                const msgContent = (log.message_content || '').toLowerCase();
+                
+                if (msgType.includes('check_in') || msgContent.includes('checked in')) {
+                    checkInCount++;
+                } else if (msgType.includes('check_out') || msgContent.includes('checked out')) {
+                    checkOutCount++;
+                } else if (msgType.includes('absence') || msgContent.includes('absent')) {
+                    absenceCount++;
+                }
             }
         });
         
@@ -111,7 +140,11 @@ async function loadSMSStats() {
         document.getElementById('checkOutSMS').textContent = checkOutCount;
         document.getElementById('absenceSMS').textContent = absenceCount;
     } catch (error) {
-        console.error('Error loading SMS stats:', error);
+        console.error('❌ Error loading SMS stats:', error);
+        document.getElementById('totalSMSToday').textContent = '0';
+        document.getElementById('checkInSMS').textContent = '0';
+        document.getElementById('checkOutSMS').textContent = '0';
+        document.getElementById('absenceSMS').textContent = '0';
     }
 }
 
@@ -124,14 +157,45 @@ async function loadSMSLogs() {
         return;
     }
     
+    // Show loading state
+    container.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading SMS logs...</p>
+        </div>
+    `;
+    
     try {
-        const logs = await getSMSLogs(50);
+        console.log('📱 Fetching SMS logs from sms_logs table...');
         
-        if (logs.length === 0) {
+        // Fetch from Supabase sms_logs table
+        const { data: logs, error } = await supabase
+            .from('sms_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+        
+        if (error) {
+            console.error('❌ Error fetching SMS logs:', error);
+            throw error;
+        }
+        
+        console.log('✅ Fetched SMS logs:', logs?.length || 0, 'records');
+        
+        if (!logs || logs.length === 0) {
             container.innerHTML = `
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i>
-                    No SMS logs found.
+                <div style="text-align: center; padding: 4rem 2rem; opacity: 0.6;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                        <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" style="opacity: 0.3;">
+                            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z"/>
+                        </svg>
+                        <div>
+                            <p style="margin: 0; font-weight: 600; font-size: 1.1rem; color: var(--text-primary);">No SMS Logs Yet</p>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--text-secondary);">SMS logs will appear here after messages are sent</p>
+                        </div>
+                    </div>
                 </div>
             `;
             return;
@@ -144,19 +208,68 @@ async function loadSMSLogs() {
                         <tr>
                             <th>Timestamp</th>
                             <th>Recipient</th>
+                            <th>Student</th>
+                            <th>Type</th>
                             <th>Message</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${logs.map(log => `
-                            <tr>
-                                <td>${new Date(log.timestamp).toLocaleString()}</td>
-                                <td><code>${log.recipient}</code></td>
-                                <td class="text-truncate" style="max-width: 300px;">${log.message}</td>
-                                <td><span class="badge bg-success">Sent</span></td>
-                            </tr>
-                        `).join('')}
+                        ${logs.map(log => {
+                            const timestamp = new Date(log.created_at || log.sent_at).toLocaleString();
+                            const recipient = log.recipient_number || log.recipient_name || 'Unknown';
+                            const studentName = log.recipient_name || 'N/A';
+                            const messageType = log.message_type || 'general';
+                            const message = log.message_content || '';
+                            const status = log.status || 'sent';
+                            
+                            let typeBadge = '';
+                            switch(messageType.toLowerCase()) {
+                                case 'check_in':
+                                case 'checkin':
+                                    typeBadge = '<span class="badge bg-success">Check-in</span>';
+                                    break;
+                                case 'check_out':
+                                case 'checkout':
+                                    typeBadge = '<span class="badge bg-info">Check-out</span>';
+                                    break;
+                                case 'absence':
+                                    typeBadge = '<span class="badge bg-warning">Absence</span>';
+                                    break;
+                                case 'emergency':
+                                    typeBadge = '<span class="badge bg-danger">Emergency</span>';
+                                    break;
+                                default:
+                                    typeBadge = '<span class="badge bg-secondary">General</span>';
+                            }
+                            
+                            let statusBadge = '';
+                            switch(status.toLowerCase()) {
+                                case 'sent':
+                                case 'delivered':
+                                    statusBadge = '<span class="badge bg-success">Sent</span>';
+                                    break;
+                                case 'failed':
+                                    statusBadge = '<span class="badge bg-danger">Failed</span>';
+                                    break;
+                                case 'pending':
+                                    statusBadge = '<span class="badge bg-warning">Pending</span>';
+                                    break;
+                                default:
+                                    statusBadge = '<span class="badge bg-secondary">Unknown</span>';
+                            }
+                            
+                            return `
+                                <tr>
+                                    <td data-label="Timestamp">${timestamp}</td>
+                                    <td data-label="Recipient"><code style="font-size: 0.85rem;">${recipient}</code></td>
+                                    <td data-label="Student">${studentName}</td>
+                                    <td data-label="Type">${typeBadge}</td>
+                                    <td data-label="Message" class="text-truncate" style="max-width: 300px;" title="${message}">${message}</td>
+                                    <td data-label="Status">${statusBadge}</td>
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
             </div>
@@ -164,11 +277,12 @@ async function loadSMSLogs() {
         
         container.innerHTML = tableHtml;
     } catch (error) {
-        console.error('Error loading SMS logs:', error);
+        console.error('❌ Error loading SMS logs:', error);
         container.innerHTML = `
             <div class="alert alert-danger">
                 <i class="bi bi-exclamation-triangle"></i>
-                Error loading SMS logs. Please try again.
+                <strong>Error loading SMS logs.</strong><br>
+                ${error.message || 'Please check your connection and try again.'}
             </div>
         `;
     }

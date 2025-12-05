@@ -251,8 +251,29 @@ function renderTeachingLoads(loadsToRender = null) {
         const subjectName = subject ? `${subject.code} - ${subject.name}` : 'Unknown';
         const sectionName = section ? section.section_code : 'Unknown';
         const gradeLevel = section ? `Grade ${section.grade_level}` : '-';
-        const schedule = load.schedule || '-';
-        const timeRange = extractTimeFromSchedule(load.schedule);
+        
+        // Use new separate fields: day_of_week, start_time, end_time
+        let days = 'N/A';
+        if (load.day_of_week) {
+            // If it contains commas, format as abbreviations
+            if (load.day_of_week.includes(',')) {
+                const dayList = load.day_of_week.split(',').map(d => d.trim());
+                days = dayList.map(d => d.substring(0, 3)).join(', ');
+            } else {
+                days = load.day_of_week;
+            }
+        } else if (load.schedule) {
+            // Fallback to old schedule field
+            days = extractDaysFromSchedule(load.schedule);
+        }
+        
+        let timeRange = 'N/A';
+        if (load.start_time && load.end_time) {
+            timeRange = `${formatTime(load.start_time)}-${formatTime(load.end_time)}`;
+        } else if (load.schedule) {
+            // Fallback to old schedule field
+            timeRange = extractTimeFromSchedule(load.schedule);
+        }
         
         return `
             <tr>
@@ -260,7 +281,7 @@ function renderTeachingLoads(loadsToRender = null) {
                 <td>${escapeHtml(subjectName)}</td>
                 <td><span class="badge bg-info">${escapeHtml(sectionName)}</span></td>
                 <td>${escapeHtml(gradeLevel)}</td>
-                <td>${escapeHtml(extractDaysFromSchedule(load.schedule))}</td>
+                <td>${escapeHtml(days)}</td>
                 <td>${escapeHtml(timeRange)}</td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary" onclick="window.editLoad('${load.id}')">
@@ -275,6 +296,16 @@ function renderTeachingLoads(loadsToRender = null) {
     });
     
     tbody.innerHTML = rows.join('');
+}
+
+// Format time to 12-hour format (HH:MM to h:MM AM/PM)
+function formatTime(timeString) {
+    if (!timeString) return '';
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes}`;
 }
 
 // Helper to extract days from schedule
@@ -351,32 +382,45 @@ window.editLoad = function(id) {
     if (roomEl) roomEl.value = load.room || '';
     if (academicYearEl) academicYearEl.value = load.school_year || '';
     
-    // Parse schedule string to populate days and times
-    // Schedule format: "Monday, Tuesday, Wednesday 08:00-09:00"
-    if (load.schedule) {
-        // Clear all checkboxes first
-        document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
-        
-        // Extract days and time
-        const scheduleMatch = load.schedule.match(/^(.+)\s+(\d{1,2}:\d{2})-(\d{1,2}:\d{2})$/);
+    // Clear all checkboxes first
+    document.querySelectorAll('.day-checkbox').forEach(cb => cb.checked = false);
+    
+    // Populate days and times from new separate fields
+    if (load.day_of_week) {
+        // day_of_week is comma-separated: "Monday, Tuesday, Wednesday"
+        const days = load.day_of_week.split(',').map(d => d.trim());
+        days.forEach(day => {
+            const checkbox = document.querySelector(`.day-checkbox[value="${day}"]`);
+            if (checkbox) checkbox.checked = true;
+        });
+    } else if (load.schedule) {
+        // Fallback: Parse old schedule format "Monday, Tuesday 08:00-09:00"
+        const scheduleMatch = load.schedule.match(/^(.+)\\s+(\\d{1,2}:\\d{2})-(\\d{1,2}:\\d{2})$/);
         if (scheduleMatch) {
             const daysString = scheduleMatch[1];
-            const startTime = scheduleMatch[2];
-            const endTime = scheduleMatch[3];
-            
-            // Check the appropriate day checkboxes
             const days = daysString.split(',').map(d => d.trim());
             days.forEach(day => {
                 const checkbox = document.querySelector(`.day-checkbox[value="${day}"]`);
                 if (checkbox) checkbox.checked = true;
             });
-            
-            // Set time fields
-            const startTimeEl = document.getElementById('startTime');
-            const endTimeEl = document.getElementById('endTime');
-            if (startTimeEl) startTimeEl.value = startTime;
-            if (endTimeEl) endTimeEl.value = endTime;
         }
+    }
+    
+    // Set time fields from new separate fields
+    const startTimeEl = document.getElementById('startTime');
+    const endTimeEl = document.getElementById('endTime');
+    
+    if (load.start_time && load.end_time) {
+        if (startTimeEl) startTimeEl.value = load.start_time;
+        if (endTimeEl) endTimeEl.value = load.end_time;
+    } else if (load.schedule) {
+        // Fallback: Parse old schedule format
+        const scheduleMatch = load.schedule.match(/^(.+)\\s+(\\d{1,2}:\\d{2})-(\\d{1,2}:\\d{2})$/);
+        if (scheduleMatch) {
+            if (startTimeEl) startTimeEl.value = scheduleMatch[2];
+            if (endTimeEl) endTimeEl.value = scheduleMatch[3];
+        }
+    }
     }
     
     if (loadModal) loadModal.show();
@@ -429,16 +473,16 @@ async function handleSubmit(e) {
         
         console.log('Selected days:', selectedDays);
         
-        // Build schedule string
+        // Get time values
         const startTimeEl = document.getElementById('startTime');
         const endTimeEl = document.getElementById('endTime');
         const startTime = startTimeEl?.value || '';
         const endTime = endTimeEl?.value || '';
-        const schedule = selectedDays.length > 0 && startTime && endTime 
-            ? `${selectedDays.join(', ')} ${startTime}-${endTime}`
-            : '';
         
-        console.log('Built schedule string:', schedule);
+        // Build day_of_week as comma-separated string
+        const dayOfWeek = selectedDays.length > 0 ? selectedDays.join(', ') : null;
+        
+        console.log('Day of week:', dayOfWeek, 'Start:', startTime, 'End:', endTime);
         
         const teacherIdEl = document.getElementById('teacherId');
         const subjectIdEl = document.getElementById('subjectId');
@@ -450,7 +494,9 @@ async function handleSubmit(e) {
             teacher_id: teacherIdEl?.value || null,
             subject_id: subjectIdEl?.value || null,
             section_id: sectionIdEl?.value || null,
-            schedule: schedule || null,
+            day_of_week: dayOfWeek,
+            start_time: startTime || null,
+            end_time: endTime || null,
             room: roomEl?.value?.trim() || null,
             school_year: academicYearEl?.value?.trim() || null
         };
@@ -468,7 +514,7 @@ async function handleSubmit(e) {
         }
         
         // Validate schedule
-        if (!formData.schedule) {
+        if (!formData.day_of_week || !formData.start_time || !formData.end_time) {
             showAlert('Please select at least one day and set the time schedule', 'warning');
             if (submitBtn) {
                 submitBtn.disabled = false;

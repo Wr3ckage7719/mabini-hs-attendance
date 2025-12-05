@@ -415,12 +415,11 @@ window.editLoad = function(id) {
         if (endTimeEl) endTimeEl.value = load.end_time;
     } else if (load.schedule) {
         // Fallback: Parse old schedule format
-        const scheduleMatch = load.schedule.match(/^(.+)\\s+(\\d{1,2}:\\d{2})-(\\d{1,2}:\\d{2})$/);
+        const scheduleMatch = load.schedule.match(/^(.+)\s+(\d{1,2}:\d{2})-(\d{1,2}:\d{2})$/);
         if (scheduleMatch) {
             if (startTimeEl) startTimeEl.value = scheduleMatch[2];
             if (endTimeEl) endTimeEl.value = scheduleMatch[3];
         }
-    }
     }
     
     if (loadModal) loadModal.show();

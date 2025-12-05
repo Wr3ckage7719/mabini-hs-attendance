@@ -7,7 +7,7 @@ import { checkAuth } from './admin-common.js';
 import { getDocuments } from './admin-common.js';
 import { showAlert } from './admin-common.js';
 import { setActiveNavFromLocation } from './admin-common.js';
-import supabase from '../../js/supabase-client.js';
+import { supabase } from '../../js/supabase-client.js';
 
 const SMS_API = '../api/services/sms_service.php';
 
@@ -170,12 +170,19 @@ async function loadSMSLogs() {
     try {
         console.log('📱 Fetching SMS logs from sms_logs table...');
         
-        // Fetch from Supabase sms_logs table
-        const { data: logs, error } = await supabase
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), 10000)
+        );
+        
+        // Fetch from Supabase sms_logs table with timeout
+        const fetchPromise = supabase
             .from('sms_logs')
             .select('*')
             .order('created_at', { ascending: false })
             .limit(50);
+        
+        const { data: logs, error } = await Promise.race([fetchPromise, timeoutPromise]);
         
         if (error) {
             console.error('❌ Error fetching SMS logs:', error);
@@ -186,14 +193,14 @@ async function loadSMSLogs() {
         
         if (!logs || logs.length === 0) {
             container.innerHTML = `
-                <div style="text-align: center; padding: 4rem 2rem; opacity: 0.6;">
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
-                        <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" style="opacity: 0.3;">
+                <div style="text-align: center; padding: 4rem 2rem;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; color: var(--text-secondary, #94a3b8);">
+                        <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" style="opacity: 0.25;">
                             <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z"/>
                         </svg>
                         <div>
-                            <p style="margin: 0; font-weight: 600; font-size: 1.1rem; color: var(--text-primary);">No SMS Logs Yet</p>
-                            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--text-secondary);">SMS logs will appear here after messages are sent</p>
+                            <p style="margin: 0; font-weight: 600; font-size: 1.1rem; color: var(--text-primary, #e2e8f0);">No Data Yet</p>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.8;">SMS logs will appear here after messages are sent</p>
                         </div>
                     </div>
                 </div>
@@ -278,13 +285,31 @@ async function loadSMSLogs() {
         container.innerHTML = tableHtml;
     } catch (error) {
         console.error('❌ Error loading SMS logs:', error);
-        container.innerHTML = `
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-triangle"></i>
-                <strong>Error loading SMS logs.</strong><br>
-                ${error.message || 'Please check your connection and try again.'}
-            </div>
-        `;
+        
+        // Show "No Data Yet" instead of error for timeout or no data scenarios
+        if (error.message === 'Request timeout' || error.message.includes('fetch')) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 4rem 2rem;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; color: var(--text-secondary, #94a3b8);">
+                        <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" style="opacity: 0.25;">
+                            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z"/>
+                        </svg>
+                        <div>
+                            <p style="margin: 0; font-weight: 600; font-size: 1.1rem; color: var(--text-primary, #e2e8f0);">No Data Yet</p>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.8;">SMS logs will appear here after messages are sent</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Error loading SMS logs.</strong><br>
+                    ${error.message || 'Please check your connection and try again.'}
+                </div>
+            `;
+        }
     }
 }
 

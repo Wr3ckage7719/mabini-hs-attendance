@@ -227,7 +227,14 @@ async function updateProfile(student) {
 // Load student data
 async function loadStudentData() {
     try {
-        if (!currentStudent) return;
+        if (!currentStudent) {
+            console.warn('[Student Data] No current student - cannot load data');
+            // Show empty states
+            loadAttendanceTable([]);
+            return;
+        }
+        
+        console.log('[Student Data] Loading data for student:', currentStudent.id);
         
         // Load attendance statistics
         await loadAttendanceStats(currentStudent.id);
@@ -235,7 +242,9 @@ async function loadStudentData() {
         // Load class schedule
         await loadClassSchedule();
     } catch (error) {
-        console.error('Error loading student data:', error);
+        console.error('[Student Data] Error loading student data:', error);
+        // On error, show empty state for attendance table
+        loadAttendanceTable([]);
     }
 }
 
@@ -424,6 +433,7 @@ async function loadAttendanceStats(studentId) {
             updateAttendanceSummary(0, 0, 0, 0, true); // true = no data
             updateRecentActivity([]);
             loadAttendanceTable([]);
+            console.log('[Attendance Stats] ✅ Empty state displayed for all components');
             return;
         }
         
@@ -458,9 +468,13 @@ async function loadAttendanceStats(studentId) {
         
         // Load attendance records for table
         loadAttendanceTable(logs);
+        console.log('[Attendance Stats] ✅ All components updated successfully');
     } catch (error) {
         console.error('[Attendance Stats] Error loading attendance stats:', error);
         updateAttendanceSummary(0, 0, 0, 0, true); // true = error/no data
+        updateRecentActivity([]);
+        loadAttendanceTable([]);
+        console.log('[Attendance Stats] ⚠️ Error occurred - empty states displayed');
     }
 }
 
@@ -757,14 +771,14 @@ function loadAttendanceTable(logs) {
         console.log('[Attendance Table] No logs - showing empty state');
         tbody.innerHTML = `
             <tr>
-                <td colspan="4" style="text-align: center; padding: 3rem; opacity: 0.6;">
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem;">
-                        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" style="opacity: 0.3;">
+                <td colspan="4" style="text-align: center; padding: 4rem 2rem;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; color: var(--text-secondary, #94a3b8);">
+                        <svg viewBox="0 0 24 24" width="56" height="56" fill="currentColor" style="opacity: 0.25;">
                             <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
                         </svg>
                         <div>
-                            <p style="margin: 0; font-weight: 500; font-size: 0.95rem;">No attendance records yet</p>
-                            <p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; opacity: 0.7;">Your attendance history will be displayed here</p>
+                            <p style="margin: 0; font-weight: 600; font-size: 1.1rem; color: var(--text-primary, #e2e8f0);">No Data Yet</p>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.8;">Your attendance records will appear here</p>
                         </div>
                     </div>
                 </td>

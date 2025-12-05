@@ -742,13 +742,19 @@ function updateRecentActivity(logs) {
 
 // Load attendance table
 function loadAttendanceTable(logs) {
+    console.log('[Attendance Table] Loading table with logs:', logs?.length || 0);
     const tbody = document.getElementById('attendanceTableBody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error('[Attendance Table] Table body element not found!');
+        return;
+    }
 
     // Ensure logs is an array
     const logsArray = Array.isArray(logs) ? logs : [];
+    console.log('[Attendance Table] Logs array length:', logsArray.length);
 
     if (logsArray.length === 0) {
+        console.log('[Attendance Table] No logs - showing empty state');
         tbody.innerHTML = `
             <tr>
                 <td colspan="4" style="text-align: center; padding: 3rem; opacity: 0.6;">
@@ -767,6 +773,8 @@ function loadAttendanceTable(logs) {
         return;
     }
 
+    console.log('[Attendance Table] Processing logs...', logsArray.slice(0, 3));
+
     // Group logs by date and get the record per day
     const logsByDate = {};
     logsArray.forEach(log => {
@@ -781,6 +789,8 @@ function loadAttendanceTable(logs) {
         }
     });
     
+    console.log('[Attendance Table] Unique dates found:', Object.keys(logsByDate).length);
+    
     // Convert to array and sort by date descending
     const sortedLogs = Object.values(logsByDate)
         .sort((a, b) => {
@@ -789,6 +799,8 @@ function loadAttendanceTable(logs) {
             return dateB - dateA;
         })
         .slice(0, 15); // Take recent 15 records
+
+    console.log('[Attendance Table] Rendering', sortedLogs.length, 'rows');
 
     tbody.innerHTML = sortedLogs.map(log => {
         // Support both data formats
@@ -845,6 +857,8 @@ function loadAttendanceTable(logs) {
             </tr>
         `;
     }).join('');
+    
+    console.log('[Attendance Table] ✅ Table rendered successfully');
 }
 
 // Format time from HH:MM:SS to readable format

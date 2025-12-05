@@ -655,6 +655,25 @@
                 return;
             }
             
+            // Check for duplicate student number (only when creating new student)
+            if (!editingStudentId) {
+                const existingStudent = allStudents.find(s => s.student_number === studentNumber);
+                if (existingStudent) {
+                    alert(`Student number ${studentNumber} already exists!\n\nStudent: ${existingStudent.first_name} ${existingStudent.last_name}\nPlease use a different student number.`);
+                    return;
+                }
+            }
+            
+            // Check for duplicate email (only when creating new student or changing email)
+            const existingEmail = allStudents.find(s => 
+                s.email === email && 
+                (!editingStudentId || s.id !== editingStudentId)
+            );
+            if (existingEmail) {
+                alert(`Email ${email} is already in use by another student!\n\nStudent: ${existingEmail.first_name} ${existingEmail.last_name}\nPlease use a different email address.`);
+                return;
+            }
+            
             // Build student data object
             const studentData = {
                 student_number: studentNumber,
@@ -698,7 +717,14 @@
                     const result = await window.createDocument('students', studentData);
                     console.log('Create result:', result);
                     if (!result.data && result.error) {
-                        throw new Error(result.error || 'Failed to add student');
+                        // Check for specific database errors
+                        if (result.error.includes('duplicate key') && result.error.includes('student_number')) {
+                            throw new Error(`Student number ${studentNumber} already exists in the database. Please use a different number.`);
+                        } else if (result.error.includes('duplicate key') && result.error.includes('email')) {
+                            throw new Error(`Email ${email} is already registered. Please use a different email.`);
+                        } else {
+                            throw new Error(result.error || 'Failed to add student');
+                        }
                     }
                     alert('Student added successfully!');
                 }

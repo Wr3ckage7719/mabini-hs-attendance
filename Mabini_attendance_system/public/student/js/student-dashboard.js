@@ -568,20 +568,55 @@ async function loadNotifications() {
         }
 
         const notifications = data || [];
-        const unreadCount = notifications.filter(n => !n.is_read).length;
-
-        // Update badge
-        const badge = document.getElementById('notificationBadge');
-        if (badge && unreadCount > 0) {
-            badge.style.display = 'flex';
-            badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
-        } else if (badge) {
-            badge.style.display = 'none';
-        }
-
+        updateNotificationBadge(notifications);
         renderNotifications(notifications);
     } catch (error) {
         console.error('Error in loadNotifications:', error);
+    }
+}
+
+// Update notification badge count
+function updateNotificationBadge(notifications) {
+    const unreadCount = notifications.filter(n => !n.is_read).length;
+    const badge = document.getElementById('notificationBadge');
+    
+    if (badge && unreadCount > 0) {
+        badge.style.display = 'flex';
+        badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+    } else if (badge) {
+        badge.style.display = 'none';
+    }
+}
+
+// Mark all unread notifications as read
+async function markNotificationsAsRead() {
+    try {
+        if (!currentStudent) return;
+        
+        const { data, error } = await supabase
+            .from('student_notifications')
+            .update({ 
+                is_read: true, 
+                read_at: new Date().toISOString() 
+            })
+            .eq('student_id', currentStudent.id)
+            .eq('is_read', false)
+            .select();
+
+        if (error) {
+            console.error('Error marking notifications as read:', error);
+            return;
+        }
+
+        console.log('Marked as read:', data);
+        
+        // Update badge to hide it
+        const badge = document.getElementById('notificationBadge');
+        if (badge) {
+            badge.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error in markNotificationsAsRead:', error);
     }
 }
 
@@ -646,9 +681,11 @@ function setupNotifications() {
     const closeBtn = document.getElementById('closeNotificationsBtn');
 
     if (notifBtn && modal) {
-        notifBtn.addEventListener('click', () => {
+        notifBtn.addEventListener('click', async () => {
             modal.style.display = 'flex';
-            loadNotifications();
+            await loadNotifications();
+            // Mark all as read when modal is opened
+            await markNotificationsAsRead();
         });
     }
 

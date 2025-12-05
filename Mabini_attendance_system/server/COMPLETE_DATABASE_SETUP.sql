@@ -195,6 +195,7 @@ CREATE TABLE IF NOT EXISTS public.student_notifications (
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     type VARCHAR(20) DEFAULT 'info' CHECK (type IN ('info', 'warning', 'success', 'danger')),
+    notification_type VARCHAR(50) DEFAULT 'general',
     target_type VARCHAR(20) NOT NULL CHECK (target_type IN ('all', 'grade', 'section', 'individual')),
     target_value TEXT,
     student_id UUID,
@@ -203,6 +204,22 @@ CREATE TABLE IF NOT EXISTS public.student_notifications (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     created_by UUID
 );
+
+-- Add notification_type column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'student_notifications' 
+        AND column_name = 'notification_type'
+    ) THEN
+        ALTER TABLE public.student_notifications 
+        ADD COLUMN notification_type VARCHAR(50) DEFAULT 'general';
+        
+        COMMENT ON COLUMN public.student_notifications.notification_type IS 'Category of notification: general, absence, grade, announcement, emergency, attendance_warning';
+    END IF;
+END $$;
 
 -- Add student_id column if it doesn't exist
 DO $$ 

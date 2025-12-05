@@ -357,6 +357,7 @@ async function handleSubmit(e) {
 
     try {
         const type = document.querySelector('input[name="type"]:checked').value;
+        const notificationCategory = document.getElementById('notificationCategory')?.value || 'general';
         const title = document.getElementById('notificationTitle').value.trim();
         const message = document.getElementById('notificationMessage').value.trim();
         const targetType = document.querySelector('input[name="targetType"]:checked').value;
@@ -385,6 +386,7 @@ async function handleSubmit(e) {
             title,
             message,
             type,
+            notification_type: notificationCategory,
             target_type: targetType,
             target_value: targetValue,
             student_id: studentId,
@@ -413,6 +415,10 @@ async function handleSubmit(e) {
         document.querySelectorAll('.target-option').forEach(o => o.classList.remove('active'));
         document.querySelector('.target-option').classList.add('active');
         document.getElementById('targetValueGroup').style.display = 'none';
+        
+        // Reset notification category dropdown to default
+        const categorySelect = document.getElementById('notificationCategory');
+        if (categorySelect) categorySelect.value = 'general';
         
         // Reset recipient count
         updateRecipientCount('all', null);

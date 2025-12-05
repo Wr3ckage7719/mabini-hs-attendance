@@ -3,7 +3,7 @@
  * Initialize Supabase connection
  */
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/+esm'
 
 // Supabase configuration (hardcoded for Apache/XAMPP)
 const SUPABASE_URL = 'https://ddblgwzylvwuucnpmtzi.supabase.co'

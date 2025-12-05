@@ -597,6 +597,21 @@ async function markNotificationsAsRead() {
         }
         
         console.log('📖 Marking notifications as read...');
+        console.log('Student ID:', currentStudent.id);
+        
+        // First check how many unread notifications exist
+        const { data: unreadCheck, error: checkError } = await supabase
+            .from('student_notifications')
+            .select('id, title, is_read')
+            .eq('student_id', currentStudent.id)
+            .eq('is_read', false);
+        
+        console.log('Unread notifications before update:', unreadCheck);
+        
+        if (!unreadCheck || unreadCheck.length === 0) {
+            console.log('✅ No unread notifications to mark');
+            return true;
+        }
         
         const { data, error } = await supabase
             .from('student_notifications')
@@ -610,14 +625,21 @@ async function markNotificationsAsRead() {
 
         if (error) {
             console.error('❌ Error marking notifications as read:', error);
+            console.error('Error details:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint
+            });
             return false;
         }
 
-        console.log('✅ Marked as read:', data?.length || 0, 'notifications');
+        console.log('✅ Successfully marked as read:', data?.length || 0, 'notifications');
+        console.log('Updated notifications:', data);
         return true;
         
     } catch (error) {
-        console.error('Error in markNotificationsAsRead:', error);
+        console.error('💥 Exception in markNotificationsAsRead:', error);
         return false;
     }
 }
@@ -690,15 +712,19 @@ function setupNotifications() {
             // Load notifications first to show current state
             await loadNotifications();
             
-            // Mark all as read after a short delay (800ms) so user sees the unread state
+            // Mark all as read after 1.5 seconds so user can see the unread state
             setTimeout(async () => {
+                console.log('⏰ Delay complete, marking as read now...');
                 const marked = await markNotificationsAsRead();
                 if (marked) {
+                    console.log('🔄 Reloading notifications to show updated state...');
                     // Reload notifications to show updated read state
                     await loadNotifications();
                     console.log('✅ Notifications marked as read and UI updated');
+                } else {
+                    console.warn('⚠️ Mark as read returned false');
                 }
-            }, 800);
+            }, 1500);
         });
     }
 

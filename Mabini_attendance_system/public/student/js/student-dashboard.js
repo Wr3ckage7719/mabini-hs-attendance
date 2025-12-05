@@ -591,7 +591,12 @@ function updateNotificationBadge(notifications) {
 // Mark all unread notifications as read
 async function markNotificationsAsRead() {
     try {
-        if (!currentStudent) return;
+        if (!currentStudent) {
+            console.warn('No current student, cannot mark as read');
+            return false;
+        }
+        
+        console.log('📖 Marking notifications as read...');
         
         const { data, error } = await supabase
             .from('student_notifications')
@@ -604,19 +609,16 @@ async function markNotificationsAsRead() {
             .select();
 
         if (error) {
-            console.error('Error marking notifications as read:', error);
-            return;
+            console.error('❌ Error marking notifications as read:', error);
+            return false;
         }
 
-        console.log('Marked as read:', data);
+        console.log('✅ Marked as read:', data?.length || 0, 'notifications');
+        return true;
         
-        // Update badge to hide it
-        const badge = document.getElementById('notificationBadge');
-        if (badge) {
-            badge.style.display = 'none';
-        }
     } catch (error) {
         console.error('Error in markNotificationsAsRead:', error);
+        return false;
     }
 }
 
@@ -682,20 +684,33 @@ function setupNotifications() {
 
     if (notifBtn && modal) {
         notifBtn.addEventListener('click', async () => {
+            console.log('🔔 Opening notifications modal...');
             modal.style.display = 'flex';
+            
+            // Load notifications first to show current state
             await loadNotifications();
-            // Mark all as read when modal is opened
-            await markNotificationsAsRead();
+            
+            // Mark all as read after a short delay (800ms) so user sees the unread state
+            setTimeout(async () => {
+                const marked = await markNotificationsAsRead();
+                if (marked) {
+                    // Reload notifications to show updated read state
+                    await loadNotifications();
+                    console.log('✅ Notifications marked as read and UI updated');
+                }
+            }, 800);
         });
     }
 
     if (closeBtn && modal) {
-        closeBtn.addEventListener('click', () => {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             modal.style.display = 'none';
         });
     }
 
     if (modal) {
+        // Close modal when clicking backdrop
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 modal.style.display = 'none';

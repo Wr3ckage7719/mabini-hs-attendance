@@ -298,10 +298,23 @@ CREATE POLICY "Public read teaching loads"
 ON teaching_loads FOR SELECT
 USING (true);
 
--- STUDENT_NOTIFICATIONS: Public read access
--- (Application handles filtering by student_id)
+-- STUDENT_NOTIFICATIONS: Public read and write access
+-- (Application handles filtering and authentication)
 CREATE POLICY "Public read notifications"
 ON student_notifications FOR SELECT
+USING (true);
+
+CREATE POLICY "Public insert notifications"
+ON student_notifications FOR INSERT
+WITH CHECK (true);
+
+CREATE POLICY "Public update notifications"
+ON student_notifications FOR UPDATE
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Public delete notifications"
+ON student_notifications FOR DELETE
 USING (true);
 
 -- PASSWORD_RESET_TOKENS: Allow all operations

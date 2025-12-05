@@ -180,14 +180,66 @@ async function handleQRLogin(qrData) {
     try {
         console.log('QR Code scanned:', qrData);
         
-        // QR code contains the employee number or email
-        const identifier = qrData.trim();
+        // Extract employee number from any QR format
+        let identifier = null;
         
+        // Try parsing as JSON first (format: {"employeeNumber":"T12345"})
+        try {
+            const jsonData = JSON.parse(qrData);
+            identifier = jsonData.employeeNumber || jsonData.employee_number || jsonData.id || jsonData.number || jsonData.email;
+            if (identifier) {
+                console.log('Extracted identifier from JSON:', identifier);
+            }
+        } catch (e) {
+            // Not JSON, continue to other formats
+        }
+        
+        // Try extracting from URL format (format: https://example.com?teacher=T12345)
+        if (!identifier && qrData.includes('://')) {
+            try {
+                const url = new URL(qrData);
+                identifier = url.searchParams.get('teacher') || 
+                           url.searchParams.get('employeeNumber') || 
+                           url.searchParams.get('employee_number') ||
+                           url.searchParams.get('id') ||
+                           url.searchParams.get('number') ||
+                           url.searchParams.get('email');
+                if (identifier) {
+                    console.log('Extracted identifier from URL:', identifier);
+                }
+            } catch (e) {
+                // Not a valid URL
+            }
+        }
+        
+        // Check if it looks like an email
+        if (!identifier && qrData.includes('@')) {
+            identifier = qrData.trim();
+            console.log('Using email from QR:', identifier);
+        }
+        
+        // Try extracting alphanumeric ID (for employee numbers like T12345)
         if (!identifier) {
+            // Remove special characters but keep alphanumeric
+            const alphaNumeric = qrData.replace(/[^a-zA-Z0-9]/g, '');
+            if (alphaNumeric.length >= 3 && alphaNumeric.length <= 15) {
+                identifier = alphaNumeric;
+                console.log('Extracted identifier from text:', identifier);
+            } else if (qrData.trim().length > 0) {
+                // Use as-is if it's already clean
+                identifier = qrData.trim();
+                console.log('Using QR data as-is:', identifier);
+            }
+        }
+        
+        if (!identifier || identifier.length === 0) {
             showAlert('Invalid QR code. No identifier found.');
             qrStatus.textContent = 'Invalid QR code - Ready to scan again';
+            console.error('Could not extract identifier from:', qrData);
             return;
         }
+        
+        console.log('Final identifier to lookup:', identifier);
         
         // Stop the scanner to prevent multiple scans
         if (html5QrCode && html5QrCode.isScanning) {

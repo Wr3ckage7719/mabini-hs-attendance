@@ -219,14 +219,59 @@ async function handleQRLogin(qrData) {
     try {
         console.log('QR Code scanned:', qrData);
         
-        // QR code contains the student number
-        const studentNumber = qrData.trim();
+        // Extract student number from any QR format
+        let studentNumber = null;
         
+        // Try parsing as JSON first (format: {"studentNumber":"123456"})
+        try {
+            const jsonData = JSON.parse(qrData);
+            studentNumber = jsonData.studentNumber || jsonData.student_number || jsonData.id || jsonData.number;
+            if (studentNumber) {
+                console.log('Extracted student number from JSON:', studentNumber);
+            }
+        } catch (e) {
+            // Not JSON, continue to other formats
+        }
+        
+        // Try extracting from URL format (format: https://example.com?student=123456)
+        if (!studentNumber && qrData.includes('://')) {
+            try {
+                const url = new URL(qrData);
+                studentNumber = url.searchParams.get('student') || 
+                              url.searchParams.get('studentNumber') || 
+                              url.searchParams.get('student_number') ||
+                              url.searchParams.get('id') ||
+                              url.searchParams.get('number');
+                if (studentNumber) {
+                    console.log('Extracted student number from URL:', studentNumber);
+                }
+            } catch (e) {
+                // Not a valid URL
+            }
+        }
+        
+        // Try extracting numbers from text (fallback for plain text or embedded numbers)
         if (!studentNumber) {
+            // Remove all non-numeric characters and check if we have a valid number
+            const numericOnly = qrData.replace(/\D/g, '');
+            if (numericOnly.length >= 3 && numericOnly.length <= 10) {
+                studentNumber = numericOnly;
+                console.log('Extracted student number from text:', studentNumber);
+            } else if (qrData.trim().length > 0) {
+                // If it's already just the number, use it directly
+                studentNumber = qrData.trim();
+                console.log('Using QR data as-is:', studentNumber);
+            }
+        }
+        
+        if (!studentNumber || studentNumber.length === 0) {
             showAlert('Invalid QR code. No student number found.');
             qrStatus.textContent = 'Invalid QR code - Ready to scan again';
+            console.error('Could not extract student number from:', qrData);
             return;
         }
+        
+        console.log('Final student number to lookup:', studentNumber);
         
         // Stop the scanner to prevent multiple scans
         if (html5QrCode && html5QrCode.isScanning) {

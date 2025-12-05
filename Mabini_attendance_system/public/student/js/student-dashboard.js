@@ -289,18 +289,31 @@ async function loadClassSchedule() {
             const subjectName = schedule.subject?.name || 'N/A';
             const teacherName = schedule.teacher ? `${schedule.teacher.first_name} ${schedule.teacher.last_name}` : 'N/A';
             
-            // Use new day_of_week field with fallback to old day field
-            const day = schedule.day_of_week || schedule.day || 'N/A';
+            // Parse day_of_week - can be comma-separated (e.g., "Monday, Tuesday, Wednesday")
+            let day = 'N/A';
+            if (schedule.day_of_week) {
+                // If it contains commas, it's a list of days - format it nicely
+                if (schedule.day_of_week.includes(',')) {
+                    const days = schedule.day_of_week.split(',').map(d => d.trim());
+                    // Show abbreviated format for multiple days
+                    day = days.map(d => d.substring(0, 3)).join(', ');
+                } else {
+                    day = schedule.day_of_week;
+                }
+            } else if (schedule.day) {
+                day = schedule.day;
+            }
             
-            // Check for new start_time/end_time fields, fallback to old format
-            let time = '-';
+            // Build time string from start_time and end_time
+            let time = 'N/A';
             if (schedule.start_time && schedule.end_time) {
                 const startTime = formatTime(schedule.start_time);
                 const endTime = formatTime(schedule.end_time);
-                time = `${startTime} - ${endTime}`;
+                time = `${startTime}-${endTime}`;
             } else if (schedule.start_time) {
                 time = formatTime(schedule.start_time);
             } else if (schedule.schedule) {
+                // Fallback to old schedule field
                 time = schedule.schedule;
             }
 

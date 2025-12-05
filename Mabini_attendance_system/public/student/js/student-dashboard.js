@@ -477,19 +477,6 @@ function calculateScheduledClassDays(startDate, endDate, scheduledDays) {
 
 // Update attendance summary UI with all the new elements
 function updateAttendanceSummary(present, absent, total, rate) {
-    // Update main stat cards
-    const daysPresentEl = document.getElementById('daysPresent');
-    if (daysPresentEl) daysPresentEl.textContent = present;
-
-    const totalDaysEl = document.getElementById('totalDays');
-    if (totalDaysEl) totalDaysEl.textContent = total;
-
-    const daysAbsentEl = document.getElementById('daysAbsent');
-    if (daysAbsentEl) daysAbsentEl.textContent = absent;
-
-    const attendanceRateEl = document.getElementById('attendanceRate');
-    if (attendanceRateEl) attendanceRateEl.textContent = rate.toFixed(1) + '%';
-    
     // Update summary card
     const rateDisplay = document.getElementById('attendanceRateDisplay');
     if (rateDisplay) rateDisplay.textContent = rate.toFixed(1) + '%';
@@ -524,13 +511,13 @@ function updateAttendanceSummary(present, absent, total, rate) {
     const statusEl = document.getElementById('attendanceStatus');
     if (statusEl) {
         if (rate >= 75) {
-            statusEl.textContent = '✅ Good Attendance';
+            statusEl.textContent = '✅ Excellent Attendance';
             statusEl.style.color = '#10b981';
         } else if (rate >= 50) {
             statusEl.textContent = '⚠️ Needs Improvement';
             statusEl.style.color = '#f59e0b';
         } else {
-            statusEl.textContent = '❌ Critical Attendance';
+            statusEl.textContent = '❌ Critical - Action Required';
             statusEl.style.color = '#ef4444';
         }
     }
@@ -541,20 +528,23 @@ function updateAttendanceSummary(present, absent, total, rate) {
         warningEl.style.display = rate < 75 ? 'block' : 'none';
     }
     
-    // Update progress bars in stat cards
-    const rateProgressBar = document.getElementById('rateProgressBar');
-    if (rateProgressBar) {
-        setTimeout(() => rateProgressBar.style.width = Math.min(rate, 100) + '%', 100);
+    // Calculate and update performance insights
+    const classesNeeded = Math.max(0, Math.ceil((0.75 * total - present) / 0.25));
+    const classesNeededEl = document.getElementById('classesNeeded');
+    if (classesNeededEl) {
+        if (rate >= 75) {
+            classesNeededEl.textContent = '0';
+            classesNeededEl.parentElement.parentElement.style.borderLeftColor = '#10b981';
+            classesNeededEl.style.color = '#10b981';
+        } else {
+            classesNeededEl.textContent = classesNeeded;
+        }
     }
     
-    const presentProgressBar = document.getElementById('presentProgressBar');
-    if (presentProgressBar && total > 0) {
-        setTimeout(() => presentProgressBar.style.width = (present / total * 100) + '%', 100);
-    }
-    
-    const absentProgressBar = document.getElementById('absentProgressBar');
-    if (absentProgressBar && total > 0) {
-        setTimeout(() => absentProgressBar.style.width = (absent / total * 100) + '%', 100);
+    // Update monthly rate (simplified - using overall rate for now)
+    const monthlyRateEl = document.getElementById('monthlyRate');
+    if (monthlyRateEl) {
+        monthlyRateEl.textContent = rate.toFixed(1) + '%';
     }
 }
 
@@ -567,11 +557,11 @@ function updateRecentActivity(logs) {
     
     if (logsArray.length === 0) {
         feedEl.innerHTML = `
-            <div style="text-align: center; padding: 2rem; opacity: 0.5;">
-                <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" style="opacity: 0.3;">
+            <div style="text-align: center; padding: 3rem 1rem; opacity: 0.5;">
+                <svg viewBox="0 0 24 24" width="56" height="56" fill="currentColor" style="opacity: 0.2;">
                     <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
                 </svg>
-                <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">No recent activity</p>
+                <p style="margin: 0.75rem 0 0 0; font-size: 0.875rem;">No recent activity</p>
             </div>
         `;
         return;
@@ -582,20 +572,57 @@ function updateRecentActivity(logs) {
         .sort((a, b) => new Date(b.scan_time) - new Date(a.scan_time))
         .slice(0, 5);
     
+    // Calculate streak
+    let streak = 0;
+    const today = new Date();
+    const sortedByDateAsc = [...logsArray].sort((a, b) => new Date(a.scan_time) - new Date(b.scan_time));
+    
+    for (let i = sortedByDateAsc.length - 1; i >= 0; i--) {
+        const logDate = new Date(sortedByDateAsc[i].scan_time);
+        const expectedDate = new Date(today);
+        expectedDate.setDate(expectedDate.getDate() - streak);
+        
+        if (logDate.toDateString() === expectedDate.toDateString()) {
+            streak++;
+        } else {
+            break;
+        }
+    }
+    
+    const streakEl = document.getElementById('presentStreak');
+    if (streakEl) {
+        streakEl.textContent = streak;
+    }
+    
     feedEl.innerHTML = sortedLogs.map(log => {
         const date = new Date(log.scan_time);
-        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         
+        const isToday = date.toDateString() === new Date().toDateString();
+        const isYesterday = date.toDateString() === new Date(Date.now() - 86400000).toDateString();
+        
+        let displayDate = dateStr;
+        if (isToday) displayDate = 'Today';
+        else if (isYesterday) displayDate = 'Yesterday';
+        
         return `
-            <div style="padding: 0.75rem; background: rgba(79, 172, 254, 0.05); border-radius: 8px; border-left: 3px solid #10b981;">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem;">
-                            ✅ Attended Class
+            <div style="padding: 1rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.03) 100%); border-radius: 10px; border-left: 3px solid #10b981; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateX(4px)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.15)'" onmouseout="this.style.transform='translateX(0)'; this.style.boxShadow='none'">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="flex-shrink: 0; width: 36px; height: 36px; background: linear-gradient(135deg, #10b981 0%, #34d399 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; color: #10b981;">
+                            Class Attended
                         </div>
-                        <div style="font-size: 0.75rem; opacity: 0.7;">
-                            ${dateStr} at ${timeStr}
+                        <div style="font-size: 0.8rem; opacity: 0.7; display: flex; align-items: center; gap: 0.5rem;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="opacity: 0.5;">
+                                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                            </svg>
+                            <span>${displayDate} • ${timeStr}</span>
                         </div>
                     </div>
                 </div>

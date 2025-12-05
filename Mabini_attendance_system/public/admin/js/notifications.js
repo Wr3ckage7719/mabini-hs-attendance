@@ -103,7 +103,9 @@ async function loadStudentsCache() {
         
         if (testError) {
             console.error('❌ Database connection test failed:', testError);
-            throw new Error(`Database connection failed: ${testError.message}`);
+            // Don't throw, just log and continue with empty cache
+            studentsCache = [];
+            return;
         }
         
         console.log(`✅ Database connected. Total students in table: ${testData || 'unknown'}`);
@@ -118,10 +120,12 @@ async function loadStudentsCache() {
 
         if (error) {
             console.error('❌ Error fetching students:', error);
-            throw error;
+            // Don't throw, just set empty cache
+            studentsCache = [];
+            return;
         }
         
-        studentsCache = students || [];
+        studentsCache = Array.isArray(students) ? students : [];
         
         console.log(`✅ Loaded ${studentsCache.length} active students`);
         console.log('Student sample:', studentsCache.slice(0, 3)); // Log first 3 students

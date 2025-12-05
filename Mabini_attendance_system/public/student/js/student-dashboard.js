@@ -288,10 +288,21 @@ async function loadClassSchedule() {
         tbody.innerHTML = schedules.map(schedule => {
             const subjectName = schedule.subject?.name || 'N/A';
             const teacherName = schedule.teacher ? `${schedule.teacher.first_name} ${schedule.teacher.last_name}` : 'N/A';
-            const day = schedule.day || 'N/A';
-            const startTime = schedule.start_time ? formatTime(schedule.start_time) : '-';
-            const endTime = schedule.end_time ? formatTime(schedule.end_time) : '-';
-            const time = `${startTime} - ${endTime}`;
+            
+            // Use new day_of_week field with fallback to old day field
+            const day = schedule.day_of_week || schedule.day || 'N/A';
+            
+            // Check for new start_time/end_time fields, fallback to old format
+            let time = '-';
+            if (schedule.start_time && schedule.end_time) {
+                const startTime = formatTime(schedule.start_time);
+                const endTime = formatTime(schedule.end_time);
+                time = `${startTime} - ${endTime}`;
+            } else if (schedule.start_time) {
+                time = formatTime(schedule.start_time);
+            } else if (schedule.schedule) {
+                time = schedule.schedule;
+            }
 
             return `
                 <tr style="transition:background 0.2s;" onmouseover="this.style.background='rgba(102,126,234,0.05)'" onmouseout="this.style.background='transparent'">

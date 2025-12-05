@@ -341,6 +341,32 @@ async function loadClassSchedule() {
 // Load attendance statistics
 async function loadAttendanceStats(studentId) {
     try {
+        // Get student's class schedule first to calculate actual scheduled days
+        let scheduledClassDays = [];
+        
+        if (currentStudent && currentStudent.section_id) {
+            const { data: scheduleData, error: scheduleError } = await supabase
+                .from('teaching_loads')
+                .select('day_of_week, start_time, end_time')
+                .eq('section_id', currentStudent.section_id);
+            
+            if (!scheduleError && scheduleData) {
+                // Parse days from schedule
+                scheduleData.forEach(schedule => {
+                    if (schedule.day_of_week) {
+                        const days = schedule.day_of_week.split(',').map(d => d.trim());
+                        days.forEach(day => {
+                            if (!scheduledClassDays.includes(day)) {
+                                scheduledClassDays.push(day);
+                            }
+                        });
+                    }
+                });
+            }
+        }
+        
+        console.log('Scheduled class days:', scheduledClassDays);
+        
         // Define date range - current school year or last 6 months
         const endDate = new Date();
         const startDate = new Date();
@@ -373,31 +399,187 @@ async function loadAttendanceStats(studentId) {
         
         const daysPresent = uniqueDates.size;
         
-        // Get total school days (approximate based on weekdays in range)
-        const totalDays = calculateSchoolDays(startDate, endDate);
+        // Calculate total scheduled class days (only days student has classes)
+        const totalDays = calculateScheduledClassDays(startDate, endDate, scheduledClassDays);
         const daysAbsent = Math.max(0, totalDays - daysPresent);
         const attendanceRate = totalDays > 0 ? (daysPresent / totalDays) * 100 : 0;
         
-        // Update UI
-        const daysPresentEl = document.getElementById('daysPresent');
-        if (daysPresentEl) daysPresentEl.textContent = daysPresent;
-
-        const totalDaysEl = document.getElementById('totalDays');
-        if (totalDaysEl) totalDaysEl.textContent = totalDays;
-
-        const daysAbsentEl = document.getElementById('daysAbsent');
-        if (daysAbsentEl) daysAbsentEl.textContent = daysAbsent;
-
-        const attendanceRateEl = document.getElementById('attendanceRate');
-        if (attendanceRateEl) {
-            attendanceRateEl.textContent = attendanceRate.toFixed(1) + '%';
-        }
-
-        // Load attendance records for table
+        console.log('Attendance calculation:', {
+            daysPresent,
+            totalDays,
+            daysAbsent,
+            attendanceRate,
+            scheduledDays: scheduledClassDays
+        });
+        
+        // Update UI\n        updateAttendanceSummary(daysPresent, daysAbsent, totalDays, attendanceRate);
+        
+        // Load attendance records for table and activity feed
         loadAttendanceTable(logs);
+        loadRecentActivity(logs);
+        
     } catch (error) {
         console.error('Error loading attendance stats:', error);
         // Set defaults
+        updateAttendanceSummary(0, 0, 0, 0);
+    }
+}
+
+// Calculate scheduled class days based on student's actual schedule
+function calculateScheduledClassDays(startDate, endDate, scheduledDays) {
+    if (!scheduledDays || scheduledDays.length === 0) {
+        // Fallback to weekdays if no schedule
+        return calculateSchoolDays(startDate, endDate);
+    }
+    
+    const dayMap = {
+        'Sunday': 0,
+        'Monday': 1,
+        'Tuesday': 2,
+        'Wednesday': 3,
+        'Thursday': 4,
+        'Friday': 5,
+        'Saturday': 6
+    };
+    
+    const scheduledDayNumbers = scheduledDays.map(day => dayMap[day]).filter(d => d !== undefined);
+    
+    let count = 0;
+    const current = new Date(startDate);
+    
+    while (current <= endDate) {
+        const dayOfWeek = current.getDay();
+        // Count only days when student has classes
+        if (scheduledDayNumbers.includes(dayOfWeek)) {
+            count++;
+        }
+        current.setDate(current.getDate() + 1);
+    }
+    
+    return count;
+}
+
+// Update attendance summary card with animations
+function updateAttendanceSummary(present, absent, total, rate) {
+    // Update main rate
+    const rateEl = document.getElementById('attendanceRate');
+    if (rateEl) {
+        rateEl.textContent = rate.toFixed(1) + '%';
+        
+        // Color code based on rate
+        if (rate >= 75) {
+            rateEl.style.color = '#10b981'; // Green
+        } else if (rate >= 50) {
+            rateEl.style.color = '#f59e0b'; // Yellow
+        } else {
+            rateEl.style.color = '#ef4444'; // Red
+        }
+    }
+    
+    // Update status
+    const statusEl = document.getElementById('attendanceStatus');
+    if (statusEl) {
+        if (rate >= 75) {
+            statusEl.textContent = 'Excellent Attendance! ✨';
+            statusEl.style.color = '#10b981';
+        } else if (rate >= 50) {
+            statusEl.textContent = 'Needs Improvement ⚠️';
+            statusEl.style.color = '#f59e0b';
+        } else {
+            statusEl.textContent = 'Critical - Action Required 🚨';
+            statusEl.style.color = '#ef4444';
+        }
+    }
+    
+    // Update progress bar
+    const progressBar = document.getElementById('attendanceProgress');
+    if (progressBar) {
+        setTimeout(() => {
+            progressBar.style.width = Math.min(rate, 100) + '%';
+            
+            // Color code progress bar
+            if (rate >= 75) {
+                progressBar.style.background = 'linear-gradient(90deg, #10b981 0%, #34d399 100%)';
+            } else if (rate >= 50) {
+                progressBar.style.background = 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)';
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, #ef4444 0%, #f87171 100%)';
+            }
+        }, 100);
+    }
+    
+    // Update progress label
+    const progressLabel = document.getElementById('progressLabel');
+    if (progressLabel) {
+        progressLabel.textContent = `${present}/${total} classes`;
+    }
+    
+    // Update individual stats
+    const daysPresentEl = document.getElementById('daysPresent');
+    if (daysPresentEl) daysPresentEl.textContent = present;
+
+    const totalDaysEl = document.getElementById('totalDays');
+    if (totalDaysEl) totalDaysEl.textContent = total;
+
+    const daysAbsentEl = document.getElementById('daysAbsent');
+    if (daysAbsentEl) daysAbsentEl.textContent = absent;
+    
+    // Show/hide warning
+    const warningEl = document.getElementById('attendanceWarning');
+    if (warningEl) {
+        if (rate < 75) {
+            warningEl.style.display = 'block';
+        } else {
+            warningEl.style.display = 'none';
+        }
+    }
+}
+
+// Load recent activity feed
+function loadRecentActivity(logs) {
+    const feedEl = document.getElementById('recentActivityFeed');
+    if (!feedEl) return;
+    
+    const logsArray = Array.isArray(logs) ? logs : [];
+    
+    if (logsArray.length === 0) {
+        feedEl.innerHTML = `
+            <div style=\"text-align: center; padding: 2rem 1rem; color: var(--text-secondary);\">
+                <div style=\"font-size: 2rem; margin-bottom: 0.5rem;\">📭</div>
+                <div style=\"font-size: 0.9rem;\">No recent activity</div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Get last 5 unique days
+    const activityByDate = {};
+    logsArray.forEach(log => {
+        if (log.scan_time) {
+            const date = log.scan_time.split('T')[0];
+            if (!activityByDate[date]) {
+                activityByDate[date] = log;
+            }
+        }
+    });
+    
+    const recentDates = Object.keys(activityByDate).sort().reverse().slice(0, 5);
+    
+    feedEl.innerHTML = recentDates.map(date => {
+        const log = activityByDate[date];
+        const dateObj = new Date(date);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        return `
+            <div style=\"display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 8px; background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981;\">\n                <span style=\"font-size: 1.25rem;\">✅</span>\n                <div style=\"flex: 1;\">\n                    <div style=\"font-size: 0.9rem; font-weight: 600; color: var(--text-primary);\">${formattedDate}</div>\n                    <div style=\"font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.1rem;\">Present</div>\n                </div>\n            </div>\n        `;
+    }).join('');
+    
+    // Add "View All" link if there are more records
+    if (logsArray.length > 5) {
+        feedEl.innerHTML += `
+            <div style=\"text-align: center; padding-top: 0.5rem;\">\n                <a href=\"#\" style=\"font-size: 0.85rem; color: #667eea; text-decoration: none; font-weight: 600;\" onclick=\"document.querySelector('.attendance-title').scrollIntoView({behavior: 'smooth'}); return false;\">View All →</a>\n            </div>\n        `;
+    }
+}
         const daysPresentEl = document.getElementById('daysPresent');
         if (daysPresentEl) daysPresentEl.textContent = '0';
         

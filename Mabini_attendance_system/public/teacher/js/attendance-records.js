@@ -162,17 +162,14 @@ async function loadAttendanceRecords() {
             </tr>
         `;
 
-        // Query entrance_logs table for the selected date
-        const startDate = selectedDate ? `${selectedDate}T00:00:00` : null;
-        const endDate = selectedDate ? `${selectedDate}T23:59:59` : null;
-
-        let query = supabase.from('entrance_logs').select('*');
+        // Query attendance table for the selected date
+        let query = supabase.from('attendance').select('*');
         
-        if (startDate && endDate) {
-            query = query.gte('check_in_time', startDate).lte('check_in_time', endDate);
+        if (selectedDate) {
+            query = query.eq('attendance_date', selectedDate);
         }
 
-        query = query.order('check_in_time', { ascending: false });
+        query = query.order('attendance_date', { ascending: false });
 
         const { data: logs, error: logsError } = await query;
 
@@ -212,17 +209,10 @@ async function loadAttendanceRecords() {
     }
 }
 
-// Derive attendance status from log times
+// Derive attendance status from log
 function deriveStatus(log) {
-    if (!log.check_in_time) return 'absent';
-    
-    const checkInDate = new Date(log.check_in_time);
-    const hour = checkInDate.getHours();
-    
-    // If checked in after 8 AM, mark as late
-    if (hour >= 8) return 'late';
-    
-    return 'present';
+    // Use the status field directly from attendance table
+    return log.status || 'present';
 }
 
 // Render attendance table
@@ -245,9 +235,9 @@ function renderAttendanceTable() {
 
         const section = teacherSections.find(s => s.id === student.section_id);
         const status = deriveStatus(log);
-        const checkIn = log.check_in_time ? formatTime(log.check_in_time) : '-';
-        const checkOut = log.check_out_time ? formatTime(log.check_out_time) : '-';
-        const date = log.check_in_time ? formatDate(log.check_in_time) : '-';
+        const checkIn = log.time_in || '-';
+        const checkOut = log.time_out || '-';
+        const date = log.attendance_date ? formatDate(log.attendance_date) : '-';
 
         return `
             <tr>
@@ -291,12 +281,11 @@ function renderAttendanceTable() {
 function updateStatistics() {
     const today = new Date().toISOString().split('T')[0];
     const todayRecords = allRecords.filter(log => {
-        const logDate = log.check_in_time ? log.check_in_time.split('T')[0] : null;
-        return logDate === today;
+        return log.attendance_date === today;
     });
 
-    const presentCount = todayRecords.filter(log => deriveStatus(log) === 'present').length;
-    const lateCount = todayRecords.filter(log => deriveStatus(log) === 'late').length;
+    const presentCount = todayRecords.filter(log => log.status === 'present').length;
+    const lateCount = todayRecords.filter(log => log.status === 'late').length;
     const absentCount = allStudents.length - todayRecords.length;
 
     statPresent.textContent = presentCount;
@@ -358,10 +347,11 @@ window.editAttendance = async function(logId) {
         modalTitle.textContent = 'Edit Attendance';
         
         studentSelect.value = log.student_id;
-        attendanceDate.value = log.check_in_time ? log.check_in_time.split('T')[0] : '';
-        checkInTime.value = log.check_in_time ? log.check_in_time.split('T')[1].substring(0, 5) : '';
-        checkOutTime.value = log.check_out_time ? log.check_out_time.split('T')[1].substring(0, 5) : '';
-        attendanceStatus.value = deriveStatus(log);
+        attendanceDate.value = log.attendance_date || '';
+        checkInTime.value = log.time_in || '';
+        checkOutTime.value = log.time_out || '';
+        attendanceStatus.value = log.status || 'present';
+        remarks.value = log.remarks || '';
         
         attendanceModal.show();
     } catch (error) {
@@ -376,7 +366,7 @@ window.deleteAttendance = async function(logId) {
 
     try {
         const { error } = await supabase
-            .from('entrance_logs')
+            .from('attendance')
             .delete()
             .eq('id', logId);
 
@@ -403,10 +393,7 @@ async function saveAttendance() {
         const checkIn = checkInTime.value;
         const checkOut = checkOutTime.value;
         const status = attendanceStatus.value;
-
-        // Build timestamps
-        const checkInTimestamp = checkIn ? `${date}T${checkIn}:00` : `${date}T08:00:00`;
-        const checkOutTimestamp = checkOut ? `${date}T${checkOut}:00` : null;
+        const remarksText = remarks.value;
 
         saveAttendanceBtn.disabled = true;
         saveAttendanceBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
@@ -414,10 +401,12 @@ async function saveAttendance() {
         if (currentEditId) {
             // Update existing record
             const { error } = await supabase
-                .from('entrance_logs')
+                .from('attendance')
                 .update({
-                    check_in_time: checkInTimestamp,
-                    check_out_time: checkOutTimestamp,
+                    time_in: checkIn || null,
+                    time_out: checkOut || null,
+                    status: status,
+                    remarks: remarksText || null,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', currentEditId);
@@ -425,15 +414,23 @@ async function saveAttendance() {
             if (error) throw error;
             showAlert('Attendance updated successfully', 'success');
         } else {
+            // Get student's section_id
+            const student = allStudents.find(s => s.id === studentId);
+            if (!student) {
+                throw new Error('Student not found');
+            }
+
             // Create new record
             const { error } = await supabase
-                .from('entrance_logs')
+                .from('attendance')
                 .insert({
                     student_id: studentId,
-                    check_in_time: checkInTimestamp,
-                    check_out_time: checkOutTimestamp,
-                    device_id: 'manual',
-                    scan_type: 'entry'
+                    section_id: student.section_id,
+                    attendance_date: date,
+                    time_in: checkIn || null,
+                    time_out: checkOut || null,
+                    status: status,
+                    remarks: remarksText || null
                 });
 
             if (error) throw error;
@@ -460,22 +457,23 @@ function exportToExcel() {
     }
 
     // Prepare CSV data
-    const headers = ['Student Name', 'Student Number', 'Section', 'Date', 'Check-In', 'Check-Out', 'Status'];
+    const headers = ['Student Name', 'Student Number', 'Section', 'Date', 'Time In', 'Time Out', 'Status', 'Remarks'];
     const rows = allRecords.map(log => {
         const student = allStudents.find(s => s.id === log.student_id);
         if (!student) return null;
 
         const section = teacherSections.find(s => s.id === student.section_id);
-        const status = deriveStatus(log);
+        const status = log.status || 'unknown';
         
         return [
             `${student.first_name} ${student.last_name}`,
             student.student_number,
             section ? section.section_name || section.section_code : 'N/A',
-            log.check_in_time ? formatDate(log.check_in_time) : '-',
-            log.check_in_time ? formatTime(log.check_in_time) : '-',
-            log.check_out_time ? formatTime(log.check_out_time) : '-',
-            capitalizeFirst(status)
+            log.attendance_date || '-',
+            log.time_in || '-',
+            log.time_out || '-',
+            capitalizeFirst(status),
+            log.remarks || '-'
         ];
     }).filter(row => row !== null);
 

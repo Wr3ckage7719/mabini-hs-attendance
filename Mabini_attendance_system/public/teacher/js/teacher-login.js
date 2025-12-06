@@ -73,62 +73,85 @@ loginForm.addEventListener('submit', async (e) => {
     loginBtn.textContent = 'Signing in...';
     
     try {
-        console.log('Teacher login attempt:', email);
-        console.log('Password:', password);
+        console.log('=== TEACHER LOGIN ATTEMPT ===');
+        console.log('Email/Username:', email);
         console.log('Password length:', password.length);
         
-        // Query teachers table by email - try exact match first
-        let teacherResult = await dataClient.getAll('teachers', [
+        // Query teachers table by email first
+        console.log('Querying by email...');
+        const emailResult = await dataClient.getAll('teachers', [
             { field: 'email', operator: '==', value: email }
         ]);
         
-        console.log('Exact email query result:', teacherResult);
+        console.log('Email query result:', {
+            success: !emailResult.error,
+            error: emailResult.error,
+            dataLength: emailResult.data?.length || 0,
+            data: emailResult.data
+        });
         
-        let teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
+        let teacher = emailResult.data && emailResult.data.length > 0 ? emailResult.data[0] : null;
         
         // If not found by email, try by username
         if (!teacher) {
-            console.log('Not found by email, trying username...');
-            teacherResult = await dataClient.getAll('teachers', [
+            console.log('Not found by email, querying by username...');
+            const usernameResult = await dataClient.getAll('teachers', [
                 { field: 'username', operator: '==', value: email }
             ]);
-            console.log('Username query result:', teacherResult);
-            teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
+            
+            console.log('Username query result:', {
+                success: !usernameResult.error,
+                error: usernameResult.error,
+                dataLength: usernameResult.data?.length || 0,
+                data: usernameResult.data
+            });
+            
+            teacher = usernameResult.data && usernameResult.data.length > 0 ? usernameResult.data[0] : null;
         }
         
         if (!teacher) {
-            console.error('No matching teacher found for:', email);
+            console.error('=== TEACHER NOT FOUND ===');
+            console.error('Searched for:', email);
             showAlert('Invalid email or password.');
             loginBtn.disabled = false;
             loginBtn.textContent = originalText;
             return;
         }
         
-        console.log('Teacher found:', {
-            id: teacher.id,
-            email: teacher.email,
-            username: teacher.username,
-            name: `${teacher.first_name} ${teacher.last_name}`,
-            status: teacher.status,
-            passwordFromDB: teacher.password
-        });
+        console.log('=== TEACHER FOUND ===');
+        console.log('Teacher ID:', teacher.id);
+        console.log('Teacher Email:', teacher.email);
+        console.log('Teacher Username:', teacher.username);
+        console.log('Teacher Name:', `${teacher.first_name} ${teacher.last_name}`);
+        console.log('Teacher Status:', teacher.status);
+        console.log('Has Password:', !!teacher.password);
+        console.log('Password from DB:', teacher.password);
         
         // Check password
-        console.log('Password comparison:', {
-            dbPassword: teacher.password,
-            inputPassword: password,
-            match: teacher.password === password
-        });
+        console.log('=== PASSWORD CHECK ===');
+        console.log('Input password:', password);
+        console.log('DB password:', teacher.password);
+        console.log('Passwords match:', teacher.password === password);
+        
+        if (!teacher.password) {
+            console.error('No password set in database!');
+            showAlert('Account error: No password set. Please contact administration.');
+            loginBtn.disabled = false;
+            loginBtn.textContent = originalText;
+            return;
+        }
         
         if (teacher.password !== password) {
-            console.error('Password mismatch');
+            console.error('Password mismatch!');
             showAlert('Invalid email or password.');
             loginBtn.disabled = false;
             loginBtn.textContent = originalText;
             return;
         }
         
-        // Check status (handle null/undefined as active)
+        // Check status
+        console.log('=== STATUS CHECK ===');
+        console.log('Status:', teacher.status);
         if (teacher.status && teacher.status !== 'active') {
             console.error('Account not active. Status:', teacher.status);
             showAlert('Your account is not active. Please contact administration.');
@@ -137,18 +160,41 @@ loginForm.addEventListener('submit', async (e) => {
             return;
         }
         
-        console.log('Login successful! Storing session data...');
+        console.log('=== LOGIN SUCCESSFUL ===');
         
         // Store teacher data in session
-        sessionStorage.setItem('teacherData', JSON.stringify(teacher));
-        sessionStorage.setItem('userRole', 'teacher');
-        sessionStorage.setItem('userData', JSON.stringify(teacher)); // Required by dashboard and other pages
+        const teacherDataToStore = {
+            id: teacher.id,
+            employee_number: teacher.employee_number,
+            email: teacher.email,
+            username: teacher.username,
+            first_name: teacher.first_name,
+            last_name: teacher.last_name,
+            middle_name: teacher.middle_name,
+            fullName: `${teacher.first_name} ${teacher.middle_name || ''} ${teacher.last_name}`.trim(),
+            department: teacher.department,
+            position: teacher.position,
+            phone: teacher.phone,
+            status: teacher.status,
+            role: 'teacher'
+        };
         
-        console.log('Session data stored:', { teacherId: teacher.id, role: 'teacher' });
+        sessionStorage.setItem('teacherData', JSON.stringify(teacherDataToStore));
+        sessionStorage.setItem('userRole', 'teacher');
+        sessionStorage.setItem('userData', JSON.stringify(teacherDataToStore));
+        sessionStorage.setItem('loginMethod', 'email');
+        sessionStorage.setItem('loginTime', new Date().toISOString());
+        
+        // Clear any logout flag
+        sessionStorage.removeItem('justLoggedOut');
+        
+        console.log('Session data stored successfully');
         
         showAlert('Login successful! Redirecting...', 'success');
+        
         // Redirect to teacher dashboard
         setTimeout(() => {
+            console.log('Redirecting to dashboard...');
             window.location.href = 'dashboard.html';
         }, 1000);
         

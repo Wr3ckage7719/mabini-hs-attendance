@@ -178,7 +178,10 @@ function startQRScanner() {
 // Handle QR code login
 async function handleQRLogin(qrData) {
     try {
-        console.log('QR Code scanned:', qrData);
+        console.log('=== QR CODE SCAN START ===');
+        console.log('Raw QR Data:', qrData);
+        console.log('QR Data Type:', typeof qrData);
+        console.log('QR Data Length:', qrData?.length);
         
         // Extract employee number from any QR format
         let identifier = null;
@@ -233,13 +236,18 @@ async function handleQRLogin(qrData) {
         }
         
         if (!identifier || identifier.length === 0) {
+            console.error('=== IDENTIFIER EXTRACTION FAILED ===');
+            console.error('Raw QR Data:', qrData);
+            console.error('Could not extract any valid identifier');
             showAlert('Invalid QR code. No identifier found.');
             qrStatus.textContent = 'Invalid QR code - Ready to scan again';
-            console.error('Could not extract identifier from:', qrData);
             return;
         }
         
-        console.log('Final identifier to lookup:', identifier);
+        console.log('=== IDENTIFIER EXTRACTED ===');
+        console.log('Final identifier:', identifier);
+        console.log('Identifier length:', identifier.length);
+        console.log('Identifier type:', typeof identifier);
         
         // Stop the scanner to prevent multiple scans
         if (html5QrCode && html5QrCode.isScanning) {
@@ -248,23 +256,36 @@ async function handleQRLogin(qrData) {
         
         qrStatus.textContent = 'Authenticating teacher...';
         
+        // Normalize identifier for better matching
+        const normalizedIdentifier = identifier.trim();
+        
         // Find teacher by employee_number first, then by email as fallback
         let teacherResult = await dataClient.getAll('teachers', [
-            { field: 'employee_number', operator: '==', value: identifier }
+            { field: 'employee_number', operator: '==', value: normalizedIdentifier }
         ]);
         
         let teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
         
-        // If not found by employee_number, try email
+        // If not found by exact match, try case-insensitive email match
+        if (!teacher && normalizedIdentifier.includes('@')) {
+            teacherResult = await dataClient.getAll('teachers', [
+                { field: 'email', operator: 'ilike', value: normalizedIdentifier }
+            ]);
+            teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
+        }
+        
+        // If still not found, try username field
         if (!teacher) {
             teacherResult = await dataClient.getAll('teachers', [
-                { field: 'email', operator: '==', value: identifier }
+                { field: 'username', operator: '==', value: normalizedIdentifier }
             ]);
             teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
         }
         
         if (!teacher) {
-            showAlert('Teacher not found. Invalid QR code.');
+            console.error('Teacher not found in database. Searched for:', normalizedIdentifier);
+            console.error('Tried fields: employee_number, email, username');
+            showAlert('Teacher not found. Please ensure your QR code contains a valid employee number, email, or username.');
             qrStatus.textContent = 'Teacher not found - Ready to scan again';
             // Restart scanner
             setTimeout(() => startQRScanner(), 2000);
@@ -273,8 +294,8 @@ async function handleQRLogin(qrData) {
         
         console.log('Teacher found via QR:', teacher);
         
-        // Check if teacher account is active
-        if (teacher.status !== 'active') {
+        // Check if teacher account is active (handle null/undefined status)
+        if (teacher.status && teacher.status.toLowerCase() !== 'active') {
             showAlert('Your account is not active. Please contact administration.');
             qrStatus.textContent = 'Account inactive - Ready to scan again';
             // Restart scanner

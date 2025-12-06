@@ -10,22 +10,6 @@ console.log('[Teacher Dashboard] Script loaded - v2.0');
 let allSchedules = [];
 let currentTeacherId = null;
 
-// Wait for teacher-common.js to provide CRUD functions and auth
-await new Promise(resolve => {
-    if (window.getDocuments) {
-        resolve();
-    } else {
-        const checkInterval = setInterval(() => {
-            if (window.getDocuments) {
-                clearInterval(checkInterval);
-                resolve();
-            }
-        }, 50);
-    }
-});
-
-console.log('[Teacher Dashboard] CRUD functions available');
-
 // Load dashboard data
 async function loadDashboard() {
     console.log('[Teacher Dashboard] loadDashboard called');

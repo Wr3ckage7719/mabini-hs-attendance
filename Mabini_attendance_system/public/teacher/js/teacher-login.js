@@ -77,6 +77,20 @@ loginForm.addEventListener('submit', async (e) => {
         console.log('Email/Username:', email);
         console.log('Password length:', password.length);
         
+        // First, test if we can query teachers table at all
+        console.log('Testing teachers table access...');
+        const testResult = await dataClient.getAll('teachers', []);
+        console.log('All teachers query result:', {
+            success: !testResult.error,
+            error: testResult.error,
+            count: testResult.data?.length || 0,
+            hasData: !!testResult.data
+        });
+        
+        if (testResult.data && testResult.data.length > 0) {
+            console.log('Sample teacher emails:', testResult.data.map(t => t.email));
+        }
+        
         // Query teachers table by email first
         console.log('Querying by email...');
         const emailResult = await dataClient.getAll('teachers', [

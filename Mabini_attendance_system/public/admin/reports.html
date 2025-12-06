@@ -675,6 +675,25 @@
                 // Load attendance records
                 allLogs = await window.getDocuments('attendance');
                 
+                // Debug: Check data quality
+                console.log('Data loaded:', {
+                    students: allStudents.length,
+                    sections: allSections.length,
+                    subjects: allSubjects.length,
+                    teachingLoads: allTeachingLoads.length,
+                    attendanceLogs: allLogs.length
+                });
+                
+                // Debug: Check subject coverage in attendance
+                const logsWithSubject = allLogs.filter(log => log.subject_id).length;
+                const logsWithTeachingLoad = allLogs.filter(log => log.teaching_load_id).length;
+                console.log('Attendance data quality:', {
+                    totalLogs: allLogs.length,
+                    withSubjectId: logsWithSubject,
+                    withTeachingLoadId: logsWithTeachingLoad,
+                    missingBoth: allLogs.length - Math.max(logsWithSubject, logsWithTeachingLoad)
+                });
+                
                 // Initialize charts
                 initCharts();
                 
@@ -777,9 +796,20 @@
             tbody.innerHTML = logs.map(log => {
                 const student = allStudents.find(s => s.id === log.student_id);
                 const section = allSections.find(b => b.id === log.section_id);
-                const subject = allSubjects.find(s => s.id === log.subject_id);
                 
-                const status = log.status || 'Present';
+                // Try to get subject - first from direct subject_id, then from teaching_load_id
+                let subject = null;
+                if (log.subject_id) {
+                    subject = allSubjects.find(s => s.id === log.subject_id);
+                } else if (log.teaching_load_id) {
+                    // Fallback: get subject from teaching load
+                    const teachingLoad = allTeachingLoads.find(tl => tl.id === log.teaching_load_id);
+                    if (teachingLoad && teachingLoad.subject_id) {
+                        subject = allSubjects.find(s => s.id === teachingLoad.subject_id);
+                    }
+                }
+                
+                const status = log.status || 'present';
                 const statusClass = status.toLowerCase() === 'late' ? 'badge-late' : 
                                    status.toLowerCase() === 'absent' ? 'badge-absent' : 'badge-present';
                 
@@ -792,7 +822,7 @@
                         <td>${student?.student_number || log.student_id || '-'}</td>
                         <td>${student ? `${student.first_name} ${student.last_name}` : 'Unknown'}</td>
                         <td>${section ? section.section_name : '-'}</td>
-                        <td>${subject ? subject.subject_name : '-'}</td>
+                        <td>${subject ? subject.name || subject.subject_name || 'Unknown Subject' : 'Not Assigned'}</td>
                         <td>${formattedDate}</td>
                         <td>${timeIn}</td>
                         <td>${timeOut}</td>

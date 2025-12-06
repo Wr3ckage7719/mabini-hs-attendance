@@ -38,25 +38,50 @@ async function loadDashboard() {
         currentTeacherId = userData.id;
         console.log('[Teacher Dashboard] Loading for teacher:', currentTeacherId);
         
-        // Get teaching loads
-        const teachingLoads = await window.getDocuments('teaching_loads');
-        console.log('[Teacher Dashboard] All teaching loads:', teachingLoads.length);
+        // Get teaching loads for this teacher
+        const loadsResult = await dataClient.getAll('teaching_loads', [
+            { field: 'teacher_id', operator: '==', value: currentTeacherId }
+        ]);
         
-        const myLoads = teachingLoads.filter(load => {
-            return String(load.teacher_id) === String(currentTeacherId);
-        });
+        if (loadsResult.error) {
+            console.error('[Teacher Dashboard] Error loading teaching loads:', loadsResult.error);
+            if (window.showAlert) window.showAlert('Failed to load teaching assignments', 'error');
+            return;
+        }
         
+        const myLoads = loadsResult.data || [];
         console.log('[Teacher Dashboard] My teaching loads:', myLoads.length);
         
+        
         // Get related data
-        const subjects = await window.getDocuments('subjects');
-        const sections = await window.getDocuments('sections');
-        const students = await window.getDocuments('students');
+        const subjectsResult = await dataClient.getAll('subjects', []);
+        const sectionsResult = await dataClient.getAll('sections', []);
+        
+        if (subjectsResult.error || sectionsResult.error) {
+            console.error('[Teacher Dashboard] Error loading related data');
+            if (window.showAlert) window.showAlert('Failed to load complete data', 'error');
+            return;
+        }
+        
+        const subjects = subjectsResult.data || [];
+        const sections = sectionsResult.data || [];
+        
+        // Get students only if we have sections
+        const uniqueSections = [...new Set(myLoads.map(l => l.section_id))].filter(Boolean);
+        let students = [];
+        
+        if (uniqueSections.length > 0) {
+            const studentsResult = await dataClient.getAll('students', [
+                { field: 'section_id', operator: 'in', value: uniqueSections }
+            ]);
+            
+            if (!studentsResult.error) {
+                students = studentsResult.data || [];
+            }
+        }
         
         // Calculate stats
-        const uniqueSections = [...new Set(myLoads.map(l => l.section_id))].filter(Boolean);
         const uniqueSubjects = [...new Set(myLoads.map(l => l.subject_id))].filter(Boolean);
-        const myStudents = students.filter(s => uniqueSections.some(sId => String(sId) === String(s.section_id)));
         
         // Update stat cards
         const mySectionsEl = document.getElementById('mySections');
@@ -65,7 +90,7 @@ async function loadDashboard() {
         const totalSubjectsEl = document.getElementById('totalSubjects');
         
         if (mySectionsEl) mySectionsEl.textContent = uniqueSections.length;
-        if (totalStudentsEl) totalStudentsEl.textContent = myStudents.length;
+        if (totalStudentsEl) totalStudentsEl.textContent = students.length;
         if (totalClassesEl) totalClassesEl.textContent = myLoads.length;
         if (totalSubjectsEl) totalSubjectsEl.textContent = uniqueSubjects.length;
         

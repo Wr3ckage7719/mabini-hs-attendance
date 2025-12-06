@@ -73,90 +73,29 @@ loginForm.addEventListener('submit', async (e) => {
     loginBtn.textContent = 'Signing in...';
     
     try {
-        console.log('=== TEACHER LOGIN ATTEMPT ===');
-        console.log('Email/Username:', email);
-        console.log('Password length:', password.length);
-        
-        // First, test if we can query teachers table at all
-        console.log('Testing teachers table access...');
-        const testResult = await dataClient.getAll('teachers', []);
-        console.log('All teachers query result:', {
-            success: !testResult.error,
-            error: testResult.error,
-            count: testResult.data?.length || 0,
-            hasData: !!testResult.data
-        });
-        
-        if (testResult.data && testResult.data.length > 0) {
-            console.log('Sample teacher emails:', testResult.data.map(t => t.email));
-        }
-        
-        // Query teachers table by email first
-        console.log('Querying by email...');
-        const emailResult = await dataClient.getAll('teachers', [
+        // Query teachers table by email
+        const teacherResult = await dataClient.getAll('teachers', [
             { field: 'email', operator: '==', value: email }
         ]);
         
-        console.log('Email query result:', {
-            success: !emailResult.error,
-            error: emailResult.error,
-            dataLength: emailResult.data?.length || 0,
-            data: emailResult.data
-        });
-        
-        let teacher = emailResult.data && emailResult.data.length > 0 ? emailResult.data[0] : null;
-        
-        // If not found by email, try by username
-        if (!teacher) {
-            console.log('Not found by email, querying by username...');
-            const usernameResult = await dataClient.getAll('teachers', [
-                { field: 'username', operator: '==', value: email }
-            ]);
-            
-            console.log('Username query result:', {
-                success: !usernameResult.error,
-                error: usernameResult.error,
-                dataLength: usernameResult.data?.length || 0,
-                data: usernameResult.data
-            });
-            
-            teacher = usernameResult.data && usernameResult.data.length > 0 ? usernameResult.data[0] : null;
+        if (teacherResult.error) {
+            showAlert('Login failed. Please try again.');
+            loginBtn.disabled = false;
+            loginBtn.textContent = originalText;
+            return;
         }
         
+        const teacher = teacherResult.data?.[0];
+        
         if (!teacher) {
-            console.error('=== TEACHER NOT FOUND ===');
-            console.error('Searched for:', email);
             showAlert('Invalid email or password.');
             loginBtn.disabled = false;
             loginBtn.textContent = originalText;
             return;
         }
         
-        console.log('=== TEACHER FOUND ===');
-        console.log('Teacher ID:', teacher.id);
-        console.log('Teacher Email:', teacher.email);
-        console.log('Teacher Username:', teacher.username);
-        console.log('Teacher Name:', `${teacher.first_name} ${teacher.last_name}`);
-        console.log('Teacher Status:', teacher.status);
-        console.log('Has Password:', !!teacher.password);
-        console.log('Password from DB:', teacher.password);
-        
         // Check password
-        console.log('=== PASSWORD CHECK ===');
-        console.log('Input password:', password);
-        console.log('DB password:', teacher.password);
-        console.log('Passwords match:', teacher.password === password);
-        
-        if (!teacher.password) {
-            console.error('No password set in database!');
-            showAlert('Account error: No password set. Please contact administration.');
-            loginBtn.disabled = false;
-            loginBtn.textContent = originalText;
-            return;
-        }
-        
         if (teacher.password !== password) {
-            console.error('Password mismatch!');
             showAlert('Invalid email or password.');
             loginBtn.disabled = false;
             loginBtn.textContent = originalText;
@@ -164,51 +103,22 @@ loginForm.addEventListener('submit', async (e) => {
         }
         
         // Check status
-        console.log('=== STATUS CHECK ===');
-        console.log('Status:', teacher.status);
         if (teacher.status && teacher.status !== 'active') {
-            console.error('Account not active. Status:', teacher.status);
             showAlert('Your account is not active. Please contact administration.');
             loginBtn.disabled = false;
             loginBtn.textContent = originalText;
             return;
         }
         
-        console.log('=== LOGIN SUCCESSFUL ===');
-        
         // Store teacher data in session
-        const teacherDataToStore = {
-            id: teacher.id,
-            employee_number: teacher.employee_number,
-            email: teacher.email,
-            username: teacher.username,
-            first_name: teacher.first_name,
-            last_name: teacher.last_name,
-            middle_name: teacher.middle_name,
-            fullName: `${teacher.first_name} ${teacher.middle_name || ''} ${teacher.last_name}`.trim(),
-            department: teacher.department,
-            position: teacher.position,
-            phone: teacher.phone,
-            status: teacher.status,
-            role: 'teacher'
-        };
-        
-        sessionStorage.setItem('teacherData', JSON.stringify(teacherDataToStore));
+        sessionStorage.setItem('teacherData', JSON.stringify(teacher));
         sessionStorage.setItem('userRole', 'teacher');
-        sessionStorage.setItem('userData', JSON.stringify(teacherDataToStore));
-        sessionStorage.setItem('loginMethod', 'email');
-        sessionStorage.setItem('loginTime', new Date().toISOString());
-        
-        // Clear any logout flag
-        sessionStorage.removeItem('justLoggedOut');
-        
-        console.log('Session data stored successfully');
+        sessionStorage.setItem('userData', JSON.stringify(teacher));
         
         showAlert('Login successful! Redirecting...', 'success');
         
         // Redirect to teacher dashboard
         setTimeout(() => {
-            console.log('Redirecting to dashboard...');
             window.location.href = 'dashboard.html';
         }, 1000);
         
@@ -348,91 +258,39 @@ async function handleQRLogin(qrData) {
         
         qrStatus.textContent = 'Authenticating teacher...';
         
-        console.log('=== DATABASE LOOKUP START ===');
-        console.log('Searching for identifier:', identifier);
-        
-        // Find teacher by employee_number first
-        console.log('Attempt 1: Searching by employee_number...');
-        let teacherResult = await dataClient.getAll('teachers', [
+        // Find teacher by employee_number
+        const teacherResult = await dataClient.getAll('teachers', [
             { field: 'employee_number', operator: '==', value: identifier }
         ]);
         
-        console.log('Employee number query result:', teacherResult);
-        let teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
-        console.log('Employee number search result:', teacher ? 'FOUND' : 'NOT FOUND');
-        
-        // If not found by employee_number, try email
-        if (!teacher && identifier.includes('@')) {
-            console.log('Attempt 2: Searching by email...');
-            teacherResult = await dataClient.getAll('teachers', [
-                { field: 'email', operator: '==', value: identifier }
-            ]);
-            console.log('Email query result:', teacherResult);
-            teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
-            console.log('Email search result:', teacher ? 'FOUND' : 'NOT FOUND');
-        }
-        
-        // If still not found, try username field
-        if (!teacher) {
-            console.log('Attempt 3: Searching by username...');
-            teacherResult = await dataClient.getAll('teachers', [
-                { field: 'username', operator: '==', value: identifier }
-            ]);
-            console.log('Username query result:', teacherResult);
-            teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
-            console.log('Username search result:', teacher ? 'FOUND' : 'NOT FOUND');
-        }
-        
-        console.log('=== DATABASE LOOKUP END ===');
-        if (teacher) {
-            console.log('Teacher found:', {
-                id: teacher.id,
-                employee_number: teacher.employee_number,
-                email: teacher.email,
-                name: `${teacher.first_name} ${teacher.last_name}`,
-                status: teacher.status
-            });
-        }
-        
-        if (!teacher) {
-            console.error('Teacher not found in database. Searched for:', identifier);
-            console.error('Tried fields: employee_number, email, username');
-            showAlert('Teacher not found. Please ensure your QR code contains a valid employee number, email, or username.');
-            qrStatus.textContent = 'Teacher not found - Ready to scan again';
-            // Restart scanner
+        if (teacherResult.error) {
+            showAlert('Login failed. Please try again.');
+            qrStatus.textContent = 'Error - Ready to scan again';
             setTimeout(() => startQRScanner(), 2000);
             return;
         }
         
-        console.log('Teacher found via QR:', {
-            id: teacher.id,
-            employee_number: teacher.employee_number,
-            email: teacher.email,
-            username: teacher.username,
-            name: `${teacher.first_name} ${teacher.last_name}`,
-            status: teacher.status
-        });
+        const teacher = teacherResult.data?.[0];
         
-        // Check if teacher account is active (handle null/undefined status as active)
+        if (!teacher) {
+            showAlert('Teacher not found. Please ensure your QR code is valid.');
+            qrStatus.textContent = 'Teacher not found - Ready to scan again';
+            setTimeout(() => startQRScanner(), 2000);
+            return;
+        }
+        
+        // Check if teacher account is active
         if (teacher.status && teacher.status !== 'active') {
-            console.error('Account not active. Status:', teacher.status);
             showAlert('Your account is not active. Please contact administration.');
             qrStatus.textContent = 'Account inactive - Ready to scan again';
-            // Restart scanner
             setTimeout(() => startQRScanner(), 2000);
             return;
         }
         
-        // Direct QR login - no password required (same as student QR login)
         // Store teacher data in session
         sessionStorage.setItem('teacherData', JSON.stringify(teacher));
         sessionStorage.setItem('userRole', 'teacher');
-        sessionStorage.setItem('userData', JSON.stringify(teacher)); // Required by dashboard and other pages
-        sessionStorage.setItem('loginMethod', 'qr');
-        sessionStorage.setItem('loginTime', new Date().toISOString());
-        
-        // Clear any logout flag
-        sessionStorage.removeItem('justLoggedOut');
+        sessionStorage.setItem('userData', JSON.stringify(teacher));
         
         qrStatus.textContent = 'Login successful! Redirecting...';
         showAlert('QR Login successful! Welcome, ' + teacher.first_name + '!', 'success');

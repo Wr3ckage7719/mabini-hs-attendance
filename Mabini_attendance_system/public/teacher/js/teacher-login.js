@@ -259,27 +259,51 @@ async function handleQRLogin(qrData) {
         // Normalize identifier for better matching
         const normalizedIdentifier = identifier.trim();
         
-        // Find teacher by employee_number first, then by email as fallback
+        console.log('=== DATABASE LOOKUP START ===');
+        console.log('Searching for identifier:', normalizedIdentifier);
+        
+        // Find teacher by employee_number first
+        console.log('Attempt 1: Searching by employee_number...');
         let teacherResult = await dataClient.getAll('teachers', [
             { field: 'employee_number', operator: '==', value: normalizedIdentifier }
         ]);
         
         let teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
+        console.log('Employee number search result:', teacher ? 'FOUND' : 'NOT FOUND');
         
         // If not found by exact match, try case-insensitive email match
         if (!teacher && normalizedIdentifier.includes('@')) {
+            console.log('Attempt 2: Searching by email (case-insensitive)...');
             teacherResult = await dataClient.getAll('teachers', [
-                { field: 'email', operator: 'ilike', value: normalizedIdentifier }
+                { field: 'email', operator: 'contains', value: normalizedIdentifier }
             ]);
-            teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
+            // Filter to exact match (contains is fuzzy)
+            const exactEmailMatch = teacherResult.data ? teacherResult.data.find(t => 
+                t.email && t.email.toLowerCase() === normalizedIdentifier.toLowerCase()
+            ) : null;
+            teacher = exactEmailMatch || null;
+            console.log('Email search result:', teacher ? 'FOUND' : 'NOT FOUND');
         }
         
         // If still not found, try username field
         if (!teacher) {
+            console.log('Attempt 3: Searching by username...');
             teacherResult = await dataClient.getAll('teachers', [
                 { field: 'username', operator: '==', value: normalizedIdentifier }
             ]);
             teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
+            console.log('Username search result:', teacher ? 'FOUND' : 'NOT FOUND');
+        }
+        
+        console.log('=== DATABASE LOOKUP END ===');
+        if (teacher) {
+            console.log('Teacher found:', {
+                id: teacher.id,
+                employee_number: teacher.employee_number,
+                email: teacher.email,
+                name: `${teacher.first_name} ${teacher.last_name}`,
+                status: teacher.status
+            });
         }
         
         if (!teacher) {

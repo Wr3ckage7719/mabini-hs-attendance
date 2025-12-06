@@ -87,9 +87,83 @@ async function loadStats() {
         // Load recent activity
         await loadRecentActivity(todayLogs.slice(-5).reverse(), students);
         
+        // Load notification stats
+        await loadNotificationStats();
+        
         console.log('[Dashboard] Stats loaded successfully');
     } catch (error) {
         console.error('[Dashboard] Error loading stats:', error);
+    }
+}
+
+// Load notification statistics
+async function loadNotificationStats() {
+    try {
+        console.log('[Dashboard] Loading notification stats...');
+        
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Get SMS logs for today
+        const smsLogs = await window.getDocuments('sms_logs');
+        const todaySMS = smsLogs.filter(log => {
+            if (!log.sent_at && !log.created_at) return false;
+            const logDate = new Date(log.sent_at || log.created_at).toISOString().split('T')[0];
+            return logDate === today;
+        });
+        
+        // Count total SMS sent today
+        const totalSMS = todaySMS.length;
+        const smsSentTodayEl = document.getElementById('smsSentToday');
+        if (smsSentTodayEl) {
+            smsSentTodayEl.textContent = totalSMS;
+        }
+        
+        // Count check-in alerts (entrance)
+        const checkinAlerts = todaySMS.filter(log => 
+            log.message_type === 'check_in' || 
+            log.message_type === 'entrance' ||
+            (log.message && (log.message.toLowerCase().includes('arrived') || log.message.toLowerCase().includes('checked in')))
+        ).length;
+        const checkinAlertsEl = document.getElementById('checkinAlerts');
+        if (checkinAlertsEl) {
+            checkinAlertsEl.textContent = checkinAlerts;
+        }
+        
+        // Count check-out alerts (exit)
+        const checkoutAlerts = todaySMS.filter(log => 
+            log.message_type === 'check_out' || 
+            log.message_type === 'exit' ||
+            (log.message && (log.message.toLowerCase().includes('departed') || log.message.toLowerCase().includes('left') || log.message.toLowerCase().includes('checked out')))
+        ).length;
+        const checkoutAlertsEl = document.getElementById('checkoutAlerts');
+        if (checkoutAlertsEl) {
+            checkoutAlertsEl.textContent = checkoutAlerts;
+        }
+        
+        // Count absence alerts
+        const absenceAlerts = todaySMS.filter(log => 
+            log.message_type === 'absence' ||
+            (log.message && (log.message.toLowerCase().includes('absent') || log.message.toLowerCase().includes('did not attend')))
+        ).length;
+        const absenceAlertsEl = document.getElementById('absenceAlerts');
+        if (absenceAlertsEl) {
+            absenceAlertsEl.textContent = absenceAlerts;
+        }
+        
+        console.log('[Dashboard] Notification stats loaded:', {
+            total: totalSMS,
+            checkin: checkinAlerts,
+            checkout: checkoutAlerts,
+            absence: absenceAlerts
+        });
+    } catch (error) {
+        console.error('[Dashboard] Error loading notification stats:', error);
+        // Set to 0 on error
+        const elements = ['smsSentToday', 'checkinAlerts', 'checkoutAlerts', 'absenceAlerts'];
+        elements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = '0';
+        });
     }
 }
 

@@ -59,7 +59,7 @@ qrTabBtn.addEventListener('click', () => {
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const email = emailInput.value.trim().toLowerCase();
+    const email = emailInput.value.trim();
     const password = passwordInput.value;
     
     if (!email || !password) {
@@ -74,23 +74,30 @@ loginForm.addEventListener('submit', async (e) => {
     
     try {
         console.log('Teacher login attempt:', email);
+        console.log('Password:', password);
         console.log('Password length:', password.length);
         
-        // Query teachers table by email (case-insensitive using contains)
-        const teacherResult = await dataClient.getAll('teachers', [
-            { field: 'email', operator: 'contains', value: email }
+        // Query teachers table by email - try exact match first
+        let teacherResult = await dataClient.getAll('teachers', [
+            { field: 'email', operator: '==', value: email }
         ]);
         
-        console.log('Query result:', teacherResult);
-        console.log('Teachers found:', teacherResult.data?.length || 0);
+        console.log('Exact email query result:', teacherResult);
         
-        // Find exact match (case-insensitive)
-        const teacher = teacherResult.data?.find(t => 
-            t.email && t.email.toLowerCase().trim() === email
-        );
+        let teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
+        
+        // If not found by email, try by username
+        if (!teacher) {
+            console.log('Not found by email, trying username...');
+            teacherResult = await dataClient.getAll('teachers', [
+                { field: 'username', operator: '==', value: email }
+            ]);
+            console.log('Username query result:', teacherResult);
+            teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
+        }
         
         if (!teacher) {
-            console.error('No matching teacher found for email:', email);
+            console.error('No matching teacher found for:', email);
             showAlert('Invalid email or password.');
             loginBtn.disabled = false;
             loginBtn.textContent = originalText;
@@ -100,22 +107,20 @@ loginForm.addEventListener('submit', async (e) => {
         console.log('Teacher found:', {
             id: teacher.id,
             email: teacher.email,
+            username: teacher.username,
             name: `${teacher.first_name} ${teacher.last_name}`,
             status: teacher.status,
-            hasPassword: !!teacher.password
+            passwordFromDB: teacher.password
         });
         
-        // Check password - don't trim input to preserve intentional spaces
-        const dbPassword = teacher.password || '';
-        const inputPassword = password;
-        
+        // Check password
         console.log('Password comparison:', {
-            dbPasswordLength: dbPassword.length,
-            inputPasswordLength: inputPassword.length,
-            match: dbPassword === inputPassword
+            dbPassword: teacher.password,
+            inputPassword: password,
+            match: teacher.password === password
         });
         
-        if (dbPassword !== inputPassword) {
+        if (teacher.password !== password) {
             console.error('Password mismatch');
             showAlert('Invalid email or password.');
             loginBtn.disabled = false;
@@ -124,16 +129,15 @@ loginForm.addEventListener('submit', async (e) => {
         }
         
         // Check status (handle null/undefined as active)
-        const status = (teacher.status || 'active').toLowerCase();
-        console.log('Teacher status:', status);
-        
-        if (status !== 'active') {
+        if (teacher.status && teacher.status !== 'active') {
             console.error('Account not active. Status:', teacher.status);
             showAlert('Your account is not active. Please contact administration.');
             loginBtn.disabled = false;
             loginBtn.textContent = originalText;
             return;
         }
+        
+        console.log('Login successful! Storing session data...');
         
         // Store teacher data in session
         sessionStorage.setItem('teacherData', JSON.stringify(teacher));
@@ -284,32 +288,27 @@ async function handleQRLogin(qrData) {
         
         qrStatus.textContent = 'Authenticating teacher...';
         
-        // Normalize identifier for better matching
-        const normalizedIdentifier = identifier.trim();
-        
         console.log('=== DATABASE LOOKUP START ===');
-        console.log('Searching for identifier:', normalizedIdentifier);
+        console.log('Searching for identifier:', identifier);
         
         // Find teacher by employee_number first
         console.log('Attempt 1: Searching by employee_number...');
         let teacherResult = await dataClient.getAll('teachers', [
-            { field: 'employee_number', operator: '==', value: normalizedIdentifier }
+            { field: 'employee_number', operator: '==', value: identifier }
         ]);
         
+        console.log('Employee number query result:', teacherResult);
         let teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
         console.log('Employee number search result:', teacher ? 'FOUND' : 'NOT FOUND');
         
-        // If not found by exact match, try case-insensitive email match
-        if (!teacher && normalizedIdentifier.includes('@')) {
-            console.log('Attempt 2: Searching by email (case-insensitive)...');
+        // If not found by employee_number, try email
+        if (!teacher && identifier.includes('@')) {
+            console.log('Attempt 2: Searching by email...');
             teacherResult = await dataClient.getAll('teachers', [
-                { field: 'email', operator: 'contains', value: normalizedIdentifier }
+                { field: 'email', operator: '==', value: identifier }
             ]);
-            // Filter to exact match (contains is fuzzy)
-            const exactEmailMatch = teacherResult.data ? teacherResult.data.find(t => 
-                t.email && t.email.toLowerCase() === normalizedIdentifier.toLowerCase()
-            ) : null;
-            teacher = exactEmailMatch || null;
+            console.log('Email query result:', teacherResult);
+            teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
             console.log('Email search result:', teacher ? 'FOUND' : 'NOT FOUND');
         }
         
@@ -317,8 +316,9 @@ async function handleQRLogin(qrData) {
         if (!teacher) {
             console.log('Attempt 3: Searching by username...');
             teacherResult = await dataClient.getAll('teachers', [
-                { field: 'username', operator: '==', value: normalizedIdentifier }
+                { field: 'username', operator: '==', value: identifier }
             ]);
+            console.log('Username query result:', teacherResult);
             teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
             console.log('Username search result:', teacher ? 'FOUND' : 'NOT FOUND');
         }
@@ -335,7 +335,7 @@ async function handleQRLogin(qrData) {
         }
         
         if (!teacher) {
-            console.error('Teacher not found in database. Searched for:', normalizedIdentifier);
+            console.error('Teacher not found in database. Searched for:', identifier);
             console.error('Tried fields: employee_number, email, username');
             showAlert('Teacher not found. Please ensure your QR code contains a valid employee number, email, or username.');
             qrStatus.textContent = 'Teacher not found - Ready to scan again';
@@ -344,10 +344,18 @@ async function handleQRLogin(qrData) {
             return;
         }
         
-        console.log('Teacher found via QR:', teacher);
+        console.log('Teacher found via QR:', {
+            id: teacher.id,
+            employee_number: teacher.employee_number,
+            email: teacher.email,
+            username: teacher.username,
+            name: `${teacher.first_name} ${teacher.last_name}`,
+            status: teacher.status
+        });
         
-        // Check if teacher account is active (handle null/undefined status)
-        if (teacher.status && teacher.status.toLowerCase() !== 'active') {
+        // Check if teacher account is active (handle null/undefined status as active)
+        if (teacher.status && teacher.status !== 'active') {
+            console.error('Account not active. Status:', teacher.status);
             showAlert('Your account is not active. Please contact administration.');
             qrStatus.textContent = 'Account inactive - Ready to scan again';
             // Restart scanner

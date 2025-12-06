@@ -1,0 +1,398 @@
+/* ========================================
+   TEACHER MOBILE ENHANCEMENTS
+   ======================================== */
+
+/* Ensure proper viewport handling */
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+/* ========================================
+   MOBILE TABLE FIXES (Max 767px)
+   ======================================== */
+@media (max-width: 767px) {
+    
+    /* Container adjustments for mobile */
+    .main-content {
+        padding: 12px 8px !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    .container-fluid {
+        padding: 0 12px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Card spacing */
+    .card {
+        margin: 0 0 16px 0 !important;
+        border-radius: 8px;
+    }
+    
+    .card-body {
+        padding: 16px 12px !important;
+    }
+    
+    /* ========================================
+       TABLE RESPONSIVE WRAPPER
+       ======================================== */
+    
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: relative;
+        border-radius: 8px;
+    }
+    
+    /* Ensure table doesn't break container */
+    .table-responsive table {
+        margin-bottom: 0;
+        width: max-content;
+        min-width: 100%;
+    }
+    
+    /* Scroll indicator for user */
+    .table-responsive::after {
+        content: '← Swipe to see more →';
+        position: absolute;
+        bottom: -24px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 11px;
+        color: var(--text-secondary, #6c757d);
+        opacity: 0.7;
+        pointer-events: none;
+        padding: 4px 0;
+    }
+    
+    /* Remove scroll indicator when scrolled */
+    .table-responsive.scrolled::after {
+        opacity: 0;
+    }
+    
+    /* ========================================
+       TABLE STYLING
+       ======================================== */
+    
+    .table {
+        font-size: 13px;
+        margin-bottom: 24px;
+        border-collapse: collapse;
+        width: auto;
+        min-width: 100%;
+    }
+    
+    .table thead th {
+        position: sticky;
+        top: 0;
+        background: var(--table-header-bg, #f8f9fa);
+        z-index: 10;
+        padding: 12px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        border-bottom: 2px solid var(--border-color, #dee2e6);
+    }
+    
+    .table tbody td {
+        padding: 12px 10px;
+        vertical-align: middle;
+        white-space: nowrap;
+        border-bottom: 1px solid var(--border-color, #dee2e6);
+    }
+    
+    /* First column sticky (for ID/Name) */
+    .table thead th:first-child,
+    .table tbody td:first-child {
+        position: sticky;
+        left: 0;
+        background: var(--table-bg, #ffffff);
+        z-index: 5;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Dark mode support for sticky column */
+    [data-theme="dark"] .table thead th:first-child,
+    [data-theme="dark"] .table tbody td:first-child {
+        background: var(--table-bg, #1a1d20);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Striped rows - ensure sticky column matches */
+    .table-striped tbody tr:nth-of-type(odd) td:first-child {
+        background: var(--table-striped-bg, #f8f9fa);
+    }
+    
+    [data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) td:first-child {
+        background: var(--table-striped-bg, #212529);
+    }
+    
+    /* Hover effect */
+    .table-hover tbody tr:hover td {
+        background: var(--table-hover-bg, #f1f3f5) !important;
+    }
+    
+    [data-theme="dark"] .table-hover tbody tr:hover td {
+        background: var(--table-hover-bg, #2c3034) !important;
+    }
+    
+    /* ========================================
+       ACTION BUTTONS IN TABLES
+       ======================================== */
+    
+    .table tbody td:last-child {
+        min-width: 100px;
+        text-align: center;
+    }
+    
+    /* Compact button groups */
+    .table .btn-group {
+        display: flex;
+        gap: 4px;
+        flex-wrap: nowrap;
+    }
+    
+    .table .btn {
+        padding: 6px 10px;
+        font-size: 13px;
+        white-space: nowrap;
+        min-width: auto;
+    }
+    
+    .table .btn i {
+        font-size: 14px;
+    }
+    
+    .table .btn-sm {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+    
+    /* ========================================
+       SEARCH & FILTERS
+       ======================================== */
+    
+    .search-filters {
+        margin-bottom: 16px;
+    }
+    
+    .search-filters .row {
+        gap: 12px 0;
+    }
+    
+    .search-filters .form-control,
+    .search-filters .form-select {
+        min-height: 44px;
+        font-size: 16px; /* Prevents iOS zoom */
+        padding: 10px 12px;
+    }
+    
+    /* ========================================
+       STAT CARDS
+       ======================================== */
+    
+    .stats-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-card {
+        padding: 16px;
+        border-radius: 8px;
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border-color, #dee2e6);
+    }
+    
+    .stat-card h3 {
+        font-size: 28px;
+        margin-bottom: 4px;
+    }
+    
+    .stat-card p {
+        font-size: 13px;
+        margin-bottom: 0;
+    }
+    
+    /* ========================================
+       QUICK ACTIONS
+       ======================================== */
+    
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .quick-action-card {
+        padding: 16px;
+        text-align: center;
+        border-radius: 8px;
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border-color, #dee2e6);
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+    
+    .quick-action-card:active {
+        transform: scale(0.95);
+    }
+    
+    .quick-action-card i {
+        font-size: 32px;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .quick-action-card h6 {
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+    
+    .quick-action-card p {
+        font-size: 11px;
+        margin-bottom: 0;
+        opacity: 0.7;
+    }
+    
+    /* ========================================
+       PAGE HEADER
+       ======================================== */
+    
+    .page-header {
+        margin-bottom: 20px;
+        padding: 0 4px;
+    }
+    
+    .page-header h1,
+    .page-header h2 {
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+    
+    .page-header .breadcrumb {
+        font-size: 12px;
+        padding: 8px 0;
+        background: transparent;
+    }
+    
+    /* ========================================
+       EMPTY STATES
+       ======================================== */
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    .empty-state i {
+        font-size: 48px;
+        opacity: 0.3;
+        margin-bottom: 16px;
+        display: block;
+    }
+    
+    .empty-state p {
+        font-size: 14px;
+        color: var(--text-secondary, #6c757d);
+    }
+    
+    /* ========================================
+       LOADING STATES
+       ======================================== */
+    
+    .loading-skeleton {
+        background: linear-gradient(
+            90deg,
+            var(--skeleton-base, #f0f0f0) 25%,
+            var(--skeleton-highlight, #e0e0e0) 50%,
+            var(--skeleton-base, #f0f0f0) 75%
+        );
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        border-radius: 4px;
+    }
+    
+    @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+}
+
+/* ========================================
+   TABLET ADJUSTMENTS (768px - 1023px)
+   ======================================== */
+@media (min-width: 768px) and (max-width: 1023px) {
+    
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table {
+        font-size: 14px;
+    }
+    
+    .table thead th,
+    .table tbody td {
+        padding: 12px 14px;
+    }
+    
+    .quick-actions {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ========================================
+   LANDSCAPE MOBILE (Max 767px height)
+   ======================================== */
+@media (max-width: 767px) and (orientation: landscape) {
+    
+    .page-header h1,
+    .page-header h2 {
+        font-size: 20px;
+    }
+    
+    .stat-card h3 {
+        font-size: 24px;
+    }
+    
+    .card-body {
+        padding: 12px !important;
+    }
+}
+
+/* ========================================
+   TOUCH OPTIMIZATIONS
+   ======================================== */
+@media (hover: none) and (pointer: coarse) {
+    
+    /* Larger touch targets */
+    .btn,
+    .form-control,
+    .form-select,
+    a.nav-link {
+        min-height: 44px;
+    }
+    
+    /* Remove hover states on touch devices */
+    .table-hover tbody tr:hover td {
+        background: inherit !important;
+    }
+    
+    /* Add active states instead */
+    .table tbody tr:active td {
+        background: var(--table-hover-bg, #f1f3f5) !important;
+    }
+}

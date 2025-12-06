@@ -79,17 +79,33 @@ async function loadTeacherSections() {
 
         if (loadsResult.error) {
             console.error('Error loading teaching loads:', loadsResult.error);
+            showAlert('Failed to load teaching assignments', 'error');
+            return;
+        }
+
+        if (!loadsResult.data || loadsResult.data.length === 0) {
+            console.log('No teaching loads found for teacher');
+            filterSection.innerHTML = '<option value="">No sections assigned</option>';
             return;
         }
 
         // Get unique section IDs
-        const sectionIds = [...new Set(loadsResult.data.map(load => load.section_id))];
+        const sectionIds = [...new Set(loadsResult.data.map(load => load.section_id).filter(id => id))];
+        
+        if (sectionIds.length === 0) {
+            filterSection.innerHTML = '<option value="">No sections assigned</option>';
+            return;
+        }
         
         // Load section details
         for (const sectionId of sectionIds) {
-            const sectionResult = await dataClient.getOne('sections', sectionId);
-            if (sectionResult.data) {
-                teacherSections.push(sectionResult.data);
+            try {
+                const sectionResult = await dataClient.getOne('sections', sectionId);
+                if (sectionResult.data) {
+                    teacherSections.push(sectionResult.data);
+                }
+            } catch (err) {
+                console.error('Error loading section:', sectionId, err);
             }
         }
 
@@ -112,6 +128,8 @@ async function loadTeacherSections() {
 async function loadStudents() {
     try {
         if (teacherSections.length === 0) {
+            console.log('No sections to load students from');
+            studentSelect.innerHTML = '<option value="">No students available</option>';
             return;
         }
 
@@ -124,10 +142,17 @@ async function loadStudents() {
 
         if (studentsResult.error) {
             console.error('Error loading students:', studentsResult.error);
+            showAlert('Failed to load students: ' + studentsResult.error, 'error');
+            studentSelect.innerHTML = '<option value="">Error loading students</option>';
             return;
         }
 
         allStudents = studentsResult.data || [];
+        
+        if (allStudents.length === 0) {
+            studentSelect.innerHTML = '<option value="">No students in your sections</option>';
+            return;
+        }
         
         // Populate student select
         studentSelect.innerHTML = '<option value="">Select Student</option>';
@@ -162,50 +187,67 @@ async function loadAttendanceRecords() {
             </tr>
         `;
 
-        // Query attendance table for the selected date
-        let query = supabase.from('attendance').select('*');
+        // Build query
+        let filters = [];
         
         if (selectedDate) {
-            query = query.eq('attendance_date', selectedDate);
+            filters.push({ field: 'attendance_date', operator: '==', value: selectedDate });
+        }
+        
+        if (selectedStatus) {
+            filters.push({ field: 'status', operator: '==', value: selectedStatus });
         }
 
-        query = query.order('attendance_date', { ascending: false });
+        // Query attendance table
+        const result = await dataClient.getAll('attendance', filters);
 
-        const { data: logs, error: logsError } = await query;
-
-        if (logsError) {
-            console.error('Error loading logs:', logsError);
-            showAlert('Failed to load attendance records', 'error');
+        if (result.error) {
+            console.error('Error loading attendance:', result.error);
+            showAlert('Failed to load attendance records: ' + result.error, 'error');
+            attendanceTableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-danger">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+                        <p class="mt-2">Error loading records</p>
+                        <small>${result.error}</small>
+                    </td>
+                </tr>
+            `;
             return;
         }
 
-        // Filter records for teacher's students
-        const studentIds = allStudents.map(s => s.id);
-        let filteredRecords = logs.filter(log => studentIds.includes(log.student_id));
+        let logs = result.data || [];
 
-        // Apply section filter
-        if (selectedSection) {
+        // Filter for teacher's students only
+        if (allStudents.length > 0) {
+            const studentIds = allStudents.map(s => s.id);
+            logs = logs.filter(log => studentIds.includes(log.student_id));
+        }
+
+        // Apply section filter client-side
+        if (selectedSection && allStudents.length > 0) {
             const sectionStudentIds = allStudents
                 .filter(s => s.section_id === selectedSection)
                 .map(s => s.id);
-            filteredRecords = filteredRecords.filter(log => sectionStudentIds.includes(log.student_id));
+            logs = logs.filter(log => sectionStudentIds.includes(log.student_id));
         }
 
-        // Apply status filter (derive status from times)
-        if (selectedStatus) {
-            filteredRecords = filteredRecords.filter(log => {
-                const status = deriveStatus(log);
-                return status === selectedStatus;
-            });
-        }
-
-        allRecords = filteredRecords;
+        allRecords = logs;
         renderAttendanceTable();
         updateStatistics();
 
     } catch (error) {
         console.error('Error loading attendance records:', error);
-        showAlert('Failed to load attendance records', 'error');
+        showAlert('Failed to load attendance records: ' + error.message, 'error');
+        attendanceTableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-5 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+                    <p class="mt-2">Error loading records</p>
+                    <small>${error.message}</small>
+                </td>
+            </tr>
+        `;
     }
 }
 
@@ -365,18 +407,19 @@ window.deleteAttendance = async function(logId) {
     if (!confirm('Are you sure you want to delete this attendance record?')) return;
 
     try {
-        const { error } = await supabase
-            .from('attendance')
-            .delete()
-            .eq('id', logId);
+        const result = await dataClient.delete('attendance', logId);
 
-        if (error) throw error;
+        if (result.error) {
+            console.error('Error deleting attendance:', result.error);
+            showAlert('Failed to delete attendance record: ' + result.error, 'error');
+            return;
+        }
 
         showAlert('Attendance record deleted successfully', 'success');
         await loadAttendanceRecords();
     } catch (error) {
         console.error('Error deleting attendance:', error);
-        showAlert('Failed to delete attendance record', 'error');
+        showAlert('Failed to delete attendance record: ' + error.message, 'error');
     }
 };
 
@@ -400,18 +443,18 @@ async function saveAttendance() {
 
         if (currentEditId) {
             // Update existing record
-            const { error } = await supabase
-                .from('attendance')
-                .update({
-                    time_in: checkIn || null,
-                    time_out: checkOut || null,
-                    status: status,
-                    remarks: remarksText || null,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', currentEditId);
+            const result = await dataClient.update('attendance', currentEditId, {
+                time_in: checkIn || null,
+                time_out: checkOut || null,
+                status: status,
+                remarks: remarksText || null
+            });
 
-            if (error) throw error;
+            if (result.error) {
+                console.error('Error updating attendance:', result.error);
+                throw new Error(result.error);
+            }
+
             showAlert('Attendance updated successfully', 'success');
         } else {
             // Get student's section_id
@@ -421,19 +464,21 @@ async function saveAttendance() {
             }
 
             // Create new record
-            const { error } = await supabase
-                .from('attendance')
-                .insert({
-                    student_id: studentId,
-                    section_id: student.section_id,
-                    attendance_date: date,
-                    time_in: checkIn || null,
-                    time_out: checkOut || null,
-                    status: status,
-                    remarks: remarksText || null
-                });
+            const result = await dataClient.create('attendance', {
+                student_id: studentId,
+                section_id: student.section_id,
+                attendance_date: date,
+                time_in: checkIn || null,
+                time_out: checkOut || null,
+                status: status,
+                remarks: remarksText || null
+            });
 
-            if (error) throw error;
+            if (result.error) {
+                console.error('Error creating attendance:', result.error);
+                throw new Error(result.error);
+            }
+
             showAlert('Attendance recorded successfully', 'success');
         }
 
@@ -442,7 +487,7 @@ async function saveAttendance() {
 
     } catch (error) {
         console.error('Error saving attendance:', error);
-        showAlert('Failed to save attendance', 'error');
+        showAlert('Failed to save attendance: ' + error.message, 'error');
     } finally {
         saveAttendanceBtn.disabled = false;
         saveAttendanceBtn.innerHTML = '<i class="bi bi-save me-1"></i>Save';

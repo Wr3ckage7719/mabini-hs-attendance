@@ -694,6 +694,27 @@
                     missingBoth: allLogs.length - Math.max(logsWithSubject, logsWithTeachingLoad)
                 });
                 
+                // Debug: Sample data inspection
+                if (allLogs.length > 0) {
+                    console.log('Sample attendance log:', allLogs[0]);
+                }
+                if (allSubjects.length > 0) {
+                    console.log('Sample subject:', allSubjects[0]);
+                }
+                if (allTeachingLoads.length > 0) {
+                    console.log('Sample teaching load:', allTeachingLoads[0]);
+                }
+                
+                // Debug: Check if subject IDs match
+                if (allLogs.length > 0 && allSubjects.length > 0) {
+                    const sampleLog = allLogs.find(log => log.subject_id);
+                    if (sampleLog) {
+                        console.log('Sample log with subject_id:', sampleLog.subject_id);
+                        const matchingSubject = allSubjects.find(s => s.id === sampleLog.subject_id);
+                        console.log('Matching subject found:', matchingSubject);
+                    }
+                }
+                
                 // Initialize charts
                 initCharts();
                 
@@ -793,7 +814,7 @@
                 return (b.time_in || '').localeCompare(a.time_in || '');
             });
             
-            tbody.innerHTML = logs.map(log => {
+            tbody.innerHTML = logs.map((log, index) => {
                 const student = allStudents.find(s => s.id === log.student_id);
                 const section = allSections.find(b => b.id === log.section_id);
                 
@@ -801,11 +822,28 @@
                 let subject = null;
                 if (log.subject_id) {
                     subject = allSubjects.find(s => s.id === log.subject_id);
+                    // Debug first few logs
+                    if (index < 3) {
+                        console.log(`Log ${index} subject lookup:`, {
+                            log_subject_id: log.subject_id,
+                            found_subject: subject,
+                            all_subject_ids: allSubjects.map(s => s.id).slice(0, 5)
+                        });
+                    }
                 } else if (log.teaching_load_id) {
                     // Fallback: get subject from teaching load
                     const teachingLoad = allTeachingLoads.find(tl => tl.id === log.teaching_load_id);
                     if (teachingLoad && teachingLoad.subject_id) {
                         subject = allSubjects.find(s => s.id === teachingLoad.subject_id);
+                    }
+                    // Debug first few logs
+                    if (index < 3) {
+                        console.log(`Log ${index} teaching load lookup:`, {
+                            log_teaching_load_id: log.teaching_load_id,
+                            found_teaching_load: teachingLoad,
+                            teaching_load_subject_id: teachingLoad?.subject_id,
+                            found_subject: subject
+                        });
                     }
                 }
                 
@@ -817,12 +855,18 @@
                 const timeIn = log.time_in || '-';
                 const timeOut = log.time_out || '-';
                 
+                // Get subject name with better fallback
+                let subjectName = 'Not Assigned';
+                if (subject) {
+                    subjectName = subject.name || subject.subject_name || subject.code || 'Unknown Subject';
+                }
+                
                 return `
                     <tr>
                         <td>${student?.student_number || log.student_id || '-'}</td>
                         <td>${student ? `${student.first_name} ${student.last_name}` : 'Unknown'}</td>
                         <td>${section ? section.section_name : '-'}</td>
-                        <td>${subject ? subject.name || subject.subject_name || 'Unknown Subject' : 'Not Assigned'}</td>
+                        <td>${subjectName}</td>
                         <td>${formattedDate}</td>
                         <td>${timeIn}</td>
                         <td>${timeOut}</td>

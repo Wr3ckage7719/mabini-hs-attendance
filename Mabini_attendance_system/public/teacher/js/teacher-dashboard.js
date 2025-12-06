@@ -128,8 +128,21 @@ async function loadDashboard() {
         console.log('[Teacher Dashboard] Dashboard loaded successfully');
     } catch (error) {
         console.error('[Teacher Dashboard] Error loading dashboard:', error);
+        
+        // Show error in schedule tables
+        const todayBody = document.getElementById('todayScheduleBody');
+        const allBody = document.getElementById('allSchedulesBody');
+        
+        if (todayBody) {
+            todayBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle me-2"></i>Error loading schedule</td></tr>';
+        }
+        
+        if (allBody) {
+            allBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle me-2"></i>Error loading schedule</td></tr>';
+        }
+        
         if (window.showAlert) {
-            window.showAlert('Failed to load dashboard data', 'error');
+            window.showAlert('Failed to load dashboard data: ' + error.message, 'error');
         }
     }
 }
@@ -153,10 +166,16 @@ function renderTodaySchedule() {
     const tbody = document.getElementById('todayScheduleBody');
     if (!tbody) return;
     
+    // Show loading or no data message
+    if (allSchedules.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-calendar-x me-2"></i>No teaching assignments found. Please contact admin to assign you to classes.</td></tr>';
+        return;
+    }
+    
     const todaySchedules = allSchedules.filter(s => s.day.includes(todayName));
     
     if (todaySchedules.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No classes scheduled for today</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3"><i class="bi bi-calendar-check me-2"></i>No classes scheduled for today</td></tr>';
         return;
     }
     
@@ -175,6 +194,12 @@ function renderAllSchedules(filterDay = '') {
     const tbody = document.getElementById('allSchedulesBody');
     if (!tbody) return;
     
+    // Show no data message if no schedules at all
+    if (allSchedules.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-calendar-x me-2"></i>No teaching assignments found</td></tr>';
+        return;
+    }
+    
     let filtered = allSchedules;
     
     if (filterDay) {
@@ -190,7 +215,8 @@ function renderAllSchedules(filterDay = '') {
     });
     
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No schedules found</td></tr>';
+        const dayName = filterDay || 'this filter';
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3"><i class="bi bi-calendar-check me-2"></i>No classes found for ${dayName}</td></tr>`;
         return;
     }
     
@@ -260,64 +286,6 @@ async function initDashboard() {
 window.addEventListener('load', initDashboard);
 
 console.log('[Teacher Dashboard] Script ready');
-    const tbody = document.querySelector('.class-details-table tbody');
-    
-    if (!tbody) return;
-
-    // Filter sections assigned to this teacher (if applicable)
-    let teacherSections = sections;
-    if (currentTeacher) {
-        const teachingLoads = await dataClient.query('teaching_loads', {
-            filter: { teacher_id: currentTeacher.id }
-        });
-        const assignedSectionIds = teachingLoads.map(tl => tl.section_id);
-        teacherSections = sections.filter(s => assignedSectionIds.includes(s.id));
-    }
-
-    if (teacherSections.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No classes assigned</td></tr>';
-        return;
-    }
-
-    window.allClassSections = teacherSections; // Store for modal view
-    
-    tbody.innerHTML = teacherSections.map((section, index) => {
-        // Count students in this section
-        const sectionStudents = students.filter(s => 
-            s.grade_level === section.grade_level && s.section === section.section_name
-        );
-        
-        return `
-            <tr>
-                <td>${section.section_code || '-'}</td>
-                <td>${section.section_name || 'Unnamed Section'}</td>
-                <td>${section.schedule || '-'}</td>
-                <td>${section.room || '-'}</td>
-                <td>${sectionStudents.length}</td>
-                <td>
-                    <button class="btn btn-sm btn-info" onclick="viewClassDetails(${index})">
-                        <i class="bi bi-eye"></i> View
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
-
-// Load recent attendance
-async function loadRecentAttendance(attendanceRecords, students) {
-    const tbody = document.querySelector('.attendance-history-table tbody');
-    
-    if (!tbody) return;
-
-    if (attendanceRecords.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">No attendance records for today</td></tr>';
-        return;
-    }
-
-    // Get student details
-    const studentMap = {};
-    students.forEach(s => {
         studentMap[s.id] = `${s.first_name} ${s.last_name}`;
     });
 

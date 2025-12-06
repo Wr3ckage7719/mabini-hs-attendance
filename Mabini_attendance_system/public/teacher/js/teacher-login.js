@@ -59,7 +59,7 @@ qrTabBtn.addEventListener('click', () => {
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const email = emailInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
     const password = passwordInput.value;
     
     if (!email || !password) {
@@ -74,33 +74,61 @@ loginForm.addEventListener('submit', async (e) => {
     
     try {
         console.log('Teacher login attempt:', email);
+        console.log('Password length:', password.length);
         
-        // Query teachers table by email
+        // Query teachers table by email (case-insensitive using contains)
         const teacherResult = await dataClient.getAll('teachers', [
-            { field: 'email', operator: '==', value: email }
+            { field: 'email', operator: 'contains', value: email }
         ]);
         
-        const teacher = teacherResult.data && teacherResult.data.length > 0 ? teacherResult.data[0] : null;
+        console.log('Query result:', teacherResult);
+        console.log('Teachers found:', teacherResult.data?.length || 0);
+        
+        // Find exact match (case-insensitive)
+        const teacher = teacherResult.data?.find(t => 
+            t.email && t.email.toLowerCase().trim() === email
+        );
         
         if (!teacher) {
+            console.error('No matching teacher found for email:', email);
             showAlert('Invalid email or password.');
             loginBtn.disabled = false;
             loginBtn.textContent = originalText;
             return;
         }
         
-        console.log('Teacher found:', teacher);
+        console.log('Teacher found:', {
+            id: teacher.id,
+            email: teacher.email,
+            name: `${teacher.first_name} ${teacher.last_name}`,
+            status: teacher.status,
+            hasPassword: !!teacher.password
+        });
         
-        // Check password
-        if (teacher.password !== password) {
+        // Check password - don't trim input to preserve intentional spaces
+        const dbPassword = teacher.password || '';
+        const inputPassword = password;
+        
+        console.log('Password comparison:', {
+            dbPasswordLength: dbPassword.length,
+            inputPasswordLength: inputPassword.length,
+            match: dbPassword === inputPassword
+        });
+        
+        if (dbPassword !== inputPassword) {
+            console.error('Password mismatch');
             showAlert('Invalid email or password.');
             loginBtn.disabled = false;
             loginBtn.textContent = originalText;
             return;
         }
         
-        // Check status
-        if (teacher.status && teacher.status !== 'active') {
+        // Check status (handle null/undefined as active)
+        const status = (teacher.status || 'active').toLowerCase();
+        console.log('Teacher status:', status);
+        
+        if (status !== 'active') {
+            console.error('Account not active. Status:', teacher.status);
             showAlert('Your account is not active. Please contact administration.');
             loginBtn.disabled = false;
             loginBtn.textContent = originalText;

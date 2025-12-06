@@ -187,6 +187,23 @@ async function loadAttendanceRecords() {
             </tr>
         `;
 
+        // Check if teacher has any students assigned
+        if (allStudents.length === 0) {
+            console.log('[Attendance Records] No students assigned to teacher');
+            attendanceTableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="bi bi-people" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No students assigned</p>
+                        <small>This teacher has no teaching assignments. Contact admin to assign sections.</small>
+                    </td>
+                </tr>
+            `;
+            allRecords = [];
+            updateStatistics();
+            return;
+        }
+
         // Build query
         let filters = [];
         
@@ -213,19 +230,19 @@ async function loadAttendanceRecords() {
                     </td>
                 </tr>
             `;
+            allRecords = [];
+            updateStatistics();
             return;
         }
 
         let logs = result.data || [];
 
-        // Filter for teacher's students only
-        if (allStudents.length > 0) {
-            const studentIds = allStudents.map(s => s.id);
-            logs = logs.filter(log => studentIds.includes(log.student_id));
-        }
+        // Filter for teacher's students only (CRITICAL: must have students)
+        const studentIds = allStudents.map(s => s.id);
+        logs = logs.filter(log => studentIds.includes(log.student_id));
 
         // Apply section filter client-side
-        if (selectedSection && allStudents.length > 0) {
+        if (selectedSection) {
             const sectionStudentIds = allStudents
                 .filter(s => s.section_id === selectedSection)
                 .map(s => s.id);
@@ -248,6 +265,8 @@ async function loadAttendanceRecords() {
                 </td>
             </tr>
         `;
+        allRecords = [];
+        updateStatistics();
     }
 }
 
@@ -321,6 +340,15 @@ function renderAttendanceTable() {
 
 // Update statistics
 function updateStatistics() {
+    // Safety check - if no students, set all to 0
+    if (allStudents.length === 0) {
+        statPresent.textContent = 0;
+        statLate.textContent = 0;
+        statAbsent.textContent = 0;
+        statTotal.textContent = 0;
+        return;
+    }
+
     const today = new Date().toISOString().split('T')[0];
     const todayRecords = allRecords.filter(log => {
         return log.date === today;
@@ -332,7 +360,7 @@ function updateStatistics() {
 
     statPresent.textContent = presentCount;
     statLate.textContent = lateCount;
-    statAbsent.textContent = absentCount;
+    statAbsent.textContent = Math.max(0, absentCount); // Ensure non-negative
     statTotal.textContent = allStudents.length;
 }
 

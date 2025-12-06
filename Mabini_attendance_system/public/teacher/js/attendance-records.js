@@ -191,7 +191,7 @@ async function loadAttendanceRecords() {
         let filters = [];
         
         if (selectedDate) {
-            filters.push({ field: 'attendance_date', operator: '==', value: selectedDate });
+            filters.push({ field: 'date', operator: '==', value: selectedDate });
         }
         
         if (selectedStatus) {
@@ -279,7 +279,7 @@ function renderAttendanceTable() {
         const status = deriveStatus(log);
         const checkIn = log.time_in || '-';
         const checkOut = log.time_out || '-';
-        const date = log.attendance_date ? formatDate(log.attendance_date) : '-';
+        const date = log.date ? formatDate(log.date) : '-';
 
         return `
             <tr>
@@ -323,7 +323,7 @@ function renderAttendanceTable() {
 function updateStatistics() {
     const today = new Date().toISOString().split('T')[0];
     const todayRecords = allRecords.filter(log => {
-        return log.attendance_date === today;
+        return log.date === today;
     });
 
     const presentCount = todayRecords.filter(log => log.status === 'present').length;
@@ -389,7 +389,7 @@ window.editAttendance = async function(logId) {
         modalTitle.textContent = 'Edit Attendance';
         
         studentSelect.value = log.student_id;
-        attendanceDate.value = log.attendance_date || '';
+        attendanceDate.value = log.date || '';
         checkInTime.value = log.time_in || '';
         checkOutTime.value = log.time_out || '';
         attendanceStatus.value = log.status || 'present';
@@ -467,7 +467,7 @@ async function saveAttendance() {
             const result = await dataClient.create('attendance', {
                 student_id: studentId,
                 section_id: student.section_id,
-                attendance_date: date,
+                date: date,
                 time_in: checkIn || null,
                 time_out: checkOut || null,
                 status: status,
@@ -514,7 +514,7 @@ function exportToExcel() {
             `${student.first_name} ${student.last_name}`,
             student.student_number,
             section ? section.section_name || section.section_code : 'N/A',
-            log.attendance_date || '-',
+            log.date || '-',
             log.time_in || '-',
             log.time_out || '-',
             capitalizeFirst(status),

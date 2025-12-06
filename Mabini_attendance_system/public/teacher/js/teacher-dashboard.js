@@ -1,10 +1,11 @@
 // =====================================================
 // TEACHER DASHBOARD - Main Logic
+// Version: 2.0 (Fixed - Dec 7, 2025)
 // =====================================================
 
 import { dataClient } from '../../js/data-client.js';
 
-console.log('[Teacher Dashboard] Script loaded');
+console.log('[Teacher Dashboard] Script loaded - v2.0');
 
 let allSchedules = [];
 let currentTeacherId = null;
@@ -27,6 +28,7 @@ console.log('[Teacher Dashboard] CRUD functions available');
 
 // Load dashboard data
 async function loadDashboard() {
+    console.log('[Teacher Dashboard] loadDashboard called');
     try {
         const userData = JSON.parse(sessionStorage.getItem('userData') || sessionStorage.getItem('teacherData'));
         if (!userData || !userData.id) {
@@ -39,44 +41,70 @@ async function loadDashboard() {
         console.log('[Teacher Dashboard] Loading for teacher:', currentTeacherId);
         
         // Get teaching loads for this teacher
+        console.log('[Teacher Dashboard] Fetching teaching loads...');
         const loadsResult = await dataClient.getAll('teaching_loads', [
             { field: 'teacher_id', operator: '==', value: currentTeacherId }
         ]);
         
+        console.log('[Teacher Dashboard] Teaching loads result:', loadsResult);
+        
         if (loadsResult.error) {
             console.error('[Teacher Dashboard] Error loading teaching loads:', loadsResult.error);
-            if (window.showAlert) window.showAlert('Failed to load teaching assignments', 'error');
+            if (window.showAlert) window.showAlert('Failed to load teaching assignments: ' + loadsResult.error, 'error');
+            
+            // Still render empty state
+            allSchedules = [];
+            renderTodaySchedule();
+            renderAllSchedules();
             return;
         }
         
         const myLoads = loadsResult.data || [];
-        console.log('[Teacher Dashboard] My teaching loads:', myLoads.length);
+        console.log('[Teacher Dashboard] My teaching loads:', myLoads.length, myLoads);
         
         
         // Get related data
+        console.log('[Teacher Dashboard] Fetching subjects and sections...');
         const subjectsResult = await dataClient.getAll('subjects', []);
         const sectionsResult = await dataClient.getAll('sections', []);
+        
+        console.log('[Teacher Dashboard] Subjects result:', subjectsResult);
+        console.log('[Teacher Dashboard] Sections result:', sectionsResult);
         
         if (subjectsResult.error || sectionsResult.error) {
             console.error('[Teacher Dashboard] Error loading related data');
             if (window.showAlert) window.showAlert('Failed to load complete data', 'error');
+            
+            // Still render with what we have
+            allSchedules = [];
+            renderTodaySchedule();
+            renderAllSchedules();
             return;
         }
         
         const subjects = subjectsResult.data || [];
         const sections = sectionsResult.data || [];
         
+        console.log('[Teacher Dashboard] Subjects loaded:', subjects.length);
+        console.log('[Teacher Dashboard] Sections loaded:', sections.length);
+        
         // Get students only if we have sections
         const uniqueSections = [...new Set(myLoads.map(l => l.section_id))].filter(Boolean);
         let students = [];
         
+        console.log('[Teacher Dashboard] Unique sections:', uniqueSections.length);
+        
         if (uniqueSections.length > 0) {
+            console.log('[Teacher Dashboard] Fetching students for sections:', uniqueSections);
             const studentsResult = await dataClient.getAll('students', [
                 { field: 'section_id', operator: 'in', value: uniqueSections }
             ]);
             
+            console.log('[Teacher Dashboard] Students result:', studentsResult);
+            
             if (!studentsResult.error) {
                 students = studentsResult.data || [];
+                console.log('[Teacher Dashboard] Students loaded:', students.length);
             }
         }
         

@@ -4,5 +4,25 @@
       "memory": 1024,
       "maxDuration": 10
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/teacher/js/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/js/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ]
 }

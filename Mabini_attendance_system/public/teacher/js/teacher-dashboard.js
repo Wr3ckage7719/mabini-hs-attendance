@@ -1,11 +1,11 @@
 // =====================================================
 // TEACHER DASHBOARD - Main Logic
-// Version: 2.0 (Fixed - Dec 7, 2025)
+// Version: 3.0 (Fixed - Dec 7, 2025 - 3:13 AM)
 // =====================================================
 
 import { dataClient } from '../../js/data-client.js';
 
-console.log('[Teacher Dashboard] Script loaded - v2.0');
+console.log('[Teacher Dashboard] Script loaded - v3.0');
 
 let allSchedules = [];
 let currentTeacherId = null;

@@ -628,6 +628,7 @@
                 const profileData = {
                     first_name: firstName,
                     last_name: lastName,
+                    phone: document.getElementById('phone').value.trim() || null,
                     emergency_contact: document.getElementById('emergencyContact').value.trim() || null,
                     address: document.getElementById('address').value.trim() || null,
                     sex: document.getElementById('sex').value || null,
@@ -638,9 +639,6 @@
                     parent_guardian_contact: document.getElementById('parentGuardianContact').value.trim() || null,
                     parent_guardian_email: document.getElementById('parentGuardianEmail').value.trim() || null
                 };
-                
-                // Note: 'phone' field is not included as it doesn't exist in database yet
-                // Run server/ADD_PHONE_COLUMN.sql to add it to the schema
                 
                 // Upload profile picture to Supabase Storage if file selected
                 if (profilePhotoFile) {
@@ -674,28 +672,29 @@
                     throw new Error(result.error);
                 }
                 
-                if (!result.data) {
-                    console.warn('Update succeeded but no data returned');
-                }
-
-                // Verify the update by fetching fresh data
-                console.log('Verifying update by fetching fresh data...');
+                // Always fetch fresh data to verify the update
+                console.log('Fetching fresh data to verify update...');
                 const verifyResult = await dataClient.getAll('students', [
                     { field: 'id', operator: '==', value: currentStudent.id }
                 ]);
-                console.log('Verification fetch:', verifyResult);
+                console.log('Verification fetch result:', verifyResult);
+                
                 const verifiedStudent = verifyResult.data?.[0] || verifyResult?.[0];
-                console.log('Verified student profile_picture_url:', verifiedStudent?.profile_picture_url);
+                
+                if (!verifiedStudent) {
+                    console.error('Could not verify update - student not found');
+                    throw new Error('Failed to verify profile update');
+                }
+                
+                console.log('Verified student data:', verifiedStudent);
+                console.log('Parent/Guardian fields in verified data:', {
+                    name: verifiedStudent.parent_guardian_name,
+                    contact: verifiedStudent.parent_guardian_contact,
+                    email: verifiedStudent.parent_guardian_email
+                });
 
                 // Update current student with verified data
-                if (verifiedStudent) {
-                    currentStudent = verifiedStudent;
-                } else if (result.data) {
-                    currentStudent = { ...currentStudent, ...result.data };
-                } else {
-                    // Fallback: merge profileData if no result.data
-                    currentStudent = { ...currentStudent, ...profileData };
-                }
+                currentStudent = verifiedStudent;
                 
                 console.log('Updated currentStudent:', currentStudent);
                 console.log('Profile picture URL in student object:', currentStudent.profile_picture_url);

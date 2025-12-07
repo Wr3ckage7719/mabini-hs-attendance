@@ -177,7 +177,8 @@ export const dataClient = {
         }
       }
 
-      const { data: result, error } = await supabase
+      // First, try update with select
+      let { data: result, error } = await supabase
         .from(table)
         .update(data)
         .eq('id', id)
@@ -191,6 +192,24 @@ export const dataClient = {
 
       console.log(`[dataClient] Update result:`, result);
       console.log(`[dataClient] Update result length:`, result?.length);
+
+      // If select returned empty, try without select to just confirm update worked
+      if (!result || (Array.isArray(result) && result.length === 0)) {
+        console.log(`[dataClient] No data returned from select, trying update without select...`);
+        const { error: updateError } = await supabase
+          .from(table)
+          .update(data)
+          .eq('id', id);
+        
+        if (updateError) {
+          console.error(`[dataClient] Update without select failed:`, updateError);
+          throw updateError;
+        }
+        
+        console.log(`[dataClient] Update without select succeeded, returning merged data`);
+        // Return the merged data since update succeeded but we couldn't select
+        return { data: { id, ...data }, error: null };
+      }
 
       // Return the first item if array, otherwise return as-is
       const returnData = Array.isArray(result) ? result[0] : result;

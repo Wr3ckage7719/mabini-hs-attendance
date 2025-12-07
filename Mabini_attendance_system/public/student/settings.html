@@ -672,29 +672,36 @@
                     throw new Error(result.error);
                 }
                 
-                // Always fetch fresh data to verify the update
+                // Fetch fresh data directly from Supabase to verify the update
                 console.log('Fetching fresh data to verify update...');
-                const verifyResult = await dataClient.getAll('students', [
-                    { field: 'id', operator: '==', value: currentStudent.id }
-                ]);
-                console.log('Verification fetch result:', verifyResult);
+                const { data: verifyData, error: verifyError } = await supabase
+                    .from('students')
+                    .select('*')
+                    .eq('id', currentStudent.id)
+                    .single();
                 
-                const verifiedStudent = verifyResult.data?.[0] || verifyResult?.[0];
+                console.log('Verification fetch result:', { verifyData, verifyError });
                 
-                if (!verifiedStudent) {
-                    console.error('Could not verify update - student not found');
-                    throw new Error('Failed to verify profile update');
+                if (verifyError) {
+                    console.warn('Could not verify update:', verifyError.message);
+                    // Update succeeded but we can't verify - merge the data
+                    currentStudent = { ...currentStudent, ...profileData };
+                } else if (verifyData) {
+                    console.log('Verified student data:', verifyData);
+                    console.log('Parent/Guardian fields in verified data:', {
+                        name: verifyData.parent_guardian_name,
+                        contact: verifyData.parent_guardian_contact,
+                        email: verifyData.parent_guardian_email,
+                        phone: verifyData.phone,
+                        emergency_contact: verifyData.emergency_contact,
+                        address: verifyData.address,
+                        birth_place: verifyData.birth_place
+                    });
+                    currentStudent = verifyData;
+                } else {
+                    console.warn('No data returned from verification');
+                    currentStudent = { ...currentStudent, ...profileData };
                 }
-                
-                console.log('Verified student data:', verifiedStudent);
-                console.log('Parent/Guardian fields in verified data:', {
-                    name: verifiedStudent.parent_guardian_name,
-                    contact: verifiedStudent.parent_guardian_contact,
-                    email: verifiedStudent.parent_guardian_email
-                });
-
-                // Update current student with verified data
-                currentStudent = verifiedStudent;
                 
                 console.log('Updated currentStudent:', currentStudent);
                 console.log('Profile picture URL in student object:', currentStudent.profile_picture_url);

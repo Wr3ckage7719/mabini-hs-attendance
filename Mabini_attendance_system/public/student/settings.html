@@ -628,7 +628,6 @@
                 const profileData = {
                     first_name: firstName,
                     last_name: lastName,
-                    phone: document.getElementById('phone').value.trim() || null,
                     emergency_contact: document.getElementById('emergencyContact').value.trim() || null,
                     address: document.getElementById('address').value.trim() || null,
                     sex: document.getElementById('sex').value || null,
@@ -639,6 +638,9 @@
                     parent_guardian_contact: document.getElementById('parentGuardianContact').value.trim() || null,
                     parent_guardian_email: document.getElementById('parentGuardianEmail').value.trim() || null
                 };
+                
+                // Note: 'phone' field is not included as it doesn't exist in database yet
+                // Run server/ADD_PHONE_COLUMN.sql to add it to the schema
                 
                 // Upload profile picture to Supabase Storage if file selected
                 if (profilePhotoFile) {

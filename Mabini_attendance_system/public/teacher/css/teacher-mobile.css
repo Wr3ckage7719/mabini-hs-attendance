@@ -24,12 +24,21 @@ html, body {
    ======================================== */
 @media (max-width: 430px) {
     /* Header container */
+    .admin-top,
+    header.admin-top {
+        display: flex !important;
+        align-items: center !important;
+        padding: 12px 16px !important;
+    }
+    
     .admin-top-actions {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
+        justify-content: center !important;
         gap: 0.5rem !important;
         flex-wrap: nowrap !important;
+        margin-left: auto !important;
     }
     
     /* Hide the flex container with avatar and logout */
@@ -51,6 +60,13 @@ html, body {
         border-radius: 8px !important;
         background: transparent !important;
         border: none !important;
+        flex-shrink: 0 !important;
+    }
+    
+    #themeToggle .icon {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     
     /* User/profile avatar icon */
@@ -65,6 +81,7 @@ html, body {
         padding: 0.5rem !important;
         border-radius: 8px !important;
         background: transparent !important;
+        flex-shrink: 0 !important;
     }
     
     .avatar svg {
@@ -88,6 +105,8 @@ html, body {
         border: none !important;
         color: #ef4444 !important; /* Red color */
         font-size: 0 !important; /* Hide text */
+        flex-shrink: 0 !important;
+        position: relative !important;
     }
     
     /* Add logout icon */

@@ -706,31 +706,60 @@
 
                 console.log('Updating student profile in database...');
                 console.log('Student ID:', currentStudent.id);
+                console.log('Student ID type:', typeof currentStudent.id);
                 console.log('Data to save:', profileData);
                 
-                // Update directly using Supabase (without .single() to avoid coercion error)
-                const { data: updateResult, error: updateError } = await supabase
+                // First, verify the student exists
+                const { data: checkData, error: checkError } = await supabase
+                    .from('students')
+                    .select('id, student_number')
+                    .eq('id', currentStudent.id);
+                
+                console.log('Student exists check:', { checkData, checkError });
+                
+                if (!checkData || checkData.length === 0) {
+                    throw new Error('Student record not found in database. ID: ' + currentStudent.id);
+                }
+                
+                // Now do the update
+                const { data: updateResult, error: updateError, status, statusText } = await supabase
                     .from('students')
                     .update(profileData)
                     .eq('id', currentStudent.id)
                     .select();
                 
-                console.log('Update response:', { updateResult, updateError });
+                console.log('Update response:', { 
+                    updateResult, 
+                    updateError, 
+                    status,
+                    statusText,
+                    resultLength: updateResult?.length 
+                });
 
                 if (updateError) {
                     console.error('Update failed:', updateError);
                     throw new Error(updateError.message);
                 }
                 
+                // If update returns empty but no error, fetch the data manually
                 if (!updateResult || updateResult.length === 0) {
-                    throw new Error('Update succeeded but no data returned');
+                    console.warn('Update returned no data, fetching manually...');
+                    const { data: fetchedData, error: fetchError } = await supabase
+                        .from('students')
+                        .select('*')
+                        .eq('id', currentStudent.id);
+                    
+                    if (fetchError || !fetchedData || fetchedData.length === 0) {
+                        throw new Error('Update may have succeeded but cannot verify - please refresh the page');
+                    }
+                    
+                    console.log('✅ Data saved (verified by fetch):', fetchedData[0]);
+                    currentStudent = fetchedData[0];
+                } else {
+                    console.log('✅ Data saved to database successfully!');
+                    console.log('Saved data:', updateResult[0]);
+                    currentStudent = updateResult[0];
                 }
-                
-                console.log('✅ Data saved to database successfully!');
-                console.log('Saved data:', updateResult[0]);
-                
-                // Update currentStudent with the saved data (first item from array)
-                currentStudent = updateResult[0];
                 
                 // Update session storage with fresh data
                 sessionStorage.setItem('studentData', JSON.stringify(currentStudent));

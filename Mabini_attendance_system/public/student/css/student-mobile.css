@@ -205,6 +205,77 @@ html, body {
         margin: 0 !important;
     }
     
+    /* Main card - ensure content fits */
+    .main-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 16px 0 !important;
+        padding: 16px 12px !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+    
+    /* Stats grid inside main cards */
+    .main-card > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Force all grids in main cards to single column */
+    .main-card div[style] {
+        max-width: 100% !important;
+    }
+    
+    /* Responsive text sizing in main cards */
+    .main-card h3 {
+        font-size: 16px !important;
+    }
+    
+    .main-card h2 {
+        font-size: 18px !important;
+    }
+    
+    /* Attendance index section */
+    .attendance-index,
+    .attendance-history-section {
+        width: 100% !important;
+        padding: 16px 12px !important;
+        box-sizing: border-box !important;
+    }
+    
+    .attendance-title {
+        font-size: 18px !important;
+        margin-bottom: 12px !important;
+    }
+    
+    /* Attendance search form - stack vertically on mobile */
+    .attendance-search-form {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+    
+    .attendance-search-input,
+    .attendance-year-select,
+    .attendance-search-btn {
+        width: 100% !important;
+        min-height: 44px !important;
+        font-size: 16px !important;
+        box-sizing: border-box !important;
+    }
+    
+    .attendance-search-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        padding: 12px !important;
+    }
+    
     /* Cards */
     .info-card,
     .attendance-card,

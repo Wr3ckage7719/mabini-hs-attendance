@@ -19,57 +19,108 @@ html, body {
 }
 
 /* ========================================
-   HEADER ICON ARRANGEMENT (Like Image 3)
-   Mobile: 360-430px
+   HEADER ICON ARRANGEMENT (Like Image 2)
+   Mobile: 360-430px - Icons only in horizontal layout
    ======================================== */
 @media (max-width: 430px) {
-    /* Header actions - horizontal icon layout */
-    .header-right,
-    .navbar-nav,
+    /* Header container */
     .admin-top-actions {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        gap: 0.25rem !important;
+        gap: 0.5rem !important;
         flex-wrap: nowrap !important;
     }
     
-    /* Icon buttons - consistent sizing */
+    /* Hide the flex container with avatar and logout */
+    .admin-top-actions > div {
+        display: contents !important;
+    }
+    
+    /* Theme toggle button - moon/sun icon */
     .theme-toggle,
-    .theme-toggle-btn,
-    .nav-link,
-    .btn-icon,
-    [class*="icon-"],
-    .admin-top-actions button {
+    #themeToggle {
         min-width: 44px !important;
         min-height: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         padding: 0.5rem !important;
+        border-radius: 8px !important;
+        background: transparent !important;
+        border: none !important;
     }
     
-    /* Hide text labels, show icons only */
-    .nav-link span:not(.bi):not([class*="icon"]):not(.icon) {
-        display: none !important;
-    }
-    
-    .admin-top-actions .btn:not(.theme-toggle) {
-        font-size: 0 !important;
-    }
-    
-    .admin-top-actions .btn:not(.theme-toggle)::before {
-        content: '👤';
-        font-size: 18px !important;
-    }
-    
-    /* User/profile icon */
-    .user-icon,
-    .profile-icon,
+    /* User/profile avatar icon */
     .avatar {
-        width: 32px !important;
-        height: 32px !important;
-        border-radius: 50% !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0.5rem !important;
+        border-radius: 8px !important;
+        background: transparent !important;
+    }
+    
+    .avatar svg {
+        width: 24px !important;
+        height: 24px !important;
+    }
+    
+    /* Logout button - icon only with red color */
+    #logoutBtn,
+    button[id="logoutBtn"] {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0.5rem !important;
+        border-radius: 8px !important;
+        background: transparent !important;
+        border: none !important;
+        color: #ef4444 !important; /* Red color */
+        font-size: 0 !important; /* Hide text */
+    }
+    
+    /* Add logout icon */
+    #logoutBtn::before,
+    button[id="logoutBtn"]::before {
+        content: '';
+        display: block !important;
+        width: 20px !important;
+        height: 20px !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23ef4444' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'/%3E%3Cpolyline points='16 17 21 12 16 7'/%3E%3Cline x1='21' y1='12' x2='9' y2='12'/%3E%3C/svg%3E") !important;
+        background-size: contain !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        font-size: 20px !important;
+    }
+    
+    /* Dark mode logout icon */
+    [data-theme="dark"] #logoutBtn::before,
+    [data-theme="dark"] button[id="logoutBtn"]::before {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23f87171' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'/%3E%3Cpolyline points='16 17 21 12 16 7'/%3E%3Cline x1='21' y1='12' x2='9' y2='12'/%3E%3C/svg%3E") !important;
+    }
+    
+    /* Hover effect for logout button */
+    #logoutBtn:hover,
+    button[id="logoutBtn"]:hover {
+        background: rgba(239, 68, 68, 0.1) !important;
+    }
+    
+    /* Active state */
+    #logoutBtn:active,
+    button[id="logoutBtn"]:active {
+        background: rgba(239, 68, 68, 0.2) !important;
+        transform: scale(0.95) !important;
     }
 }
 

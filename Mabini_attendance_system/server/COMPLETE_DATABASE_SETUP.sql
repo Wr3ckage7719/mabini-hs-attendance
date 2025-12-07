@@ -354,7 +354,35 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- =====================================================
--- SECTION 9: VERIFICATION QUERIES
+-- SECTION 9: ROW LEVEL SECURITY (RLS) POLICIES
+-- =====================================================
+
+-- Enable RLS on students table
+ALTER TABLE students ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist (to avoid conflicts)
+DROP POLICY IF EXISTS "Allow public read for students" ON students;
+DROP POLICY IF EXISTS "Allow public update for students" ON students;
+DROP POLICY IF EXISTS "Allow public insert for students" ON students;
+
+-- Allow public read access (needed for dashboard and profile cards)
+CREATE POLICY "Allow public read for students" ON students
+    FOR SELECT
+    USING (true);
+
+-- Allow public update access (needed for settings page - students can update their profiles)
+CREATE POLICY "Allow public update for students" ON students
+    FOR UPDATE
+    USING (true)
+    WITH CHECK (true);
+
+-- Allow public insert access (needed for admin to create new students)
+CREATE POLICY "Allow public insert for students" ON students
+    FOR INSERT
+    WITH CHECK (true);
+
+-- =====================================================
+-- SECTION 10: VERIFICATION QUERIES
 -- =====================================================
 
 -- Verify students table columns
@@ -399,6 +427,18 @@ FROM information_schema.columns
 WHERE table_schema = 'public'
   AND table_name = 'sections'
   AND column_name = 'strand';
+
+-- Verify RLS policies on students table
+SELECT 
+    schemaname, 
+    tablename, 
+    policyname, 
+    permissive, 
+    roles, 
+    cmd
+FROM pg_policies 
+WHERE tablename = 'students'
+ORDER BY policyname;
 
 -- Verify student_notifications table exists
 SELECT COUNT(*) as notification_count

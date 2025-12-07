@@ -298,85 +298,15 @@ async function initDashboard() {
 window.addEventListener('load', initDashboard);
 
 console.log('[Teacher Dashboard] Script ready');
-        studentMap[s.id] = `${s.first_name} ${s.last_name}`;
-    });
-
-    // Get recent 10 records
-    const recentRecords = attendanceRecords.slice(-10).reverse();
-
-    tbody.innerHTML = recentRecords.map(record => {
-        const studentName = studentMap[record.student_id] || 'Unknown Student';
-        const date = new Date(record.date).toLocaleDateString();
-        const timeIn = record.time_in ? formatTime(record.time_in) : '-';
-        
-        let statusBadge = '';
-        switch(record.status) {
-            case 'present':
-                statusBadge = '<span class="badge bg-success">Present</span>';
-                break;
-            case 'late':
-                statusBadge = '<span class="badge bg-warning">Late</span>';
-                break;
-            case 'absent':
-                statusBadge = '<span class="badge bg-danger">Absent</span>';
-                break;
-            default:
-                statusBadge = '<span class="badge bg-secondary">Unknown</span>';
-        }
-
-        return `
-            <tr>
-                <td>${date}</td>
-                <td>${studentName}</td>
-                <td>${timeIn}</td>
-                <td>${statusBadge}</td>
-            </tr>
-        `;
-    }).join('');
-}
-
-// Format time from HH:MM:SS to readable format
-function formatTime(timeString) {
-    if (!timeString) return '-';
-    try {
-        const [hours, minutes] = timeString.split(':');
-        const date = new Date();
-        date.setHours(parseInt(hours), parseInt(minutes));
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    } catch {
-        return timeString;
-    }
-}
 
 // Logout function
 window.doLogout = async function() {
     if (confirm('Are you sure you want to logout?')) {
         sessionStorage.removeItem('teacherData');
+        sessionStorage.removeItem('userData');
         sessionStorage.removeItem('userRole');
         window.location.href = 'login.html';
     }
-};
-
-// View class details
-window.viewClassDetails = function(index) {
-    const section = window.allClassSections?.[index];
-    if (!section) return;
-    
-    document.getElementById('viewDay').textContent = section.day || 'N/A';
-    document.getElementById('viewTime').textContent = section.schedule || 'N/A';
-    document.getElementById('viewSubject').textContent = section.subject_name || '-';
-    document.getElementById('viewSection').textContent = section.section_name || 'Unnamed Section';
-    document.getElementById('viewRoom').textContent = section.room || 'N/A';
-    document.getElementById('viewGradeLevel').textContent = section.grade_level || 'N/A';
-    
-    // Count students
-    const studentCount = window.allStudents ? window.allStudents.filter(s => 
-        s.grade_level === section.grade_level && s.section === section.section_name
-    ).length : 0;
-    document.getElementById('viewStudents').textContent = studentCount;
-    
-    const modal = new bootstrap.Modal(document.getElementById('classDetailsModal'));
-    modal.show();
 };
 
 // Attach logout to button
@@ -387,5 +317,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Initialize dashboard when DOM is ready
-initDashboard();

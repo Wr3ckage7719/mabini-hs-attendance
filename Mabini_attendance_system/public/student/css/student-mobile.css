@@ -323,6 +323,36 @@ html, body {
     .stat-value {
         font-size: 24px !important;
     }
+    
+    /* Performance Insights Cards - Force single column on mobile */
+    .main-card div[style*="display: grid"][style*="grid-template-columns"] {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+    
+    /* Performance card items */
+    .main-card div[style*="display: grid"] > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: auto !important;
+        padding: 16px !important;
+    }
+    
+    /* Make stat numbers more readable on mobile */
+    .main-card div[style*="display: grid"] > div span[id*="Rate"],
+    .main-card div[style*="display: grid"] > div span[id*="Streak"],
+    .main-card div[style*="display: grid"] > div span[id*="Needed"] {
+        font-size: 2rem !important;
+    }
+    
+    /* Ensure text doesn't overflow */
+    .main-card div[style*="display: grid"] > div div[style*="text-transform: uppercase"] {
+        font-size: 0.7rem !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
 }
 
 /* ========================================
@@ -405,6 +435,26 @@ html, body {
     .btn-group .btn {
         flex: 1 1 auto !important;
         min-width: calc(50% - 4px) !important;
+    }
+    
+    /* Attendance Overview Card - Stack on mobile */
+    .main-card > div[style*="display: grid"][style*="grid-template-columns: 1fr 2fr"] {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1.5rem !important;
+    }
+    
+    /* Main rate display - center on mobile */
+    .main-card > div[style*="display: grid"] > div:first-child {
+        text-align: center !important;
+        margin: 0 auto !important;
+    }
+    
+    /* Stats grid inside attendance overview */
+    .main-card > div[style*="display: grid"] > div:last-child > div[style*="grid-template-columns: repeat(3, 1fr)"] {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
     }
 }
 

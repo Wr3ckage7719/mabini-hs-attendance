@@ -394,7 +394,6 @@ async function loadAttendanceStats(studentId) {
         // Try to get attendance records from the 'attendance' table first
         let logs = [];
         try {
-            console.log('[Attendance Stats] Fetching from attendance table...');
             const { data: attendanceData, error: attendanceError } = await supabase
                 .from('attendance')
                 .select('*')
@@ -404,12 +403,10 @@ async function loadAttendanceStats(studentId) {
                 .order('date', { ascending: false });
             
             if (attendanceError) {
-                console.error('[Attendance Stats] Error fetching from attendance table:', attendanceError);
+                console.warn('[Attendance Stats] Could not fetch from attendance table:', attendanceError.message);
             } else if (attendanceData && attendanceData.length > 0) {
-                console.log('[Attendance Stats] Found records in attendance table:', attendanceData.length);
                 logs = attendanceData;
             } else {
-                console.log('[Attendance Stats] No records in attendance table, trying entrance_logs...');
                 // Fallback to entrance_logs
                 const logsResult = await attendanceClient.getAttendanceRange(
                     studentId, 
@@ -418,10 +415,9 @@ async function loadAttendanceStats(studentId) {
                 );
                 logs = Array.isArray(logsResult.data) ? logsResult.data : 
                        Array.isArray(logsResult) ? logsResult : [];
-                console.log('[Attendance Stats] Entrance logs found:', logs.length);
             }
         } catch (err) {
-            console.error('[Attendance Stats] Error fetching attendance:', err);
+            console.warn('[Attendance Stats] Error fetching attendance:', err.message);
             logs = [];
         }
         
@@ -468,13 +464,11 @@ async function loadAttendanceStats(studentId) {
         
         // Load attendance records for table
         loadAttendanceTable(logs);
-        console.log('[Attendance Stats] ✅ All components updated successfully');
     } catch (error) {
-        console.error('[Attendance Stats] Error loading attendance stats:', error);
+        console.warn('[Attendance Stats] Error loading attendance stats:', error.message);
         updateAttendanceSummary(0, 0, 0, 0, true); // true = error/no data
         updateRecentActivity([]);
         loadAttendanceTable([]);
-        console.log('[Attendance Stats] ⚠️ Error occurred - empty states displayed');
     }
 }
 
@@ -894,27 +888,14 @@ function formatTime(timeString) {
 
 async function loadNotifications() {
     try {
-        console.log('🔔 Loading notifications...');
-        console.log('Current student:', currentStudent);
-        
         if (!currentStudent) {
             console.warn('⚠️ No current student, cannot load notifications');
+            renderNotifications([]);
+            updateNotificationBadge([]);
             return;
         }
 
-        console.log('Querying notifications for student_id:', currentStudent.id);
-        console.log('Student ID type:', typeof currentStudent.id);
-        
-        // First, let's try to get ALL notifications to see if RLS is blocking us
-        console.log('Testing: Getting all notifications (no filter)...');
-        const { data: allData, error: allError } = await supabase
-            .from('student_notifications')
-            .select('*')
-            .limit(5);
-            
-        console.log('All notifications test:', { allData, allError });
-        
-        // Now get notifications for this specific student
+        // Get notifications for this specific student
         const { data, error } = await supabase
             .from('student_notifications')
             .select('*')
@@ -923,32 +904,21 @@ async function loadNotifications() {
             .limit(50);
 
         if (error) {
-            console.error('❌ Error loading notifications:', error);
-            console.error('Error details:', {
-                message: error.message,
-                details: error.details,
-                hint: error.hint,
-                code: error.code
-            });
-            
-            // Show error in UI
+            console.warn('⚠️ Could not load notifications:', error.message);
+            // Fail silently - render empty state
             renderNotifications([]);
+            updateNotificationBadge([]);
             return;
-        }
-        
-        console.log('✅ Notifications query successful!');
-        console.log('Notifications data:', data);
-        console.log('Number of notifications:', data ? data.length : 0);
-        
-        if (data && data.length > 0) {
-            console.log('First notification:', data[0]);
         }
 
         const notifications = data || [];
         updateNotificationBadge(notifications);
         renderNotifications(notifications);
     } catch (error) {
-        console.error('Error in loadNotifications:', error);
+        console.warn('⚠️ Notification loading failed:', error.message);
+        // Fail silently - render empty state
+        renderNotifications([]);
+        updateNotificationBadge([]);
     }
 }
 

@@ -542,38 +542,75 @@
         // Load profile data
         async function loadProfile() {
             try {
-                // Find student by ID from session using getOne method
-                const studentResult = await dataClient.getOne('students', currentStudent.id);
+                // Fetch directly from Supabase to ensure we get all fields
+                console.log('Loading profile for student ID:', currentStudent.id);
+                const { data: profile, error } = await supabase
+                    .from('students')
+                    .select('*')
+                    .eq('id', currentStudent.id)
+                    .single();
 
-                console.log('Load profile result:', studentResult);
+                console.log('Load profile result:', { profile, error });
                 
-                if (studentResult.error) {
-                    console.error('Error loading profile:', studentResult.error);
-                    showAlert('Failed to load profile: ' + studentResult.error, 'error');
+                if (error) {
+                    console.error('Error loading profile:', error);
+                    showAlert('Failed to load profile: ' + error.message, 'error');
                     return;
                 }
                 
-                const profile = studentResult.data;
                 if (profile) {
                     currentStudent = profile;
+                    console.log('Student data loaded:', profile);
                     
-                    // Populate form fields - use actual database columns
-                    // Combine first_name and last_name for display
-                    const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
-                    document.getElementById('fullName').value = fullName;
-                    document.getElementById('email').value = profile.email || '';
+                    // Populate form fields with values and update placeholders
+                    // Combine first_name, middle_name, last_name for display
+                    const fullName = `${profile.first_name || ''} ${profile.middle_name || ''} ${profile.last_name || ''}`.trim().replace(/\s+/g, ' ');
+                    const fullNameInput = document.getElementById('fullName');
+                    fullNameInput.value = fullName;
+                    fullNameInput.placeholder = fullName || 'Enter full name';
                     
-                    // Load all fields from database
-                    document.getElementById('phone').value = profile.phone || '';
-                    document.getElementById('emergencyContact').value = profile.emergency_contact || '';
-                    document.getElementById('address').value = profile.address || '';
+                    const emailInput = document.getElementById('email');
+                    emailInput.value = profile.email || '';
+                    emailInput.placeholder = profile.email || 'No email set';
+                    
+                    // Load contact information
+                    const phoneInput = document.getElementById('phone');
+                    phoneInput.value = profile.phone || '';
+                    phoneInput.placeholder = profile.phone || '09XXXXXXXXX';
+                    
+                    const emergencyInput = document.getElementById('emergencyContact');
+                    emergencyInput.value = profile.emergency_contact || '';
+                    emergencyInput.placeholder = profile.emergency_contact || '09XXXXXXXXX';
+                    
+                    const addressInput = document.getElementById('address');
+                    addressInput.value = profile.address || '';
+                    addressInput.placeholder = profile.address || 'Enter your address';
+                    
+                    // Load personal information
                     document.getElementById('sex').value = profile.sex || '';
-                    document.getElementById('nationality').value = profile.nationality || '';
+                    
+                    const nationalityInput = document.getElementById('nationality');
+                    nationalityInput.value = profile.nationality || '';
+                    nationalityInput.placeholder = profile.nationality || 'e.g., Filipino';
+                    
                     document.getElementById('birthDate').value = profile.birth_date || '';
-                    document.getElementById('birthPlace').value = profile.birth_place || '';
-                    document.getElementById('parentGuardianName').value = profile.parent_guardian_name || '';
-                    document.getElementById('parentGuardianContact').value = profile.parent_guardian_contact || '';
-                    document.getElementById('parentGuardianEmail').value = profile.parent_guardian_email || '';
+                    
+                    const birthPlaceInput = document.getElementById('birthPlace');
+                    birthPlaceInput.value = profile.birth_place || '';
+                    birthPlaceInput.placeholder = profile.birth_place || 'e.g., Manila, Philippines';
+                    
+                    // Load parent/guardian information
+                    const parentNameInput = document.getElementById('parentGuardianName');
+                    parentNameInput.value = profile.parent_guardian_name || '';
+                    parentNameInput.placeholder = profile.parent_guardian_name || 'Enter parent/guardian name';
+                    
+                    const parentContactInput = document.getElementById('parentGuardianContact');
+                    parentContactInput.value = profile.parent_guardian_contact || '';
+                    parentContactInput.placeholder = profile.parent_guardian_contact || '09XXXXXXXXX';
+                    
+                    const parentEmailInput = document.getElementById('parentGuardianEmail');
+                    parentEmailInput.value = profile.parent_guardian_email || '';
+                    parentEmailInput.placeholder = profile.parent_guardian_email || 'parent@example.com';
                     
                     // Load profile photo from Storage URL or fallback to base64
                     const photoUrl = storageClient.getImageUrl(profile, 'profile_picture', '../assets/img/default-avatar.png');

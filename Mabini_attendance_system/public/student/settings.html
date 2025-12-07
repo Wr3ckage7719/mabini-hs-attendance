@@ -544,19 +544,26 @@
             try {
                 // Fetch directly from Supabase to ensure we get all fields
                 console.log('Loading profile for student ID:', currentStudent.id);
-                const { data: profile, error } = await supabase
+                const { data: profileData, error } = await supabase
                     .from('students')
                     .select('*')
-                    .eq('id', currentStudent.id)
-                    .single();
+                    .eq('id', currentStudent.id);
 
-                console.log('Load profile result:', { profile, error });
+                console.log('Load profile result:', { profileData, error });
                 
                 if (error) {
                     console.error('Error loading profile:', error);
                     showAlert('Failed to load profile: ' + error.message, 'error');
                     return;
                 }
+                
+                if (!profileData || profileData.length === 0) {
+                    console.error('No profile data found');
+                    showAlert('Failed to load profile: Student not found', 'error');
+                    return;
+                }
+                
+                const profile = profileData[0];
                 
                 if (profile) {
                     currentStudent = profile;
@@ -701,13 +708,12 @@
                 console.log('Student ID:', currentStudent.id);
                 console.log('Data to save:', profileData);
                 
-                // Update directly using Supabase
+                // Update directly using Supabase (without .single() to avoid coercion error)
                 const { data: updateResult, error: updateError } = await supabase
                     .from('students')
                     .update(profileData)
                     .eq('id', currentStudent.id)
-                    .select()
-                    .single();
+                    .select();
                 
                 console.log('Update response:', { updateResult, updateError });
 
@@ -716,15 +722,15 @@
                     throw new Error(updateError.message);
                 }
                 
-                if (!updateResult) {
+                if (!updateResult || updateResult.length === 0) {
                     throw new Error('Update succeeded but no data returned');
                 }
                 
                 console.log('✅ Data saved to database successfully!');
-                console.log('Saved data:', updateResult);
+                console.log('Saved data:', updateResult[0]);
                 
-                // Update currentStudent with the saved data
-                currentStudent = updateResult;
+                // Update currentStudent with the saved data (first item from array)
+                currentStudent = updateResult[0];
                 
                 // Update session storage with fresh data
                 sessionStorage.setItem('studentData', JSON.stringify(currentStudent));

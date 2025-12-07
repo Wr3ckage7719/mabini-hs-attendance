@@ -29,24 +29,31 @@ async function initDashboard() {
         console.log('[Dashboard] Fetching fresh student data from database...');
         console.log('[Dashboard] Student ID:', student.id);
         
-        const { data: freshData, error: fetchError } = await supabase
+        const { data: freshDataArray, error: fetchError } = await supabase
             .from('students')
             .select('*')
-            .eq('id', student.id)
-            .single();
+            .eq('id', student.id);
         
-        console.log('[Dashboard] Fresh data fetch result:', { freshData, fetchError });
+        console.log('[Dashboard] Fresh data fetch result:', { freshDataArray, fetchError });
         
         if (fetchError) {
             console.error('[Dashboard] Error fetching fresh data:', fetchError);
             // Fallback to sessionStorage data if fetch fails
             currentStudent = student;
-        } else if (!freshData || freshData.status !== 'active') {
+        } else if (!freshDataArray || freshDataArray.length === 0) {
+            console.error('[Dashboard] No student data found');
             sessionStorage.removeItem('studentData');
             sessionStorage.removeItem('userRole');
             window.location.href = 'login.html';
             return;
         } else {
+            const freshData = freshDataArray[0];
+            if (!freshData || freshData.status !== 'active') {
+                sessionStorage.removeItem('studentData');
+                sessionStorage.removeItem('userRole');
+                window.location.href = 'login.html';
+                return;
+            }
             currentStudent = freshData;
             console.log('[Dashboard] Fresh data loaded:', {
                 name: `${freshData.first_name} ${freshData.last_name}`,

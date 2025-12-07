@@ -25,36 +25,41 @@ async function initDashboard() {
         
         const student = JSON.parse(studentData);
         
-        // ALWAYS fetch fresh data from database to ensure we have latest profile picture
+        // ALWAYS fetch fresh data from database to get latest updates from settings
         console.log('[Dashboard] Fetching fresh student data from database...');
-        const studentResult = await dataClient.getAll('students', [
-            { field: 'id', operator: '==', value: student.id }
-        ]);
+        console.log('[Dashboard] Student ID:', student.id);
         
-        const students = studentResult.data || studentResult || [];
-        const currentStudentData = students.length > 0 ? students[0] : null;
+        const { data: freshData, error: fetchError } = await supabase
+            .from('students')
+            .select('*')
+            .eq('id', student.id)
+            .single();
         
-        console.log('Database fetch result:', {
-            rawResult: studentResult,
-            students: students,
-            currentStudentData: currentStudentData,
-            fields: currentStudentData ? Object.keys(currentStudentData) : [],
-            profilePictureUrl: currentStudentData?.profile_picture_url,
-            profilePicture: currentStudentData?.profile_picture
-        });
+        console.log('[Dashboard] Fresh data fetch result:', { freshData, fetchError });
         
-        if (!currentStudentData || currentStudentData.status !== 'active') {
+        if (fetchError) {
+            console.error('[Dashboard] Error fetching fresh data:', fetchError);
+            // Fallback to sessionStorage data if fetch fails
+            currentStudent = student;
+        } else if (!freshData || freshData.status !== 'active') {
             sessionStorage.removeItem('studentData');
             sessionStorage.removeItem('userRole');
             window.location.href = 'login.html';
             return;
+        } else {
+            currentStudent = freshData;
+            console.log('[Dashboard] Fresh data loaded:', {
+                name: `${freshData.first_name} ${freshData.last_name}`,
+                phone: freshData.phone,
+                parent_name: freshData.parent_guardian_name,
+                parent_contact: freshData.parent_guardian_contact,
+                parent_email: freshData.parent_guardian_email
+            });
         }
-        
-        currentStudent = currentStudentData;
         
         // Update sessionStorage with fresh data from database
         console.log('[Dashboard] Updating sessionStorage with fresh data');
-        sessionStorage.setItem('studentData', JSON.stringify(currentStudentData));
+        sessionStorage.setItem('studentData', JSON.stringify(currentStudent));
         
         // Update profile
         await updateProfile(currentStudent);

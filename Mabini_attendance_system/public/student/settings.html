@@ -697,68 +697,46 @@
                     }
                 }
 
-                console.log('Updating student profile:', currentStudent.id, profileData);
-                console.log('Current student object:', currentStudent);
+                console.log('Updating student profile in database...');
+                console.log('Student ID:', currentStudent.id);
+                console.log('Data to save:', profileData);
                 
-                const result = await dataClient.update('students', currentStudent.id, profileData);
-                console.log('Update result:', result);
-                console.log('Update result data:', result.data);
-                console.log('Update result error:', result.error);
-
-                if (result.error) {
-                    console.error('Update failed with error:', result.error);
-                    throw new Error(result.error);
-                }
-                
-                // Fetch fresh data directly from Supabase to verify the update
-                console.log('Fetching fresh data to verify update...');
-                const { data: verifyData, error: verifyError } = await supabase
+                // Update directly using Supabase
+                const { data: updateResult, error: updateError } = await supabase
                     .from('students')
-                    .select('*')
+                    .update(profileData)
                     .eq('id', currentStudent.id)
+                    .select()
                     .single();
                 
-                console.log('Verification fetch result:', { verifyData, verifyError });
-                
-                if (verifyError) {
-                    console.warn('Could not verify update:', verifyError.message);
-                    // Update succeeded but we can't verify - merge the data
-                    currentStudent = { ...currentStudent, ...profileData };
-                } else if (verifyData) {
-                    console.log('Verified student data:', verifyData);
-                    console.log('Parent/Guardian fields in verified data:', {
-                        name: verifyData.parent_guardian_name,
-                        contact: verifyData.parent_guardian_contact,
-                        email: verifyData.parent_guardian_email,
-                        phone: verifyData.phone,
-                        emergency_contact: verifyData.emergency_contact,
-                        address: verifyData.address,
-                        birth_place: verifyData.birth_place
-                    });
-                    currentStudent = verifyData;
-                } else {
-                    console.warn('No data returned from verification');
-                    currentStudent = { ...currentStudent, ...profileData };
+                console.log('Update response:', { updateResult, updateError });
+
+                if (updateError) {
+                    console.error('Update failed:', updateError);
+                    throw new Error(updateError.message);
                 }
                 
-                console.log('Updated currentStudent:', currentStudent);
-                console.log('Profile picture URL in student object:', currentStudent.profile_picture_url);
+                if (!updateResult) {
+                    throw new Error('Update succeeded but no data returned');
+                }
                 
-                // Update session storage
+                console.log('✅ Data saved to database successfully!');
+                console.log('Saved data:', updateResult);
+                
+                // Update currentStudent with the saved data
+                currentStudent = updateResult;
+                
+                // Update session storage with fresh data
                 sessionStorage.setItem('studentData', JSON.stringify(currentStudent));
+                console.log('✅ Session storage updated');
                 
-                showAlert('Profile updated successfully!', 'success');
+                showAlert('Profile updated successfully! Changes are saved.', 'success');
                 
-                // Clear file input and reload profile to show updated data
+                // Reload profile immediately to show saved data in form
                 profilePhotoFile = null;
-                setTimeout(() => {
-                    loadProfile();
-                    // Force reload the photo preview
-                    if (currentStudent.profile_picture_url) {
-                        photoPreview.src = currentStudent.profile_picture_url;
-                        photoPreview.style.display = 'block';
-                    }
-                }, 500);
+                await loadProfile();
+                
+                console.log('✅ Form reloaded with saved data');
             } catch (error) {
                 console.error('Save error:', error);
                 showAlert('Failed to save changes: ' + (error.message || 'Unknown error'), 'error');

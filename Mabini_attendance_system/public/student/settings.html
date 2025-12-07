@@ -561,9 +561,9 @@
                     const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
                     document.getElementById('fullName').value = fullName;
                     document.getElementById('email').value = profile.email || '';
-                    document.getElementById('phone').value = profile.parent_guardian_contact || profile.emergency_contact || '';
                     
-                    // Load new fields
+                    // Load all fields from database
+                    document.getElementById('phone').value = profile.phone || '';
                     document.getElementById('emergencyContact').value = profile.emergency_contact || '';
                     document.getElementById('address').value = profile.address || '';
                     document.getElementById('sex').value = profile.sex || '';
@@ -628,6 +628,7 @@
                 const profileData = {
                     first_name: firstName,
                     last_name: lastName,
+                    phone: document.getElementById('phone').value.trim() || null,
                     emergency_contact: document.getElementById('emergencyContact').value.trim() || null,
                     address: document.getElementById('address').value.trim() || null,
                     sex: document.getElementById('sex').value || null,

@@ -662,11 +662,20 @@
                 }
 
                 console.log('Updating student profile:', currentStudent.id, profileData);
+                console.log('Current student object:', currentStudent);
+                
                 const result = await dataClient.update('students', currentStudent.id, profileData);
                 console.log('Update result:', result);
+                console.log('Update result data:', result.data);
+                console.log('Update result error:', result.error);
 
                 if (result.error) {
+                    console.error('Update failed with error:', result.error);
                     throw new Error(result.error);
+                }
+                
+                if (!result.data) {
+                    console.warn('Update succeeded but no data returned');
                 }
 
                 // Verify the update by fetching fresh data

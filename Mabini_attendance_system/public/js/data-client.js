@@ -155,6 +155,12 @@ export const dataClient = {
       }
 
       console.log(`[dataClient] Updating ${table} with id:`, id, 'data:', data);
+      console.log(`[dataClient] ID type:`, typeof id, 'ID value:', id);
+
+      // Validate ID is not null/undefined
+      if (!id) {
+        throw new Error('Invalid ID: ID is required for update');
+      }
 
       // For students and teachers tables, skip auth check since they use sessionStorage
       const skipAuthCheck = ['students', 'teachers'].includes(table);
@@ -179,10 +185,12 @@ export const dataClient = {
 
       if (error) {
         console.error(`[dataClient] Supabase update error:`, error);
+        console.error(`[dataClient] Error details - code:`, error.code, 'message:', error.message, 'details:', error.details);
         throw error;
       }
 
       console.log(`[dataClient] Update result:`, result);
+      console.log(`[dataClient] Update result length:`, result?.length);
 
       // Return the first item if array, otherwise return as-is
       const returnData = Array.isArray(result) ? result[0] : result;

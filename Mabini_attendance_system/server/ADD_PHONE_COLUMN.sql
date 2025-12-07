@@ -20,9 +20,9 @@ BEGIN
     ELSE
         RAISE NOTICE 'Column phone already exists in students table';
     END IF;
+    
+    -- Create index for phone lookups (optional but recommended)
+    CREATE INDEX IF NOT EXISTS idx_students_phone ON students(phone);
+    
+    RAISE NOTICE 'Phone column setup complete!';
 END $$;
-
--- Create index for phone lookups (optional but recommended)
-CREATE INDEX IF NOT EXISTS idx_students_phone ON students(phone);
-
-RAISE NOTICE 'Phone column setup complete!';

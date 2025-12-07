@@ -49,58 +49,15 @@ html, body {
         display: contents !important;
     }
     
-    /* Theme toggle button - moon/sun icon */
+    /* Hide theme toggle on mobile */
     .theme-toggle,
     #themeToggle {
-        min-width: 44px !important;
-        min-height: 44px !important;
-        width: 44px !important;
-        height: 44px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 10px !important;
-        border-radius: 8px !important;
-        background: transparent !important;
-        border: none !important;
-        flex-shrink: 0 !important;
-        vertical-align: middle !important;
-        margin: 0 !important;
+        display: none !important;
     }
     
-    #themeToggle .icon {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: 20px !important;
-        height: 20px !important;
-    }
-    
-    #themeToggle .icon svg {
-        width: 18px !important;
-        height: 18px !important;
-    }
-    
-    /* User/profile avatar icon */
+    /* Hide avatar on mobile */
     .avatar {
-        min-width: 44px !important;
-        min-height: 44px !important;
-        width: 44px !important;
-        height: 44px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 10px !important;
-        border-radius: 8px !important;
-        background: transparent !important;
-        flex-shrink: 0 !important;
-        vertical-align: middle !important;
-        margin: 0 !important;
-    }
-    
-    .avatar svg {
-        width: 24px !important;
-        height: 24px !important;
+        display: none !important;
     }
     
     /* Logout button - icon only with red color */

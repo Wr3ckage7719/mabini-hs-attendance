@@ -664,114 +664,53 @@
             saveBtn.textContent = 'Saving...';
 
             try {
-                // Split full name into first and last name
+                // Get all form values
                 const fullName = document.getElementById('fullName').value.trim();
                 const nameParts = fullName.split(' ');
-                const firstName = nameParts[0] || '';
-                const lastName = nameParts.slice(1).join(' ') || '';
                 
-                const profileData = {
-                    first_name: firstName,
-                    last_name: lastName,
-                    phone: document.getElementById('phone').value.trim() || null,
-                    emergency_contact: document.getElementById('emergencyContact').value.trim() || null,
-                    address: document.getElementById('address').value.trim() || null,
-                    sex: document.getElementById('sex').value || null,
-                    nationality: document.getElementById('nationality').value.trim() || null,
-                    birth_date: document.getElementById('birthDate').value || null,
-                    birth_place: document.getElementById('birthPlace').value.trim() || null,
-                    parent_guardian_name: document.getElementById('parentGuardianName').value.trim() || null,
-                    parent_guardian_contact: document.getElementById('parentGuardianContact').value.trim() || null,
-                    parent_guardian_email: document.getElementById('parentGuardianEmail').value.trim() || null
+                // Simple update object
+                const updates = {
+                    first_name: nameParts[0] || '',
+                    last_name: nameParts.slice(1).join(' ') || '',
+                    phone: document.getElementById('phone').value.trim(),
+                    emergency_contact: document.getElementById('emergencyContact').value.trim(),
+                    address: document.getElementById('address').value.trim(),
+                    sex: document.getElementById('sex').value,
+                    nationality: document.getElementById('nationality').value.trim(),
+                    birth_date: document.getElementById('birthDate').value,
+                    birth_place: document.getElementById('birthPlace').value.trim(),
+                    parent_guardian_name: document.getElementById('parentGuardianName').value.trim(),
+                    parent_guardian_contact: document.getElementById('parentGuardianContact').value.trim(),
+                    parent_guardian_email: document.getElementById('parentGuardianEmail').value.trim()
                 };
                 
-                // Upload profile picture to Supabase Storage if file selected
-                if (profilePhotoFile) {
-                    try {
-                        // Use student_number or student_id for filename
-                        const studentId = currentStudent.student_number || currentStudent.student_id || currentStudent.id;
-                        console.log('Uploading profile picture for student:', studentId);
-                        
-                        const profileUrl = await storageClient.uploadProfilePicture(profilePhotoFile, studentId);
-                        profileData.profile_picture_url = profileUrl;
-                        
-                        console.log('Profile picture uploaded successfully:', profileUrl);
-                    } catch (uploadError) {
-                        console.error('Profile upload failed:', uploadError);
-                        showAlert('Warning: Profile picture upload failed - ' + uploadError.message, 'warning');
-                        // Don't continue if upload failed
-                        throw uploadError;
-                    }
-                }
-
-                console.log('Updating student profile in database...');
-                console.log('Student ID:', currentStudent.id);
-                console.log('Student ID type:', typeof currentStudent.id);
-                console.log('Data to save:', profileData);
+                console.log('Saving to database...', updates);
                 
-                // First, verify the student exists
-                const { data: checkData, error: checkError } = await supabase
+                // Simple direct update
+                const { error } = await supabase
                     .from('students')
-                    .select('id, student_number')
+                    .update(updates)
                     .eq('id', currentStudent.id);
                 
-                console.log('Student exists check:', { checkData, checkError });
-                
-                if (!checkData || checkData.length === 0) {
-                    throw new Error('Student record not found in database. ID: ' + currentStudent.id);
+                if (error) {
+                    throw new Error('Failed to save: ' + error.message);
                 }
                 
-                // Now do the update
-                const { data: updateResult, error: updateError, status, statusText } = await supabase
+                // Fetch fresh data to confirm save
+                const { data: saved } = await supabase
                     .from('students')
-                    .update(profileData)
+                    .select('*')
                     .eq('id', currentStudent.id)
-                    .select();
+                    .limit(1);
                 
-                console.log('Update response:', { 
-                    updateResult, 
-                    updateError, 
-                    status,
-                    statusText,
-                    resultLength: updateResult?.length 
-                });
-
-                if (updateError) {
-                    console.error('Update failed:', updateError);
-                    throw new Error(updateError.message);
-                }
-                
-                // If update returns empty but no error, fetch the data manually
-                if (!updateResult || updateResult.length === 0) {
-                    console.warn('Update returned no data, fetching manually...');
-                    const { data: fetchedData, error: fetchError } = await supabase
-                        .from('students')
-                        .select('*')
-                        .eq('id', currentStudent.id);
-                    
-                    if (fetchError || !fetchedData || fetchedData.length === 0) {
-                        throw new Error('Update may have succeeded but cannot verify - please refresh the page');
-                    }
-                    
-                    console.log('✅ Data saved (verified by fetch):', fetchedData[0]);
-                    currentStudent = fetchedData[0];
+                if (saved && saved[0]) {
+                    currentStudent = saved[0];
+                    sessionStorage.setItem('studentData', JSON.stringify(saved[0]));
+                    showAlert('Saved successfully!', 'success');
+                    await loadProfile();
                 } else {
-                    console.log('✅ Data saved to database successfully!');
-                    console.log('Saved data:', updateResult[0]);
-                    currentStudent = updateResult[0];
+                    throw new Error('Could not verify save');
                 }
-                
-                // Update session storage with fresh data
-                sessionStorage.setItem('studentData', JSON.stringify(currentStudent));
-                console.log('✅ Session storage updated');
-                
-                showAlert('Profile updated successfully! Changes are saved.', 'success');
-                
-                // Reload profile immediately to show saved data in form
-                profilePhotoFile = null;
-                await loadProfile();
-                
-                console.log('✅ Form reloaded with saved data');
             } catch (error) {
                 console.error('Save error:', error);
                 showAlert('Failed to save changes: ' + (error.message || 'Unknown error'), 'error');

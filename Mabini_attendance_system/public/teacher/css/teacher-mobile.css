@@ -49,15 +49,80 @@ html, body {
         display: contents !important;
     }
     
-    /* Hide theme toggle on mobile */
+    /* Theme toggle button - moon/sun icon */
     .theme-toggle,
     #themeToggle {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 10px !important;
+        border-radius: 8px !important;
+        background: transparent !important;
+        border: none !important;
+        flex-shrink: 0 !important;
+        vertical-align: middle !important;
+        margin: 0 !important;
+        position: relative !important;
+    }
+    
+    #themeToggle .icon {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 20px !important;
+        height: 20px !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+    }
+    
+    #themeToggle .icon svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+    
+    /* Show only one icon at a time based on theme */
+    [data-theme="light"] #themeToggle .icon.sun {
+        display: flex !important;
+    }
+    
+    [data-theme="light"] #themeToggle .icon.moon {
         display: none !important;
     }
     
-    /* Hide avatar on mobile */
-    .avatar {
+    [data-theme="dark"] #themeToggle .icon.sun {
         display: none !important;
+    }
+    
+    [data-theme="dark"] #themeToggle .icon.moon {
+        display: flex !important;
+    }
+    
+    /* User/profile avatar icon */
+    .avatar {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 10px !important;
+        border-radius: 8px !important;
+        background: transparent !important;
+        flex-shrink: 0 !important;
+        vertical-align: middle !important;
+        margin: 0 !important;
+    }
+    
+    .avatar svg {
+        width: 24px !important;
+        height: 24px !important;
     }
     
     /* Logout button - icon only with red color */

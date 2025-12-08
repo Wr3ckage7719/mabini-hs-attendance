@@ -54,8 +54,13 @@ html, body {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        gap: 2px !important;
+        gap: 4px !important;
         flex-wrap: nowrap !important;
+    }
+    
+    /* Ensure proper padding on mobile */
+    .portal-header-content {
+        padding: 0 12px !important;
     }
     
     /* All header icon buttons - consistent styling */
@@ -667,9 +672,14 @@ html, body {
    DESKTOP/TABLET - HEADER ICONS
    ======================================== */
 @media (min-width: 768px) {
-    /* Portal actions - tight grouping */
+    /* Portal header - better centering */
+    .portal-header-content {
+        padding: 0 2rem !important;
+    }
+    
+    /* Portal actions - comfortable spacing on desktop */
     .portal-actions {
-        gap: 4px !important;
+        gap: 0.5rem !important;
     }
     
     /* All header icon buttons */
@@ -705,8 +715,20 @@ html, body {
     #themeToggle i,
     #notificationsBtn i,
     #settingsToggle i {
-        display: block !important;
         line-height: 1 !important;
+    }
+    
+    /* Ensure only visible icon shows */
+    #themeToggle .sun-icon,
+    #themeToggle .moon-icon {
+        display: none;
+    }
+    
+    #themeToggle .sun-icon[style*="display: inline-block"],
+    #themeToggle .sun-icon[style*="display:inline-block"],
+    #themeToggle .moon-icon[style*="display: inline-block"],
+    #themeToggle .moon-icon[style*="display:inline-block"] {
+        display: inline-block !important;
     }
     
     /* Settings dropdown container */

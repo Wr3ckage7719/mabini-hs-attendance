@@ -292,7 +292,7 @@ html[data-theme='dark'] .portal-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 0 10px; /* small padding to avoid touching the absolute edge */
+	padding: 0 2rem; /* medium padding for better centering on desktop */
 }
 .portal-logo {
 	/* Make the STUDENT/TEACHER label bright and a touch larger for visibility */
@@ -816,9 +816,9 @@ body.portal-bg {
 .portal-actions {
 	display: flex;
 	align-items: center;
-	gap: 1.5rem;
+	gap: 0.5rem;
 	margin-left: auto; /* keep actions pinned to the right side */
-	padding-right: 6px; /* small right padding so items don't hit edge */
+	padding-right: 0;
 }
 
 .theme-toggle {

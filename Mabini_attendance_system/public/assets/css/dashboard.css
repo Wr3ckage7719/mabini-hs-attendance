@@ -27,6 +27,7 @@ html[data-theme='dark'] body.portal-bg {
 	font-size: 1.5rem; /* unified size so STUDENT and TEACHER match */
 	font-weight: 700;
 	background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+	background-clip: text;
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;
 }
@@ -299,6 +300,7 @@ html[data-theme='dark'] .portal-header {
 	font-size: 1.5rem;
 	color: #111827; /* light mode: dark text */
 	background: none !important;
+	background-clip: unset !important;
 	-webkit-background-clip: unset !important;
 	-webkit-text-fill-color: currentColor !important;
 	letter-spacing: 1px;
@@ -407,6 +409,7 @@ body.portal-bg {
 	font-size: 1.5rem;
 	font-weight: 700;
 	background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+	background-clip: text;
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;
 	margin: 1rem 0;
@@ -980,6 +983,7 @@ body.portal-bg {
 /* Update name gradient for dark mode */
 [data-theme="dark"] .profile-name {
     background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }

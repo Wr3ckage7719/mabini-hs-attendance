@@ -907,27 +907,38 @@ async function loadNotifications() {
             return;
         }
 
-        // Get notifications for this specific student
+        console.log('[Notifications] Loading notifications for student:', {
+            id: currentStudent.id,
+            grade_level: currentStudent.grade_level,
+            section: currentStudent.section
+        });
+
+        // Get notifications that match this student:
+        // 1. target_type='all' - broadcast to all students
+        // 2. target_type='grade' AND target_value matches student's grade_level
+        // 3. target_type='section' AND target_value matches student's section
+        // 4. target_type='individual' AND student_id matches current student
         const { data, error } = await supabase
             .from('student_notifications')
             .select('*')
-            .eq('student_id', currentStudent.id)
+            .or(`target_type.eq.all,and(target_type.eq.grade,target_value.eq.${currentStudent.grade_level}),and(target_type.eq.section,target_value.eq.${currentStudent.section}),and(target_type.eq.individual,student_id.eq.${currentStudent.id})`)
             .order('created_at', { ascending: false })
             .limit(50);
 
         if (error) {
-            console.warn('⚠️ Could not load notifications:', error.message);
+            console.error('⚠️ Could not load notifications:', error);
             // Fail silently - render empty state
             renderNotifications([]);
             updateNotificationBadge([]);
             return;
         }
 
+        console.log('[Notifications] Loaded', data?.length || 0, 'notifications');
         const notifications = data || [];
         updateNotificationBadge(notifications);
         renderNotifications(notifications);
     } catch (error) {
-        console.warn('⚠️ Notification loading failed:', error.message);
+        console.error('⚠️ Notification loading failed:', error);
         // Fail silently - render empty state
         renderNotifications([]);
         updateNotificationBadge([]);
@@ -958,43 +969,44 @@ async function markNotificationsAsRead() {
         console.log('📖 Marking notifications as read...');
         console.log('Student ID:', currentStudent.id);
         
-        // First check how many unread notifications exist
-        const { data: unreadCheck, error: checkError } = await supabase
+        // First, get all unread notifications for this student using the same filter logic
+        const { data: unreadNotifications, error: fetchError } = await supabase
             .from('student_notifications')
-            .select('id, title, is_read')
-            .eq('student_id', currentStudent.id)
+            .select('id')
+            .or(`target_type.eq.all,and(target_type.eq.grade,target_value.eq.${currentStudent.grade_level}),and(target_type.eq.section,target_value.eq.${currentStudent.section}),and(target_type.eq.individual,student_id.eq.${currentStudent.id})`)
             .eq('is_read', false);
         
-        console.log('Unread notifications before update:', unreadCheck);
+        if (fetchError) {
+            console.error('❌ Error fetching unread notifications:', fetchError);
+            return false;
+        }
         
-        if (!unreadCheck || unreadCheck.length === 0) {
+        if (!unreadNotifications || unreadNotifications.length === 0) {
             console.log('✅ No unread notifications to mark');
             return true;
         }
         
+        console.log('Found', unreadNotifications.length, 'unread notifications');
+        
+        // Get the IDs of unread notifications
+        const notificationIds = unreadNotifications.map(n => n.id);
+        
+        // Mark them as read
         const { data, error } = await supabase
             .from('student_notifications')
             .update({ 
                 is_read: true, 
                 read_at: new Date().toISOString() 
             })
-            .eq('student_id', currentStudent.id)
-            .eq('is_read', false)
+            .in('id', notificationIds)
             .select();
 
         if (error) {
             console.error('❌ Error marking notifications as read:', error);
-            console.error('Error details:', {
-                message: error.message,
-                code: error.code,
-                details: error.details,
-                hint: error.hint
-            });
             return false;
         }
 
         console.log('✅ Successfully marked as read:', data?.length || 0, 'notifications');
-        console.log('Updated notifications:', data);
         return true;
         
     } catch (error) {

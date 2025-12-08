@@ -356,47 +356,7 @@
         };
         
         (function(){
-            const wrapper = document.getElementById('themeToggle');
-            if (!wrapper) return;
-            const input = document.getElementById('themeToggleInput');
-            const suns = wrapper.querySelectorAll('.sun-icon');
-            const moons = wrapper.querySelectorAll('.moon-icon');
-            const track = wrapper.querySelector('.switch-track');
-            const thumb = wrapper.querySelector('.switch-thumb');
-
-            function isDarkTheme() {
-                return document.documentElement.getAttribute('data-theme') === 'dark';
-            }
-
-            function applyIconsAndSwitch() {
-                const isDark = isDarkTheme();
-                suns.forEach(s => s.style.display = isDark ? 'none' : 'inline');
-                moons.forEach(m => m.style.display = isDark ? 'inline' : 'none');
-                if (input) {
-                    input.checked = isDark;
-                    input.setAttribute('aria-checked', isDark ? 'true' : 'false');
-                }
-                if (track && thumb) {
-                    track.style.background = isDark ? '#4f46e5' : '#e5e7eb';
-                    thumb.style.transform = isDark ? 'translateX(20px)' : 'translateX(0)';
-                }
-            }
-
-            // Initialize theme from localStorage if present
-            (function initTheme(){
-                try{
-                    const stored = localStorage.getItem('theme');
-                    if (stored) {
-                        document.documentElement.setAttribute('data-theme', stored);
-                    } else if (!document.documentElement.getAttribute('data-theme')){
-                        document.documentElement.setAttribute('data-theme', 'light');
-                    }
-                } catch (e) {}
-            })();
-
-            applyIconsAndSwitch();
-
-            // Settings dropdown behavior (unchanged)
+            // Settings dropdown behavior
             const settingsToggle = document.getElementById('settingsToggle');
             const settingsMenu = document.getElementById('settingsMenu');
             if (settingsToggle && settingsMenu) {

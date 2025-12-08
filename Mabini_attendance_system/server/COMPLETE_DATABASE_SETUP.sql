@@ -381,6 +381,36 @@ CREATE POLICY "Allow public insert for students" ON students
     FOR INSERT
     WITH CHECK (true);
 
+-- Enable RLS on student_notifications table
+ALTER TABLE student_notifications ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist (to avoid conflicts)
+DROP POLICY IF EXISTS "Allow public read for student_notifications" ON student_notifications;
+DROP POLICY IF EXISTS "Allow public insert for student_notifications" ON student_notifications;
+DROP POLICY IF EXISTS "Allow public update for student_notifications" ON student_notifications;
+DROP POLICY IF EXISTS "Allow public delete for student_notifications" ON student_notifications;
+
+-- Allow public read access (needed for students to see notifications)
+CREATE POLICY "Allow public read for student_notifications" ON student_notifications
+    FOR SELECT
+    USING (true);
+
+-- Allow public insert access (needed for admins to send notifications)
+CREATE POLICY "Allow public insert for student_notifications" ON student_notifications
+    FOR INSERT
+    WITH CHECK (true);
+
+-- Allow public update access (needed for marking notifications as read)
+CREATE POLICY "Allow public update for student_notifications" ON student_notifications
+    FOR UPDATE
+    USING (true)
+    WITH CHECK (true);
+
+-- Allow public delete access (needed for admins to delete notifications)
+CREATE POLICY "Allow public delete for student_notifications" ON student_notifications
+    FOR DELETE
+    USING (true);
+
 -- =====================================================
 -- SECTION 10: VERIFICATION QUERIES
 -- =====================================================
@@ -438,6 +468,18 @@ SELECT
     cmd
 FROM pg_policies 
 WHERE tablename = 'students'
+ORDER BY policyname;
+
+-- Verify RLS policies on student_notifications table
+SELECT 
+    schemaname, 
+    tablename, 
+    policyname, 
+    permissive, 
+    roles, 
+    cmd
+FROM pg_policies 
+WHERE tablename = 'student_notifications'
 ORDER BY policyname;
 
 -- Verify student_notifications table exists

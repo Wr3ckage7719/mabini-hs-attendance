@@ -718,21 +718,36 @@ html, body {
         line-height: 1 !important;
     }
     
-    /* Ensure only visible icon shows */
-    #themeToggle .sun-icon,
-    #themeToggle .moon-icon {
-        display: none;
-    }
-    
-    #themeToggle .sun-icon[style*="display: inline-block"],
-    #themeToggle .sun-icon[style*="display:inline-block"],
-    #themeToggle .moon-icon[style*="display: inline-block"],
-    #themeToggle .moon-icon[style*="display:inline-block"] {
-        display: inline-block !important;
+    /* Better header centering on desktop */
+    .portal-header-content {
+        max-width: 1400px !important;
+        margin: 0 auto !important;
+        padding: 0 3rem !important;
     }
     
     /* Settings dropdown container */
     .portal-settings {
         margin: 0 !important;
     }
+}
+
+/* ========================================
+   THEME ICON CONTROL - ALL BREAKPOINTS
+   ======================================== */
+/* Default: Show sun icon (light mode) */
+#themeToggle .sun-icon {
+    display: inline-block !important;
+}
+
+#themeToggle .moon-icon {
+    display: none !important;
+}
+
+/* Dark mode: Show moon icon */
+html[data-theme='dark'] #themeToggle .sun-icon {
+    display: none !important;
+}
+
+html[data-theme='dark'] #themeToggle .moon-icon {
+    display: inline-block !important;
 }

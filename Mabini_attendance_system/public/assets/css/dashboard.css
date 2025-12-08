@@ -286,13 +286,13 @@ html[data-theme='dark'] .portal-header {
 }
 .portal-header-content {
 	/* span full viewport so logo and actions can sit very close to edges */
-	max-width: none;
+	max-width: 1400px;
 	width: 100%;
-	margin: 0;
+	margin: 0 auto;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 0 2rem; /* medium padding for better centering on desktop */
+	padding: 0 3rem; /* more padding for better visibility */
 }
 .portal-logo {
 	/* Make the STUDENT/TEACHER label bright and a touch larger for visibility */

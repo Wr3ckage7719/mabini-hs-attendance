@@ -27,81 +27,6 @@
             color: #e2e8f0;
         }
         
-        .header {
-            background: rgba(255, 255, 255, 0.95); /* light mode */
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background 0.3s ease, border-color 0.3s ease;
-        }
-        
-        html[data-theme='dark'] .header {
-            background: rgba(15, 23, 42, 0.95); /* dark mode */
-            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-        }
-        
-        .header-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #111827; /* light mode */
-            transition: color 0.3s ease;
-        }
-        
-        html[data-theme='dark'] .header-title {
-            color: white; /* dark mode */
-        }
-        
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-        
-        .btn-link {
-            color: #60a5fa;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        .btn-link:hover { color: #93c5fd; }
-
-        /* Plain text action style for header links like 'Log in' */
-        .text-action {
-            color: #60a5fa;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.25s, transform 0.18s;
-            cursor: pointer;
-            padding: 0.15rem 0.25rem;
-            border-radius: 6px;
-            display: inline-block;
-        }
-
-        .text-action:hover {
-            color: #93c5fd;
-            transform: translateY(-2px);
-        }
-        
-        .btn-logout {
-            background: #dc2626;
-            color: white;
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .btn-logout:hover {
-            background: #b91c1c;
-            transform: translateY(-1px);
-        }
-        
         .container {
             max-width: 900px;
             margin: 2rem auto;
@@ -302,23 +227,54 @@
             background: rgba(15, 23, 42, 0.6); /* dark mode */
             border: 1px solid rgba(148, 163, 184, 0.1);
         }
+        
+        /* Theme icon control - show only one at a time */
+        #themeToggle .sun-icon {
+            display: inline-block !important;
+        }
+        
+        #themeToggle .moon-icon {
+            display: none !important;
+        }
+        
+        html[data-theme='dark'] #themeToggle .sun-icon {
+            display: none !important;
+        }
+        
+        html[data-theme='dark'] #themeToggle .moon-icon {
+            display: inline-block !important;
+        }
+        
+        /* Portal header icons styling */
+        .portal-btn:hover {
+            color: #4f46e5 !important;
+            background: rgba(79, 70, 229, 0.1) !important;
+            border-radius: 8px !important;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-title">STUDENT SETTINGS</div>
-        <div class="header-actions">
-            <div id="themeToggle" class="theme-toggle-wrap" style="display:inline-flex; align-items:center; margin-right:0.6rem;">
-                <label class="toggle-switch" style="display:inline-flex; align-items:center; cursor:pointer;">
-                    <input id="themeToggleInput" type="checkbox" role="switch" aria-label="Toggle theme" style="display:none;">
-                    <span class="switch-track" style="width:44px; height:24px; display:inline-block; border-radius:999px; padding:2px; box-sizing:content-box; background:#e5e7eb;">
-                        <span class="switch-thumb" style="display:inline-block; width:20px; height:20px; background:#fff; border-radius:50%; transition:transform .18s ease; box-shadow:0 1px 2px rgba(0,0,0,0.1); transform:translateX(0);"></span>
-                    </span>
-                </label>
+    <header class="portal-header">
+        <div class="portal-header-content">
+            <a href="dashboard.html" class="portal-logo" aria-label="Student portal home" style="display:inline-flex; align-items:center; text-decoration:none; color:inherit;">
+                <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L1 7l11 5 9-4.09V17h2V7L12 2zM11 13.18L3 9.65v2.83l8 3.36 8-3.36V9.65l-8 3.53zM5 18v2h14v-2l-7 3-7-3z"/>
+                </svg>
+                <span class="logo-text">STUDENT</span>
+            </a>
+            <div class="portal-actions">
+                <!-- Theme toggle: icon button -->
+                <button id="themeToggle" class="portal-btn" style="background:none; border:none; cursor:pointer; padding:0.5rem; font-size:24px; line-height:1; color:inherit;" aria-label="Toggle theme">
+                    <i class="bi bi-sun-fill sun-icon"></i>
+                    <i class="bi bi-moon-fill moon-icon"></i>
+                </button>
+                <!-- Back to Dashboard Button -->
+                <a href="dashboard.html" class="portal-btn" style="background:none; border:none; cursor:pointer; padding:0.5rem; font-size:24px; line-height:1; color:inherit; text-decoration:none;" aria-label="Back to dashboard">
+                    <i class="bi bi-house-door-fill"></i>
+                </a>
             </div>
-            <a class="text-action" href="dashboard.html">Back to Dashboard</a>
         </div>
-    </div>
+    </header>
 
     <div class="container">
         <div id="alert-container"></div>

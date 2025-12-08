@@ -100,7 +100,14 @@ html, body {
         min-width: 44px !important;
         min-height: 44px !important;
         padding: 10px !important;
-        font-size: 14px !important;
+        font-size: 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    #settingsToggle i {
+        line-height: 1 !important;
     }
     
     #settingsMenu {
@@ -674,5 +681,29 @@ html, body {
     .table thead th:first-child,
     .table tbody td:first-child {
         background: var(--card-bg, #1a1d20) !important;
+    }
+}
+
+/* ========================================
+   DESKTOP/TABLET - SETTINGS ICON
+   ======================================== */
+@media (min-width: 768px) {
+    #settingsToggle {
+        font-size: 24px !important;
+        padding: 0.5rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: color 0.2s ease, transform 0.2s ease !important;
+    }
+    
+    #settingsToggle:hover {
+        color: #4f46e5 !important;
+        transform: rotate(90deg) !important;
+    }
+    
+    #settingsToggle i {
+        display: block !important;
+        line-height: 1 !important;
     }
 }

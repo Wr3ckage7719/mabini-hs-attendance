@@ -49,65 +49,44 @@ html, body {
         margin-left: 0.25rem !important;
     }
     
-    /* Portal actions - horizontal layout */
+    /* Portal actions - horizontal layout with tight spacing */
     .portal-actions {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        gap: 4px !important;
+        gap: 2px !important;
         flex-wrap: nowrap !important;
     }
     
-    /* Theme toggle - compact */
-    .theme-toggle-wrap {
-        margin-right: 0 !important;
-    }
-    
-    .toggle-switch .switch-track {
-        width: 40px !important;
-        height: 22px !important;
-    }
-    
-    .toggle-switch .switch-thumb {
-        width: 18px !important;
-        height: 18px !important;
-    }
-    
-    .theme-icons {
-        display: none !important;
-    }
-    
-    /* Notifications button */
-    #notificationsBtn {
-        min-width: 44px !important;
-        min-height: 44px !important;
-        padding: 10px !important;
-        margin-right: 0 !important;
-    }
-    
-    #notificationsBtn svg {
-        width: 20px !important;
-        height: 20px !important;
-    }
-    
-    /* Settings dropdown */
-    .portal-settings {
-        position: relative !important;
-        margin-right: 0 !important;
-    }
-    
+    /* All header icon buttons - consistent styling */
+    #themeToggle,
+    #notificationsBtn,
     #settingsToggle {
         min-width: 44px !important;
         min-height: 44px !important;
         padding: 10px !important;
+        margin: 0 !important;
         font-size: 20px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        background: none !important;
+        border: none !important;
+        cursor: pointer !important;
+        color: inherit !important;
     }
     
+    #themeToggle i,
+    #notificationsBtn i,
     #settingsToggle i {
         line-height: 1 !important;
+        display: block !important;
+    }
+    
+    /* Settings dropdown container */
+    .portal-settings {
+        position: relative !important;
+        margin: 0 !important;
     }
     
     #settingsMenu {
@@ -685,25 +664,53 @@ html, body {
 }
 
 /* ========================================
-   DESKTOP/TABLET - SETTINGS ICON
+   DESKTOP/TABLET - HEADER ICONS
    ======================================== */
 @media (min-width: 768px) {
+    /* Portal actions - tight grouping */
+    .portal-actions {
+        gap: 4px !important;
+    }
+    
+    /* All header icon buttons */
+    #themeToggle,
+    #notificationsBtn,
     #settingsToggle {
         font-size: 24px !important;
         padding: 0.5rem !important;
+        margin: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        transition: color 0.2s ease, transform 0.2s ease !important;
+        background: none !important;
+        border: none !important;
+        cursor: pointer !important;
+        color: inherit !important;
+        transition: color 0.2s ease, transform 0.2s ease, background-color 0.2s ease !important;
+        border-radius: 8px !important;
+    }
+    
+    /* Hover effects */
+    #themeToggle:hover,
+    #notificationsBtn:hover,
+    #settingsToggle:hover {
+        color: #4f46e5 !important;
+        background: rgba(79, 70, 229, 0.1) !important;
     }
     
     #settingsToggle:hover {
-        color: #4f46e5 !important;
         transform: rotate(90deg) !important;
     }
     
+    #themeToggle i,
+    #notificationsBtn i,
     #settingsToggle i {
         display: block !important;
         line-height: 1 !important;
+    }
+    
+    /* Settings dropdown container */
+    .portal-settings {
+        margin: 0 !important;
     }
 }

@@ -69,32 +69,19 @@
                 </svg>
                 <span class="logo-text">STUDENT</span>
             </a>
-            <div class="portal-actions">
-                <!-- Theme toggle: accessible switch wrapper with icons -->
-                <div id="themeToggle" class="theme-toggle-wrap" style="display:inline-flex; align-items:center; margin-right:0.6rem;">
-                    <label class="toggle-switch" style="display:inline-flex; align-items:center; cursor:pointer;">
-                        <input id="themeToggleInput" type="checkbox" role="switch" aria-label="Toggle theme" style="display:none;">
-                        <span class="switch-track" style="width:44px; height:24px; display:inline-block; border-radius:999px; padding:2px; box-sizing:content-box; background:#e5e7eb;">
-                            <span class="switch-thumb" style="display:inline-block; width:20px; height:20px; background:#fff; border-radius:50%; transition:transform .18s ease; box-shadow:0 1px 2px rgba(0,0,0,0.1); transform:translateX(0);"></span>
-                        </span>
-                    </label>
-                    <span class="theme-icons" style="display:inline-flex; align-items:center; margin-left:0.5rem;">
-                        <svg class="sun-icon" viewBox="0 0 24 24" width="20" height="20" style="display:inline;">
-                            <path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 3a1 1 0 0 0 1-1V1a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1zM12 21a1 1 0 0 0-1 1v1a1 1 0 1 0 2 0v-1a1 1 0 0 0-1-1zM21 11h1a1 1 0 1 0 0-2h-1a1 1 0 1 0 0 2zM3 11H2a1 1 0 1 0 0 2h1a1 1 0 1 0 0-2zM18.364 5.636a1 1 0 0 0 0-1.414l-.707-.707a1 1 0 0 0-1.414 1.414l.707.707a1 1 0 0 0 1.414 0zM5.636 18.364a1 1 0 0 0-1.414 0l-.707.707a1 1 0 1 0 1.414 1.414l.707-.707a1 1 0 0 0 0-1.414zM18.364 18.364a1 1 0 0 0 0 1.414l.707.707a1 1 0 0 0 1.414-1.414l-.707-.707a1 1 0 0 0-1.414 0zM5.636 5.636a1 1 0 0 0 1.414 0l.707-.707A1 1 0 0 0 6.343 3.515l-.707.707a1 1 0 0 0 0 1.414z"/>
-                        </svg>
-                        <svg class="moon-icon" viewBox="0 0 24 24" width="20" height="20" style="display:none;">
-                            <path d="M21.64 13.04A9 9 0 1 1 10.96 2.36 7 7 0 0 0 21.64 13.04z"/>
-                        </svg>
-                    </span>
-                </div>
+            <div class="portal-actions" style="display:flex; align-items:center; gap:4px;">
+                <!-- Theme toggle: icon button -->
+                <button id="themeToggle" class="portal-btn" style="background:none; border:none; cursor:pointer; padding:0.5rem; font-size:24px; line-height:1; color:inherit;" aria-label="Toggle theme">
+                    <i class="bi bi-sun-fill sun-icon"></i>
+                    <i class="bi bi-moon-fill moon-icon" style="display:none;"></i>
+                </button>
                 <!-- Notifications Button -->
-                <button id="notificationsBtn" class="portal-btn" style="position:relative; background:none; border:none; cursor:pointer; padding:0.5rem; margin-right:0.5rem;" aria-label="View notifications">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
-                    </svg>
+                <button id="notificationsBtn" class="portal-btn" style="position:relative; background:none; border:none; cursor:pointer; padding:0.5rem; font-size:24px; line-height:1; color:inherit;" aria-label="View notifications">
+                    <i class="bi bi-bell-fill"></i>
                     <span id="notificationBadge" class="notification-badge" style="display:none; position:absolute; top:0.3rem; right:0.3rem; background:#ef4444; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:bold; display:flex; align-items:center; justify-content:center;"></span>
                 </button>
-                <div class="portal-settings" id="settingsDropdown" style="position:relative; margin-right: 0.5rem;">
+                <!-- Settings Button -->
+                <div class="portal-settings" id="settingsDropdown" style="position:relative;">
                     <button id="settingsToggle" class="portal-btn" style="background:none; border:none; cursor:pointer; padding:0.5rem; font-size:24px; line-height:1; color:inherit;" aria-label="Settings menu">
                         <i class="bi bi-gear-fill"></i>
                     </button>

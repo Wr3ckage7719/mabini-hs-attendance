@@ -932,6 +932,16 @@ async function loadNotifications() {
 
         // Filter notifications that apply to this student
         const notifications = (allNotifications || []).filter(notif => {
+            // IMPORTANT: Each notification record has a student_id field
+            // Admin creates individual records for each recipient
+            // So we must check if this notification is for THIS specific student
+            
+            // If notification has a student_id, it must match current student
+            if (notif.student_id) {
+                return notif.student_id === currentStudent.id;
+            }
+            
+            // Legacy support: notifications without student_id (if any exist)
             // 1. Broadcast to all students
             if (notif.target_type === 'all') {
                 return true;
@@ -945,11 +955,6 @@ async function loadNotifications() {
             // 3. Section-specific notifications
             if (notif.target_type === 'section' && currentStudent.section) {
                 return notif.target_value === currentStudent.section;
-            }
-            
-            // 4. Individual notifications
-            if (notif.target_type === 'individual' && notif.student_id) {
-                return notif.student_id === currentStudent.id;
             }
             
             return false;
@@ -1006,15 +1011,18 @@ async function markNotificationsAsRead() {
         
         // Filter to find notifications that apply to this student (same logic as loadNotifications)
         const applicableNotifications = allUnread.filter(notif => {
+            // If notification has a student_id, it must match current student
+            if (notif.student_id) {
+                return notif.student_id === currentStudent.id;
+            }
+            
+            // Legacy support: notifications without student_id
             if (notif.target_type === 'all') return true;
             if (notif.target_type === 'grade' && currentStudent.grade_level) {
                 return notif.target_value === String(currentStudent.grade_level);
             }
             if (notif.target_type === 'section' && currentStudent.section) {
                 return notif.target_value === currentStudent.section;
-            }
-            if (notif.target_type === 'individual' && notif.student_id) {
-                return notif.student_id === currentStudent.id;
             }
             return false;
         });

@@ -10,9 +10,9 @@ Complete setup and deployment guide for the backend server and database.
 
 1. Open [Supabase Dashboard](https://supabase.com/dashboard)
 2. Go to **SQL Editor** → **New Query**
-3. Copy and paste `DATABASE_MIGRATION.sql`
-4. Click **Run**
-5. Verify all steps completed successfully
+3. Copy and paste the entire contents of `DATABASE_SETUP.sql`
+4. Click **Run** (or press F5)
+5. Verify all steps completed successfully (check for ✅ messages in output)
 
 ### 2. Environment Variables
 
@@ -47,6 +47,21 @@ npm start
 ```
 
 Server runs on `http://localhost:3000`
+
+---
+
+## 📁 Server Files Structure
+
+```
+server/
+├── DATABASE_SETUP.sql          # Complete database setup (run this in Supabase)
+├── README.md                   # This file
+├── index.js                    # Express server with API endpoints
+├── package.json                # Node dependencies
+├── .env                        # Environment variables (not in git)
+├── .env.example                # Environment template
+└── logs/                       # Server logs (local only)
+```
 
 ---
 

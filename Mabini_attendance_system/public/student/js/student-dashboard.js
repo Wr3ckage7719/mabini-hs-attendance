@@ -913,33 +913,53 @@ async function loadNotifications() {
             section: currentStudent.section
         });
 
-        // Get notifications that match this student:
-        // 1. target_type='all' - broadcast to all students
-        // 2. target_type='grade' AND target_value matches student's grade_level
-        // 3. target_type='section' AND target_value matches student's section
-        // 4. target_type='individual' AND student_id matches current student
-        const { data, error } = await supabase
+        // Fetch ALL notifications and filter client-side for better reliability
+        // This avoids complex SQL OR queries that can fail with null/undefined values
+        const { data: allNotifications, error } = await supabase
             .from('student_notifications')
             .select('*')
-            .or(`target_type.eq.all,and(target_type.eq.grade,target_value.eq.${currentStudent.grade_level}),and(target_type.eq.section,target_value.eq.${currentStudent.section}),and(target_type.eq.individual,student_id.eq.${currentStudent.id})`)
             .order('created_at', { ascending: false })
-            .limit(50);
+            .limit(200);
 
         if (error) {
             console.error('⚠️ Could not load notifications:', error);
-            // Fail silently - render empty state
             renderNotifications([]);
             updateNotificationBadge([]);
             return;
         }
 
-        console.log('[Notifications] Loaded', data?.length || 0, 'notifications');
-        const notifications = data || [];
+        console.log('[Notifications] Fetched', allNotifications?.length || 0, 'total notifications');
+
+        // Filter notifications that apply to this student
+        const notifications = (allNotifications || []).filter(notif => {
+            // 1. Broadcast to all students
+            if (notif.target_type === 'all') {
+                return true;
+            }
+            
+            // 2. Grade-specific notifications
+            if (notif.target_type === 'grade' && currentStudent.grade_level) {
+                return notif.target_value === String(currentStudent.grade_level);
+            }
+            
+            // 3. Section-specific notifications
+            if (notif.target_type === 'section' && currentStudent.section) {
+                return notif.target_value === currentStudent.section;
+            }
+            
+            // 4. Individual notifications
+            if (notif.target_type === 'individual' && notif.student_id) {
+                return notif.student_id === currentStudent.id;
+            }
+            
+            return false;
+        });
+
+        console.log('[Notifications] Filtered to', notifications.length, 'notifications for this student');
         updateNotificationBadge(notifications);
         renderNotifications(notifications);
     } catch (error) {
         console.error('⚠️ Notification loading failed:', error);
-        // Fail silently - render empty state
         renderNotifications([]);
         updateNotificationBadge([]);
     }
@@ -967,13 +987,11 @@ async function markNotificationsAsRead() {
         }
         
         console.log('📖 Marking notifications as read...');
-        console.log('Student ID:', currentStudent.id);
         
-        // First, get all unread notifications for this student using the same filter logic
-        const { data: unreadNotifications, error: fetchError } = await supabase
+        // Fetch all unread notifications
+        const { data: allUnread, error: fetchError } = await supabase
             .from('student_notifications')
-            .select('id')
-            .or(`target_type.eq.all,and(target_type.eq.grade,target_value.eq.${currentStudent.grade_level}),and(target_type.eq.section,target_value.eq.${currentStudent.section}),and(target_type.eq.individual,student_id.eq.${currentStudent.id})`)
+            .select('id, target_type, target_value, student_id')
             .eq('is_read', false);
         
         if (fetchError) {
@@ -981,15 +999,34 @@ async function markNotificationsAsRead() {
             return false;
         }
         
-        if (!unreadNotifications || unreadNotifications.length === 0) {
+        if (!allUnread || allUnread.length === 0) {
             console.log('✅ No unread notifications to mark');
             return true;
         }
         
-        console.log('Found', unreadNotifications.length, 'unread notifications');
+        // Filter to find notifications that apply to this student (same logic as loadNotifications)
+        const applicableNotifications = allUnread.filter(notif => {
+            if (notif.target_type === 'all') return true;
+            if (notif.target_type === 'grade' && currentStudent.grade_level) {
+                return notif.target_value === String(currentStudent.grade_level);
+            }
+            if (notif.target_type === 'section' && currentStudent.section) {
+                return notif.target_value === currentStudent.section;
+            }
+            if (notif.target_type === 'individual' && notif.student_id) {
+                return notif.student_id === currentStudent.id;
+            }
+            return false;
+        });
         
-        // Get the IDs of unread notifications
-        const notificationIds = unreadNotifications.map(n => n.id);
+        if (applicableNotifications.length === 0) {
+            console.log('✅ No applicable unread notifications');
+            return true;
+        }
+        
+        console.log('Found', applicableNotifications.length, 'unread notifications to mark');
+        
+        const notificationIds = applicableNotifications.map(n => n.id);
         
         // Mark them as read
         const { data, error } = await supabase

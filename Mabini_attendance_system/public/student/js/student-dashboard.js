@@ -108,8 +108,27 @@ async function updateProfile(student) {
             const gradeLevelEl = document.getElementById('gradeLevel');
             if (gradeLevelEl) gradeLevelEl.textContent = student.grade_level ? `Grade ${student.grade_level}` : 'Not assigned';
             
+            // Fetch section name from section_id if available
             const sectionEl = document.getElementById('section');
-            if (sectionEl) sectionEl.textContent = student.section || 'Not assigned';
+            if (sectionEl) {
+                if (student.section_id) {
+                    // Fetch section details from database
+                    supabase
+                        .from('sections')
+                        .select('section_name, section_code')
+                        .eq('id', student.section_id)
+                        .single()
+                        .then(({ data, error }) => {
+                            if (error || !data) {
+                                sectionEl.textContent = student.section || 'Not assigned';
+                            } else {
+                                sectionEl.textContent = data.section_name || data.section_code || 'Not assigned';
+                            }
+                        });
+                } else {
+                    sectionEl.textContent = student.section || 'Not assigned';
+                }
+            }
             
             const strandEl = document.getElementById('strand');
             if (strandEl) strandEl.textContent = student.strand || 'N/A';

@@ -1159,6 +1159,7 @@ function setupNotifications() {
     const notifBtn = document.getElementById('notificationsBtn');
     const modal = document.getElementById('notificationsModal');
     const closeBtn = document.getElementById('closeNotificationsBtn');
+    let markingTimeout = null;
 
     if (notifBtn && modal) {
         notifBtn.addEventListener('click', async () => {
@@ -1168,8 +1169,13 @@ function setupNotifications() {
             // Load notifications first to show current state
             await loadNotifications();
             
+            // Clear any existing timeout
+            if (markingTimeout) {
+                clearTimeout(markingTimeout);
+            }
+            
             // Mark all as read after 1.5 seconds so user can see the unread state
-            setTimeout(async () => {
+            markingTimeout = setTimeout(async () => {
                 console.log('⏰ Delay complete, marking as read now...');
                 const marked = await markNotificationsAsRead();
                 if (marked) {
@@ -1184,10 +1190,17 @@ function setupNotifications() {
         });
     }
 
+    const closeModalAndUpdate = async () => {
+        modal.style.display = 'none';
+        // Update badge after closing to reflect any changes
+        console.log('🔄 Modal closed, updating badge...');
+        await loadNotifications();
+    };
+
     if (closeBtn && modal) {
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            modal.style.display = 'none';
+            closeModalAndUpdate();
         });
     }
 
@@ -1195,7 +1208,7 @@ function setupNotifications() {
         // Close modal when clicking backdrop
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                modal.style.display = 'none';
+                closeModalAndUpdate();
             }
         });
     }

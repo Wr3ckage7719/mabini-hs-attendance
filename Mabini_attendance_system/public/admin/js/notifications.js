@@ -648,9 +648,15 @@ function showAlert(message, type) {
     setTimeout(() => {
         const alert = container.querySelector('.alert');
         if (alert) {
-            const bsAlert = bootstrap.Alert.getInstance(alert);
-            if (bsAlert) {
-                bsAlert.close();
+            // Check if bootstrap is available
+            if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                const bsAlert = bootstrap.Alert.getInstance(alert);
+                if (bsAlert) {
+                    bsAlert.close();
+                }
+            } else {
+                // Fallback: manually remove the alert
+                alert.remove();
             }
         }
     }, dismissTime);

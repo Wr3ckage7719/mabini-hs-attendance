@@ -364,15 +364,25 @@ async function loadAttendanceStats(studentId) {
     try {
         console.log('[Attendance Stats] Starting to load for student:', studentId);
         
-        // Define date range - current school year or last 6 months
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 6); // Last 6 months
+        // Define date range - current school year (starting from previous June)
+        // Or use a very wide range to catch all attendance records
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth(); // 0-11
         
-        const startDateStr = startDate.toISOString().split('T')[0];
-        const endDateStr = endDate.toISOString().split('T')[0];
+        // If we're in Jan-May, school year started in previous year's June
+        // If we're in Jun-Dec, school year started in current year's June
+        const schoolYearStart = currentMonth < 5 
+            ? new Date(currentYear - 1, 5, 1)  // Previous June
+            : new Date(currentYear, 5, 1);      // Current June
         
-        console.log('[Attendance Stats] Date range:', { startDateStr, endDateStr });
+        const startDateStr = schoolYearStart.toISOString().split('T')[0];
+        // Add 1 day to today to ensure we include today's records
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const endDateStr = tomorrow.toISOString().split('T')[0];
+        
+        console.log('[Attendance Stats] Date range:', { startDateStr, endDateStr, currentDate: today.toISOString().split('T')[0] });
         
         // Get student's section to find scheduled days
         const studentData = await dataClient.getStudent(studentId);
@@ -406,6 +416,12 @@ async function loadAttendanceStats(studentId) {
         // Try to get attendance records from the 'attendance' table first
         let logs = [];
         try {
+            console.log('[Attendance Stats] Querying attendance with:', {
+                student_id: studentId,
+                date_gte: startDateStr,
+                date_lte: endDateStr
+            });
+            
             const { data: attendanceData, error: attendanceError } = await supabase
                 .from('attendance')
                 .select('*')
@@ -415,21 +431,30 @@ async function loadAttendanceStats(studentId) {
                 .order('date', { ascending: false });
             
             if (attendanceError) {
-                console.warn('[Attendance Stats] Could not fetch from attendance table:', attendanceError.message);
-            } else if (attendanceData && attendanceData.length > 0) {
-                logs = attendanceData;
+                console.warn('[Attendance Stats] Could not fetch from attendance table:', attendanceError);
             } else {
-                // Fallback to entrance_logs
-                const logsResult = await attendanceClient.getAttendanceRange(
-                    studentId, 
-                    startDateStr,
-                    endDateStr
-                );
-                logs = Array.isArray(logsResult.data) ? logsResult.data : 
-                       Array.isArray(logsResult) ? logsResult : [];
+                console.log('[Attendance Stats] Query result:', { 
+                    recordsFound: attendanceData?.length || 0,
+                    sample: attendanceData?.[0] 
+                });
+                
+                if (attendanceData && attendanceData.length > 0) {
+                    logs = attendanceData;
+                } else {
+                    console.log('[Attendance Stats] No records in attendance table, trying entrance_logs...');
+                    // Fallback to entrance_logs
+                    const logsResult = await attendanceClient.getAttendanceRange(
+                        studentId, 
+                        startDateStr,
+                        endDateStr
+                    );
+                    logs = Array.isArray(logsResult.data) ? logsResult.data : 
+                           Array.isArray(logsResult) ? logsResult : [];
+                    console.log('[Attendance Stats] Entrance logs result:', logs.length, 'records');
+                }
             }
         } catch (err) {
-            console.warn('[Attendance Stats] Error fetching attendance:', err.message);
+            console.error('[Attendance Stats] Error fetching attendance:', err);
             logs = [];
         }
         

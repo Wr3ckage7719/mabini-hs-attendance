@@ -509,25 +509,53 @@ async function loadAttendanceStats(studentId) {
         }
         
         // Calculate statistics from attendance records
-        const uniqueDates = new Set();
+        // Group by date and count attendance status
+        const attendanceByDate = new Map();
+        const uniquePresentDates = new Set();
+        
         logs.forEach(log => {
             const dateField = log.date || log.scan_time;
             if (dateField) {
-                const date = typeof dateField === 'string' ? dateField.split('T')[0] : dateField;
-                uniqueDates.add(date);
+                const dateStr = typeof dateField === 'string' ? dateField.split('T')[0] : dateField;
+                const status = (log.status || 'present').toLowerCase();
+                
+                // Track dates where student was present or late (counted as attended)
+                if (status === 'present' || status === 'late') {
+                    uniquePresentDates.add(dateStr);
+                }
+                
+                // Store all attendance records by date
+                if (!attendanceByDate.has(dateStr)) {
+                    attendanceByDate.set(dateStr, []);
+                }
+                attendanceByDate.get(dateStr).push(log);
             }
         });
         
-        const daysPresent = uniqueDates.size;
+        const daysPresent = uniquePresentDates.size;
         console.log('[Attendance Stats] Days present:', daysPresent);
         
-        // Calculate total scheduled class days based on student's actual schedule
-        // Use TODAY as end date - don't count future days
-        const totalDays = scheduledDaysArray.length > 0 
-            ? calculateScheduledClassDays(schoolYearStart, today, scheduledDaysArray)
-            : calculateSchoolDays(schoolYearStart, today);
+        // Calculate total school days properly:
+        // 1. Find the earliest attendance record to determine when tracking started
+        // 2. Count only weekdays (Mon-Fri) from that date to today
+        // 3. This gives us the actual school days in session
+        
+        let firstAttendanceDate = schoolYearStart;
+        if (logs.length > 0) {
+            const dates = logs.map(log => {
+                const dateField = log.date || log.scan_time;
+                return new Date(typeof dateField === 'string' ? dateField.split('T')[0] : dateField);
+            }).filter(d => !isNaN(d.getTime()));
             
-        console.log('[Attendance Stats] Total scheduled days:', totalDays);
+            if (dates.length > 0) {
+                firstAttendanceDate = new Date(Math.min(...dates));
+                console.log('[Attendance Stats] First attendance record:', firstAttendanceDate.toISOString().split('T')[0]);
+            }
+        }
+        
+        // Count weekdays from first attendance date to today
+        const totalDays = calculateSchoolDays(firstAttendanceDate, today);
+        console.log('[Attendance Stats] Total school days (from first record to today):', totalDays);
         
         const daysAbsent = Math.max(0, totalDays - daysPresent);
         const attendanceRate = totalDays > 0 ? (daysPresent / totalDays) * 100 : 0;
@@ -548,7 +576,15 @@ async function loadAttendanceStats(studentId) {
     }
 }
 
-// Calculate school days (weekdays) between two dates
+/**
+ * Calculate school days (weekdays only) between two dates
+ * This counts Monday through Friday, excluding weekends
+ * Note: This does not account for holidays/breaks - those should be handled 
+ * by ensuring no attendance records exist for those days
+ * @param {Date} startDate - Start date
+ * @param {Date} endDate - End date (inclusive)
+ * @returns {number} Number of weekdays between dates
+ */
 function calculateSchoolDays(startDate, endDate) {
     let count = 0;
     const current = new Date(startDate);

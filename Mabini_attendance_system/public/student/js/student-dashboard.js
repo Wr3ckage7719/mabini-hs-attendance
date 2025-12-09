@@ -1313,7 +1313,6 @@ function setupAttendanceFilter() {
     // Auto-filter on year change
     yearSelect.addEventListener('change', () => {
         applyFilters();
-        }
     });
     
     console.log('[Attendance Filter] Filter setup complete');

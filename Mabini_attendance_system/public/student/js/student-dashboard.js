@@ -396,10 +396,8 @@ async function loadAttendanceStats(studentId) {
             : new Date(currentYear, 5, 1);      // Current June
         
         const startDateStr = schoolYearStart.toISOString().split('T')[0];
-        // Add 1 day to today to ensure we include today's records
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const endDateStr = tomorrow.toISOString().split('T')[0];
+        // Use TODAY as end date - don't count future classes that haven't happened yet
+        const endDateStr = today.toISOString().split('T')[0];
         
         console.log('[Attendance Stats] Date range:', { startDateStr, endDateStr, currentDate: today.toISOString().split('T')[0] });
         
@@ -524,9 +522,10 @@ async function loadAttendanceStats(studentId) {
         console.log('[Attendance Stats] Days present:', daysPresent);
         
         // Calculate total scheduled class days based on student's actual schedule
+        // Use TODAY as end date - don't count future days
         const totalDays = scheduledDaysArray.length > 0 
-            ? calculateScheduledClassDays(schoolYearStart, tomorrow, scheduledDaysArray)
-            : calculateSchoolDays(schoolYearStart, tomorrow);
+            ? calculateScheduledClassDays(schoolYearStart, today, scheduledDaysArray)
+            : calculateSchoolDays(schoolYearStart, today);
             
         console.log('[Attendance Stats] Total scheduled days:', totalDays);
         

@@ -1169,13 +1169,22 @@ function setupNotifications() {
             // Load notifications first to show current state
             await loadNotifications();
             
-            // Mark all as read immediately and hide badge
-            setTimeout(() => {
+            // Mark all as read and hide badge after delay
+            setTimeout(async () => {
                 console.log('⏰ Marking as read and hiding badge...');
-                markNotificationsAsRead();
-                // Hide badge immediately for instant feedback
-                if (badge) {
-                    badge.style.display = 'none';
+                try {
+                    await markNotificationsAsRead();
+                    // Hide badge immediately for instant feedback
+                    if (badge) {
+                        badge.style.display = 'none';
+                    }
+                    console.log('✅ Badge hidden successfully');
+                } catch (error) {
+                    console.warn('⚠️ Error in notification marking:', error);
+                    // Hide badge anyway for better UX
+                    if (badge) {
+                        badge.style.display = 'none';
+                    }
                 }
             }, 1500);
         });

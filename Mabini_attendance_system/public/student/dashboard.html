@@ -250,13 +250,15 @@
                                             <div class="attendance-history-header">
                                                 <h2 class="attendance-title">Attendance History</h2>
                                                 <form class="attendance-search-form" autocomplete="off">
-                                                    <input type="text" class="attendance-search-input" placeholder="Search date (YYYY-MM-DD)">
+                                                    <input type="date" class="attendance-search-input" placeholder="Select date">
                                                     <select class="attendance-year-select">
+                                                        <option value="">All Years</option>
+                                                        <option value="2025" selected>2025</option>
+                                                        <option value="2024">2024</option>
                                                         <option value="2023">2023</option>
-                                                        <option value="2022">2022</option>
-                                                        <option value="2021">2021</option>
                                                     </select>
-                                                    <button type="submit" class="attendance-search-btn">Search</button>
+                                                    <button type="submit" class="attendance-search-btn">Filter</button>
+                                                    <button type="button" class="attendance-clear-btn" style="background: #6b7280; margin-left: 0.5rem;">Clear</button>
                                                 </form>
                                             </div>
                                             <div class="table-responsive-wrapper" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">

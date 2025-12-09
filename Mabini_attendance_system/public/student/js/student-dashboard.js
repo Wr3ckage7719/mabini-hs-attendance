@@ -1243,6 +1243,7 @@ function setupAttendanceFilter() {
     const searchForm = document.querySelector('.attendance-search-form');
     const searchInput = document.querySelector('.attendance-search-input');
     const yearSelect = document.querySelector('.attendance-year-select');
+    const clearBtn = document.querySelector('.attendance-clear-btn');
     
     if (!searchForm || !searchInput || !yearSelect) {
         console.warn('[Attendance Filter] Form elements not found');
@@ -1259,24 +1260,21 @@ function setupAttendanceFilter() {
         originalLoadTable(logs);
     };
     
-    // Handle form submission
-    searchForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
+    // Apply filters
+    const applyFilters = () => {
         const searchDate = searchInput.value.trim();
         const selectedYear = yearSelect.value;
         
-        console.log('[Attendance Filter] Searching:', { searchDate, selectedYear });
+        console.log('[Attendance Filter] Filtering:', { searchDate, selectedYear });
         
         if (!allAttendanceLogs || allAttendanceLogs.length === 0) {
             console.warn('[Attendance Filter] No attendance data to filter');
             return;
         }
         
-        // Filter the logs
         let filteredLogs = [...allAttendanceLogs];
         
-        // Filter by year
+        // Filter by year first
         if (selectedYear) {
             filteredLogs = filteredLogs.filter(log => {
                 const logDate = new Date(log.date || log.scan_time);
@@ -1284,30 +1282,37 @@ function setupAttendanceFilter() {
             });
         }
         
-        // Filter by specific date (YYYY-MM-DD format)
+        // Filter by specific date (exact match)
         if (searchDate) {
             filteredLogs = filteredLogs.filter(log => {
                 const logDateStr = log.date || (log.scan_time ? log.scan_time.split('T')[0] : '');
-                return logDateStr.includes(searchDate);
+                return logDateStr === searchDate;
             });
         }
         
-        console.log('[Attendance Filter] Filtered results:', filteredLogs.length);
-        
-        // Update the table with filtered results
+        console.log('[Attendance Filter] Results:', filteredLogs.length, 'of', allAttendanceLogs.length);
         loadAttendanceTable(filteredLogs);
+    };
+    
+    // Handle form submission
+    searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        applyFilters();
     });
     
-    // Reset filter when input is cleared
-    searchInput.addEventListener('input', (e) => {
-        if (!e.target.value && !yearSelect.value) {
+    // Clear filters
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            yearSelect.value = '2025';
+            console.log('[Attendance Filter] Filters cleared');
             loadAttendanceTable(allAttendanceLogs);
-        }
-    });
+        });
+    }
     
+    // Auto-filter on year change
     yearSelect.addEventListener('change', () => {
-        if (!searchInput.value && !yearSelect.value) {
-            loadAttendanceTable(allAttendanceLogs);
+        applyFilters();
         }
     });
     

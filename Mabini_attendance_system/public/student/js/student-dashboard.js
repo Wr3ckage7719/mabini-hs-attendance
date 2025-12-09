@@ -485,8 +485,8 @@ async function loadAttendanceStats(studentId) {
         
         // Calculate total scheduled class days based on student's actual schedule
         const totalDays = scheduledDaysArray.length > 0 
-            ? calculateScheduledClassDays(startDate, endDate, scheduledDaysArray)
-            : calculateSchoolDays(startDate, endDate);
+            ? calculateScheduledClassDays(schoolYearStart, tomorrow, scheduledDaysArray)
+            : calculateSchoolDays(schoolYearStart, tomorrow);
             
         console.log('[Attendance Stats] Total scheduled days:', totalDays);
         

@@ -384,33 +384,36 @@ async function loadAttendanceStats(studentId) {
         
         console.log('[Attendance Stats] Date range:', { startDateStr, endDateStr, currentDate: today.toISOString().split('T')[0] });
         
-        // Get student's section to find scheduled days
-        const studentData = await dataClient.getStudent(studentId);
-        const sectionId = studentData?.section_id;
+        // Get student's section from currentStudent (already loaded)
+        const sectionId = currentStudent?.section_id;
         
         let scheduledDaysArray = [];
         
         if (sectionId) {
             // Get teaching loads for this section to determine scheduled class days
-            const loadsResult = await dataClient.getTeachingLoads();
-            const loads = Array.isArray(loadsResult?.data) ? loadsResult.data : 
-                         Array.isArray(loadsResult) ? loadsResult : [];
-            
-            // Filter loads for this section
-            const sectionLoads = loads.filter(load => load.section_id === sectionId);
-            
-            // Extract unique scheduled days
-            const daysSet = new Set();
-            sectionLoads.forEach(load => {
-                if (load.day_of_week) {
-                    // day_of_week might be comma-separated like "Monday, Tuesday, Wednesday"
-                    const days = load.day_of_week.split(',').map(d => d.trim());
-                    days.forEach(day => daysSet.add(day));
+            try {
+                const { data: loads, error: loadsError } = await supabase
+                    .from('teaching_loads')
+                    .select('*')
+                    .eq('section_id', sectionId);
+                
+                if (!loadsError && loads) {
+                    // Extract unique scheduled days
+                    const daysSet = new Set();
+                    loads.forEach(load => {
+                        if (load.day_of_week) {
+                            // day_of_week might be comma-separated like "Monday, Tuesday, Wednesday"
+                            const days = load.day_of_week.split(',').map(d => d.trim());
+                            days.forEach(day => daysSet.add(day));
+                        }
+                    });
+                    
+                    scheduledDaysArray = Array.from(daysSet);
+                    console.log('[Attendance Stats] Scheduled class days:', scheduledDaysArray);
                 }
-            });
-            
-            scheduledDaysArray = Array.from(daysSet);
-            console.log('[Attendance Stats] Scheduled class days:', scheduledDaysArray);
+            } catch (err) {
+                console.warn('[Attendance Stats] Could not load teaching loads:', err);
+            }
         }
         
         // Try to get attendance records from the 'attendance' table first
@@ -418,10 +421,24 @@ async function loadAttendanceStats(studentId) {
         try {
             console.log('[Attendance Stats] Querying attendance with:', {
                 student_id: studentId,
+                student_id_type: typeof studentId,
                 date_gte: startDateStr,
                 date_lte: endDateStr
             });
             
+            // First, let's check if ANY records exist for this student (without date filter)
+            const { data: allStudentRecords, error: checkError } = await supabase
+                .from('attendance')
+                .select('*')
+                .eq('student_id', studentId)
+                .limit(5);
+            
+            console.log('[Attendance Stats] All-time check:', {
+                found: allStudentRecords?.length || 0,
+                sample: allStudentRecords?.[0]
+            });
+            
+            // Now query with date range
             const { data: attendanceData, error: attendanceError } = await supabase
                 .from('attendance')
                 .select('*')
@@ -431,7 +448,7 @@ async function loadAttendanceStats(studentId) {
                 .order('date', { ascending: false });
             
             if (attendanceError) {
-                console.warn('[Attendance Stats] Could not fetch from attendance table:', attendanceError);
+                console.error('[Attendance Stats] Could not fetch from attendance table:', attendanceError);
             } else {
                 console.log('[Attendance Stats] Query result:', { 
                     recordsFound: attendanceData?.length || 0,
@@ -443,14 +460,18 @@ async function loadAttendanceStats(studentId) {
                 } else {
                     console.log('[Attendance Stats] No records in attendance table, trying entrance_logs...');
                     // Fallback to entrance_logs
-                    const logsResult = await attendanceClient.getAttendanceRange(
-                        studentId, 
-                        startDateStr,
-                        endDateStr
-                    );
-                    logs = Array.isArray(logsResult.data) ? logsResult.data : 
-                           Array.isArray(logsResult) ? logsResult : [];
-                    console.log('[Attendance Stats] Entrance logs result:', logs.length, 'records');
+                    try {
+                        const logsResult = await attendanceClient.getAttendanceRange(
+                            studentId, 
+                            startDateStr,
+                            endDateStr
+                        );
+                        logs = Array.isArray(logsResult.data) ? logsResult.data : 
+                               Array.isArray(logsResult) ? logsResult : [];
+                        console.log('[Attendance Stats] Entrance logs result:', logs.length, 'records');
+                    } catch (entranceErr) {
+                        console.warn('[Attendance Stats] Entrance logs also failed:', entranceErr);
+                    }
                 }
             }
         } catch (err) {

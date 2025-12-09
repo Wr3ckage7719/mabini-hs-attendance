@@ -1159,7 +1159,7 @@ function setupNotifications() {
     const notifBtn = document.getElementById('notificationsBtn');
     const modal = document.getElementById('notificationsModal');
     const closeBtn = document.getElementById('closeNotificationsBtn');
-    let markingTimeout = null;
+    const badge = document.getElementById('notificationBadge');
 
     if (notifBtn && modal) {
         notifBtn.addEventListener('click', async () => {
@@ -1169,38 +1169,22 @@ function setupNotifications() {
             // Load notifications first to show current state
             await loadNotifications();
             
-            // Clear any existing timeout
-            if (markingTimeout) {
-                clearTimeout(markingTimeout);
-            }
-            
-            // Mark all as read after 1.5 seconds so user can see the unread state
-            markingTimeout = setTimeout(async () => {
-                console.log('⏰ Delay complete, marking as read now...');
-                const marked = await markNotificationsAsRead();
-                if (marked) {
-                    console.log('🔄 Reloading notifications to show updated state...');
-                    // Reload notifications to show updated read state
-                    await loadNotifications();
-                    console.log('✅ Notifications marked as read and UI updated');
-                } else {
-                    console.warn('⚠️ Mark as read returned false');
+            // Mark all as read immediately and hide badge
+            setTimeout(() => {
+                console.log('⏰ Marking as read and hiding badge...');
+                markNotificationsAsRead();
+                // Hide badge immediately for instant feedback
+                if (badge) {
+                    badge.style.display = 'none';
                 }
             }, 1500);
         });
     }
 
-    const closeModalAndUpdate = async () => {
-        modal.style.display = 'none';
-        // Update badge after closing to reflect any changes
-        console.log('🔄 Modal closed, updating badge...');
-        await loadNotifications();
-    };
-
     if (closeBtn && modal) {
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            closeModalAndUpdate();
+            modal.style.display = 'none';
         });
     }
 
@@ -1208,7 +1192,7 @@ function setupNotifications() {
         // Close modal when clicking backdrop
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                closeModalAndUpdate();
+                modal.style.display = 'none';
             }
         });
     }

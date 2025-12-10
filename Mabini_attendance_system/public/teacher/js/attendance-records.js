@@ -67,9 +67,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Load teacher's assigned sections
 async function loadTeacherSections() {
     try {
-        const teacherData = JSON.parse(sessionStorage.getItem('teacherData'));
-        if (!teacherData) {
-            showAlert('Teacher session not found', 'error');
+        // Check both userData and teacherData for compatibility
+        const userDataStr = sessionStorage.getItem('userData') || sessionStorage.getItem('teacherData');
+        if (!userDataStr) {
+            showAlert('Session expired. Please login again.', 'error');
+            setTimeout(() => window.location.href = 'login.html', 2000);
+            return;
+        }
+        
+        const teacherData = JSON.parse(userDataStr);
+        if (!teacherData || !teacherData.id) {
+            showAlert('Invalid session data. Please login again.', 'error');
+            setTimeout(() => window.location.href = 'login.html', 2000);
             return;
         }
 

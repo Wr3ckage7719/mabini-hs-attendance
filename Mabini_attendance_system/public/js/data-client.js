@@ -90,14 +90,19 @@ export const dataClient = {
         throw new Error('No data provided')
       }
 
-      // Ensure we have an active session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      if (sessionError || !session) {
-        console.warn('No active session, attempting to refresh...')
-        // Try to refresh the session
-        const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession()
-        if (refreshError || !newSession) {
-          throw new Error('Authentication required. Please login again.')
+      // For students, teachers, and attendance tables, skip auth check since they use sessionStorage
+      const skipAuthCheck = ['students', 'teachers', 'attendance'].includes(table);
+      
+      if (!skipAuthCheck) {
+        // Ensure we have an active session for other tables
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError || !session) {
+          console.warn('No active session, attempting to refresh...')
+          // Try to refresh the session
+          const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession()
+          if (refreshError || !newSession) {
+            throw new Error('Authentication required. Please login again.')
+          }
         }
       }
 
@@ -162,8 +167,8 @@ export const dataClient = {
         throw new Error('Invalid ID: ID is required for update');
       }
 
-      // For students and teachers tables, skip auth check since they use sessionStorage
-      const skipAuthCheck = ['students', 'teachers'].includes(table);
+      // For students, teachers, and attendance tables, skip auth check since they use sessionStorage
+      const skipAuthCheck = ['students', 'teachers', 'attendance'].includes(table);
       
       if (!skipAuthCheck) {
         // Ensure we have an active session for other tables

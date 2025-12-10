@@ -182,6 +182,12 @@ node test-complete-system.js
 
 ## 🤝 Contributing
 
+### For Team Members / Collaborators
+
+If you need to add a team member or give edit access to someone, see the [Collaborator Access Guide](../COLLABORATOR_ACCESS.md) for detailed instructions on how to add people to this repository.
+
+### For Contributors
+
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commit changes (`git commit -m 'Add AmazingFeature'`)

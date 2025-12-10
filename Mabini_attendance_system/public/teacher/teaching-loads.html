@@ -333,16 +333,22 @@
                     const section = sections.find(s => String(s.id) === String(load.section_id));
                     const sectionStudents = students.filter(st => String(st.section_id) === String(load.section_id));
                     
-                    // Parse schedule string (format: "Monday, Tuesday, Wednesday 07:00-10:00")
-                    let daysPart = 'N/A';
+                    // Get day and time from database columns (day_of_week, start_time, end_time)
+                    let daysPart = load.day_of_week || 'N/A';
                     let timePart = 'N/A';
-                    if (load.schedule) {
+                    
+                    // Format time from start_time and end_time columns
+                    if (load.start_time && load.end_time) {
+                        // Convert time format (HH:MM:SS to HH:MM)
+                        const startTime = load.start_time.substring(0, 5);
+                        const endTime = load.end_time.substring(0, 5);
+                        timePart = `${startTime}-${endTime}`;
+                    } else if (load.schedule) {
+                        // Fallback: parse schedule string if time columns are empty
                         const schedParts = load.schedule.split(/\s+(?=\d)/);
                         if (schedParts.length >= 2) {
-                            daysPart = schedParts[0]; // "Monday, Tuesday, Wednesday"
-                            timePart = schedParts[1]; // "07:00-10:00"
-                        } else {
-                            daysPart = load.schedule;
+                            if (!load.day_of_week) daysPart = schedParts[0];
+                            timePart = schedParts[1];
                         }
                     }
                     

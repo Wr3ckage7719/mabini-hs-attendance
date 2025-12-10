@@ -44,9 +44,10 @@ let currentEditId = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    // Set default date to today
-    filterDate.value = new Date().toISOString().split('T')[0];
+    // Set default date for attendance form (not for filter)
     attendanceDate.value = new Date().toISOString().split('T')[0];
+    // Leave filterDate empty to show all records by default
+    filterDate.value = '';
     
     await loadTeacherSections();
     await loadStudents();
@@ -177,10 +178,12 @@ async function loadAttendanceRecords() {
         const selectedSection = filterSection.value;
         const selectedStatus = filterStatus.value;
 
+        console.log('[Attendance Records] Loading with filters:', { selectedDate, selectedSection, selectedStatus });
+
         // Show loading
         attendanceTableBody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center py-5">
+                <td colspan="9" class="text-center py-5">
                     <div class="spinner-border text-primary" role="status"></div>
                     <p class="mt-2 text-muted">Loading records...</p>
                 </td>
@@ -192,7 +195,7 @@ async function loadAttendanceRecords() {
             console.log('[Attendance Records] No students assigned to teacher');
             attendanceTableBody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center py-5 text-muted">
+                    <td colspan="9" class="text-center py-5 text-muted">
                         <i class="bi bi-people" style="font-size: 3rem;"></i>
                         <p class="mt-2">No students assigned</p>
                         <small>This teacher has no teaching assignments. Contact admin to assign sections.</small>
@@ -204,9 +207,10 @@ async function loadAttendanceRecords() {
             return;
         }
 
-        // Build query
+        // Build query - ONLY filter by date if explicitly set
         let filters = [];
         
+        // Don't filter by today's date by default - show all records
         if (selectedDate) {
             filters.push({ field: 'date', operator: '==', value: selectedDate });
         }
@@ -215,8 +219,12 @@ async function loadAttendanceRecords() {
             filters.push({ field: 'status', operator: '==', value: selectedStatus });
         }
 
+        console.log('[Attendance Records] Query filters:', filters);
+
         // Query attendance table
         const result = await dataClient.getAll('attendance', filters);
+        
+        console.log('[Attendance Records] Query result:', result);
 
         if (result.error) {
             console.error('Error loading attendance:', result.error);
@@ -236,10 +244,16 @@ async function loadAttendanceRecords() {
         }
 
         let logs = result.data || [];
+        
+        console.log('[Attendance Records] Total logs from database:', logs.length);
 
         // Filter for teacher's students only (CRITICAL: must have students)
         const studentIds = allStudents.map(s => s.id);
+        console.log('[Attendance Records] Teacher student IDs:', studentIds.length, studentIds);
+        
         logs = logs.filter(log => studentIds.includes(log.student_id));
+        
+        console.log('[Attendance Records] After student filter:', logs.length);
 
         // Apply section filter client-side
         if (selectedSection) {
@@ -247,9 +261,12 @@ async function loadAttendanceRecords() {
                 .filter(s => s.section_id === selectedSection)
                 .map(s => s.id);
             logs = logs.filter(log => sectionStudentIds.includes(log.student_id));
+            console.log('[Attendance Records] After section filter:', logs.length);
         }
 
         allRecords = logs;
+        console.log('[Attendance Records] Final records to display:', allRecords.length);
+        
         renderAttendanceTable();
         updateStatistics();
 
@@ -398,7 +415,7 @@ function capitalizeFirst(str) {
 
 // Reset filters
 function resetFilters() {
-    filterDate.value = new Date().toISOString().split('T')[0];
+    filterDate.value = ''; // Show all dates
     filterSection.value = '';
     filterStatus.value = '';
     loadAttendanceRecords();

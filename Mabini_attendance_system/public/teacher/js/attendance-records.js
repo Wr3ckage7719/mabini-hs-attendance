@@ -281,7 +281,7 @@ function renderAttendanceTable() {
     if (allRecords.length === 0) {
         attendanceTableBody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center py-5">
+                <td colspan="9" class="text-center py-5">
                     <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
                     <p class="mt-2 text-muted">No attendance records found</p>
                 </td>
@@ -299,6 +299,12 @@ function renderAttendanceTable() {
         const checkIn = log.time_in || '-';
         const checkOut = log.time_out || '-';
         const date = log.date ? formatDate(log.date) : '-';
+        
+        // Check if photo exists
+        const photoUrl = log.photo_url || log.photo;
+        const photoCell = photoUrl 
+            ? `<img src="${photoUrl}" class="photo-thumbnail" onclick="viewPhoto('${log.id}')" alt="Photo" onerror="this.parentElement.innerHTML='<span class=\\'photo-placeholder\\'><i class=\\'bi bi-image\\'>N/A</i></span>'">`
+            : `<span class="photo-placeholder"><i class="bi bi-camera-slash"></i></span>`;
 
         return `
             <tr>
@@ -317,6 +323,7 @@ function renderAttendanceTable() {
                 <td>${date}</td>
                 <td><span class="time-badge">${checkIn}</span></td>
                 <td><span class="time-badge">${checkOut}</span></td>
+                <td>${photoCell}</td>
                 <td><span class="badge status-${status}">${capitalizeFirst(status)}</span></td>
                 <td>
                     <div class="btn-group btn-group-sm">
@@ -567,6 +574,48 @@ function exportToExcel() {
 
     showAlert('Attendance records exported successfully', 'success');
 }
+
+// View photo in modal
+window.viewPhoto = async function(recordId) {
+    try {
+        const log = allRecords.find(r => r.id === recordId);
+        if (!log) {
+            showAlert('Record not found', 'error');
+            return;
+        }
+        
+        const student = allStudents.find(s => s.id === log.student_id);
+        const section = teacherSections.find(s => s.id === student?.section_id);
+        const photoUrl = log.photo_url || log.photo;
+        
+        if (!photoUrl) {
+            showAlert('No photo available for this record', 'warning');
+            return;
+        }
+        
+        // Update modal content
+        document.getElementById('photoViewerImage').src = photoUrl;
+        document.getElementById('photoStudentName').textContent = student ? `${student.first_name} ${student.last_name}` : 'Unknown';
+        document.getElementById('photoDateTime').textContent = log.date && log.time_in 
+            ? `${formatDate(log.date)} at ${log.time_in}`
+            : formatDate(log.date) || 'Unknown';
+        document.getElementById('photoStatus').innerHTML = `<span class="badge status-${log.status}">${capitalizeFirst(log.status || 'present')}</span>`;
+        document.getElementById('photoSection').textContent = section ? (section.section_name || section.section_code) : 'N/A';
+        
+        // Set download link
+        const downloadBtn = document.getElementById('photoDownloadBtn');
+        downloadBtn.href = photoUrl;
+        downloadBtn.download = `attendance_${student?.student_number || 'photo'}_${log.date || 'unknown'}.jpg`;
+        
+        // Show modal
+        const photoModal = new bootstrap.Modal(document.getElementById('photoViewerModal'));
+        photoModal.show();
+        
+    } catch (error) {
+        console.error('Error viewing photo:', error);
+        showAlert('Failed to load photo', 'error');
+    }
+};
 
 // Show alert
 function showAlert(message, type = 'info') {

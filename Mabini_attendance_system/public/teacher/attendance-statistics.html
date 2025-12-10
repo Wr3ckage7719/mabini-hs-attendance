@@ -509,20 +509,8 @@
             
             for (const student of allStudentsData) {
                 const status = student.attendanceRate < 50 ? 'Low' : student.attendanceRate < 75 ? 'At Risk' : 'Good';
-                const imageUrl = student.qr_code_url || student.qr_code || '';
-                
-                // Try to load image
-                let imageData = null;
-                if (imageUrl) {
-                    try {
-                        imageData = await loadImageAsBase64(imageUrl);
-                    } catch (err) {
-                        console.log('Could not load image for student:', student.student_number);
-                    }
-                }
                 
                 tableData.push([
-                    imageData || '', // Empty string instead of 'No Photo' or base64
                     student.student_number || 'N/A',
                     `${student.first_name} ${student.last_name}`,
                     student.email || 'N/A',
@@ -536,37 +524,18 @@
                 ]);
             }
             
-            // Generate table with images
+            // Generate table without photos
             doc.autoTable({
-                head: [['Photo', 'Student ID', 'Name', 'Email', 'Section', 'Grade', 'Total', 'Present', 'Absent', 'Rate', 'Status']],
+                head: [['Student ID', 'Name', 'Email', 'Section', 'Grade', 'Total', 'Present', 'Absent', 'Rate', 'Status']],
                 body: tableData,
                 startY: 35,
                 styles: { fontSize: 8, cellPadding: 2 },
                 headStyles: { fillColor: [41, 128, 185], textColor: 255 },
                 columnStyles: {
-                    0: { cellWidth: 20 }, // Photo column
-                    1: { cellWidth: 22 }, // Student ID
-                    2: { cellWidth: 35 }, // Name
-                    3: { cellWidth: 40 }, // Email
-                    10: { cellWidth: 18 } // Status
-                },
-                didDrawCell: function(data) {
-                    // Draw images in the first column
-                    if (data.column.index === 0 && data.cell.section === 'body') {
-                        const imageData = data.cell.raw;
-                        if (imageData && typeof imageData === 'string' && imageData.startsWith('data:image')) {
-                            try {
-                                // Clear the cell text first
-                                data.cell.text = [];
-                                doc.addImage(imageData, 'PNG', data.cell.x + 2, data.cell.y + 2, 16, 16);
-                            } catch (err) {
-                                console.log('Error adding image to PDF:', err);
-                            }
-                        } else if (!imageData) {
-                            // Show "No Photo" text only if no image
-                            data.cell.text = ['No Photo'];
-                        }
-                    }
+                    0: { cellWidth: 22 }, // Student ID
+                    1: { cellWidth: 35 }, // Name
+                    2: { cellWidth: 40 }, // Email
+                    9: { cellWidth: 18 } // Status
                 },
                 rowPageBreak: 'avoid',
                 margin: { top: 35 }

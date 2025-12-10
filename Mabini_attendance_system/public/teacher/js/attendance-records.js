@@ -344,10 +344,10 @@ function renderAttendanceTable() {
                 <td><span class="badge status-${status}">${capitalizeFirst(status)}</span></td>
                 <td>
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary btn-sm" onclick="editAttendance('${log.id}')" title="Edit">
+                        <button class="btn btn-outline-primary btn-sm" onclick="editAttendance('${log.id}')" title="Edit" ${!status || !['present', 'late', 'absent', 'excused'].includes(status.toLowerCase()) ? 'disabled' : ''}>
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-outline-danger btn-sm" onclick="deleteAttendance('${log.id}')" title="Delete">
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteAttendance('${log.id}')" title="Delete" ${!status || !['present', 'late', 'absent', 'excused'].includes(status.toLowerCase()) ? 'disabled' : ''}>
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -436,6 +436,14 @@ window.editAttendance = async function(logId) {
     try {
         const log = allRecords.find(r => r.id === logId);
         if (!log) return;
+        
+        // Validate that record has a valid status
+        const validStatuses = ['present', 'late', 'absent', 'excused'];
+        const status = (log.status || '').toLowerCase();
+        if (!validStatuses.includes(status)) {
+            showAlert('Cannot edit: This record does not have a valid attendance status.', 'warning');
+            return;
+        }
 
         currentEditId = logId;
         modalTitle.textContent = 'Edit Attendance';
@@ -456,9 +464,20 @@ window.editAttendance = async function(logId) {
 
 // Delete attendance
 window.deleteAttendance = async function(logId) {
-    if (!confirm('Are you sure you want to delete this attendance record?')) return;
-
     try {
+        const log = allRecords.find(r => r.id === logId);
+        if (!log) return;
+        
+        // Validate that record has a valid status
+        const validStatuses = ['present', 'late', 'absent', 'excused'];
+        const status = (log.status || '').toLowerCase();
+        if (!validStatuses.includes(status)) {
+            showAlert('Cannot delete: This record does not have a valid attendance status.', 'warning');
+            return;
+        }
+        
+        if (!confirm('Are you sure you want to delete this attendance record?')) return;
+
         const result = await dataClient.delete('attendance', logId);
 
         if (result.error) {
